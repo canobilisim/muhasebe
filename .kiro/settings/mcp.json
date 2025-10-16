@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=aooqwdinoxnawxmhttwj",
+      "headers": {
+        "Authorization": "Bearer sbp_fa961a034c96ec7e9b488ff8f5020f6456a97aba",
+        "X-Supabase-Access-Token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvb3F3ZGlub3huYXd4bWh0dHdqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MDUxNzEwMiwiZXhwIjoyMDc2MDkzMTAyfQ.SnhUgddPvqA6K2b-odfpWT-wRQ3ksoG_qxQkr1QcV4w"
+      },
+      "disabled": false,
+      "autoApprove": [],
+      "disabledTools": []
+    }
+  }
+}

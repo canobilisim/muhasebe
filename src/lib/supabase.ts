@@ -1,0 +1,11 @@
+import { createClient } from '@supabase/supabase-js'
+import type { Database } from '@/types/database'
+import { config, validateConfig } from './config'
+
+// Validate configuration on startup
+validateConfig()
+
+export const supabase = createClient<Database>(
+  config.supabase.url,
+  config.supabase.anonKey
+)

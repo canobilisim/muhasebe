@@ -1,0 +1,62 @@
+
+# Kimlik Doğrulama Tanılama Raporu
+Tarih: 16.10.2025 12:41:46
+
+## 1. Environment Variables
+- Supabase URL: https://aooqwdinoxnawxmhttwj.supabase.co
+- Anon Key: MEVCUT
+- Service Role Key: MEVCUT
+- Node Environment: N/A
+
+## 2. Bağlantı Durumu
+- Anon Key Bağlantısı: ❌ Başarısız
+  Hata: Invalid API key
+- Service Role Bağlantısı: ✅ Başarılı
+
+
+## 3. Database Schema
+### Tablolar
+- branches: ✅ 1 kayıt
+- users: ✅ 1 kayıt
+- products: ✅ 10 kayıt
+- customers: ✅ 5 kayıt
+- sales: ✅ 0 kayıt
+- sale_items: ✅ 0 kayıt
+- cash_movements: ✅ 0 kayıt
+
+### Functions
+- get_user_branch_id: ✅ Mevcut
+- is_admin: ✅ Mevcut
+- generate_sale_number: ❌ Bulunamadı
+- get_low_stock_products: ❌ Bulunamadı
+- get_daily_sales_summary: ❌ Bulunamadı
+
+### Triggers
+⚠️  Trigger bilgisi alınamadı
+
+## 4. Kullanıcı Verileri
+- auth.users: 1 kullanıcı
+- users tablosu: 1 kullanıcı
+- Eşleşmeyen kullanıcılar: Yok
+
+### Kullanıcı Detayları
+
+- admin@test.com
+  - Profile: ✅
+  - Active: ✅
+  - Branch: ✅
+  - Role: admin
+
+
+## 5. RLS Policy Testleri
+- Service role bypass: ✅ Başarılı
+- Anon key RLS enforcement: ✅ Başarılı
+
+## 6. Tespit Edilen Sorunlar
+1. Anon key bağlantı hatası: Invalid API key
+
+## 7. Öneriler
+1. Eksik database function'ları oluşturun
+
+---
+Rapor JSON formatında: auth-diagnostic-report.json

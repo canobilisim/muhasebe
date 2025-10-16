@@ -1,0 +1,113 @@
+{
+  "timestamp": "2025-10-16T09:41:46.595Z",
+  "environment": {
+    "supabaseUrl": "https://aooqwdinoxnawxmhttwj.supabase.co",
+    "hasAnonKey": true,
+    "hasServiceRoleKey": true
+  },
+  "connection": {
+    "anonKeyConnection": {
+      "success": false,
+      "error": "Invalid API key"
+    },
+    "serviceRoleConnection": {
+      "success": true
+    }
+  },
+  "database": {
+    "tables": [
+      {
+        "name": "branches",
+        "exists": true,
+        "rowCount": 1
+      },
+      {
+        "name": "users",
+        "exists": true,
+        "rowCount": 1
+      },
+      {
+        "name": "products",
+        "exists": true,
+        "rowCount": 10
+      },
+      {
+        "name": "customers",
+        "exists": true,
+        "rowCount": 5
+      },
+      {
+        "name": "sales",
+        "exists": true,
+        "rowCount": 0
+      },
+      {
+        "name": "sale_items",
+        "exists": true,
+        "rowCount": 0
+      },
+      {
+        "name": "cash_movements",
+        "exists": true,
+        "rowCount": 0
+      }
+    ],
+    "functions": [
+      {
+        "name": "get_user_branch_id",
+        "exists": true
+      },
+      {
+        "name": "is_admin",
+        "exists": true
+      },
+      {
+        "name": "generate_sale_number",
+        "exists": false
+      },
+      {
+        "name": "get_low_stock_products",
+        "exists": false
+      },
+      {
+        "name": "get_daily_sales_summary",
+        "exists": false
+      }
+    ],
+    "triggers": []
+  },
+  "users": {
+    "authUsersCount": 1,
+    "usersTableCount": 1,
+    "mismatchedUsers": [],
+    "userDetails": [
+      {
+        "id": "b0098eab-ee6d-4c33-a14d-849e781c65bd",
+        "email": "admin@test.com",
+        "hasProfile": true,
+        "isActive": true,
+        "hasBranch": true,
+        "role": "admin"
+      }
+    ]
+  },
+  "rls": {
+    "policies": [],
+    "testResults": [
+      {
+        "test": "Service role bypass",
+        "success": true
+      },
+      {
+        "test": "Anon key RLS enforcement",
+        "success": true
+      }
+    ]
+  },
+  "issues": [
+    "Anon key bağlantı hatası: Invalid API key"
+  ],
+  "recommendations": [
+    "Eksik database function'ları oluşturun"
+  ]
+}

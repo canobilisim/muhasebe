@@ -1,15 +1,51 @@
 // Core application types and interfaces
-// Business logic types based on database schema
+import type { Database, UserRole, PaymentType, PaymentStatus, MovementType } from './database'
 
-import { Database } from './database'
+// Re-export database types
+export type { Database, UserRole, PaymentType, PaymentStatus, MovementType, Json } from './database'
 
-// Re-export all types
-export * from './database'
-export * from './enums'
-export * from './supabase'
-export * from './guards'
+// Re-export enum constants
+export {
+  UserRole as UserRoleEnum,
+  PaymentType as PaymentTypeEnum,
+  PaymentStatus as PaymentStatusEnum,
+  MovementType as MovementTypeEnum,
+  UserRoleLabels,
+  PaymentTypeLabels,
+  PaymentStatusLabels,
+  MovementTypeLabels,
+  PaymentStatusColors,
+  MovementTypeColors,
+  getUserRoleLabel,
+  getPaymentTypeLabel,
+  getPaymentStatusLabel,
+  getMovementTypeLabel,
+  isValidUserRole,
+  isValidPaymentType,
+  isValidPaymentStatus,
+  isValidMovementType
+} from './enums'
 
-// Extract table types for easier use
+// Re-export supabase types
+export type {
+  SupabaseClient,
+  AuthUser,
+  AuthSession,
+  DatabaseError,
+  QueryResult,
+  QueryBuilder,
+  RPCResponse,
+  RealtimeChannel,
+  RealtimePayload,
+  StorageError,
+  FileObject,
+  TableName,
+  TableRow,
+  TableInsert,
+  TableUpdate
+} from './supabase'
+
+// Table types
 export type Branch = Database['public']['Tables']['branches']['Row']
 export type User = Database['public']['Tables']['users']['Row']
 export type Product = Database['public']['Tables']['products']['Row']
@@ -18,7 +54,6 @@ export type Sale = Database['public']['Tables']['sales']['Row']
 export type SaleItem = Database['public']['Tables']['sale_items']['Row']
 export type CashMovement = Database['public']['Tables']['cash_movements']['Row']
 
-// Insert types for forms
 export type BranchInsert = Database['public']['Tables']['branches']['Insert']
 export type UserInsert = Database['public']['Tables']['users']['Insert']
 export type ProductInsert = Database['public']['Tables']['products']['Insert']
@@ -27,7 +62,6 @@ export type SaleInsert = Database['public']['Tables']['sales']['Insert']
 export type SaleItemInsert = Database['public']['Tables']['sale_items']['Insert']
 export type CashMovementInsert = Database['public']['Tables']['cash_movements']['Insert']
 
-// Update types for forms
 export type BranchUpdate = Database['public']['Tables']['branches']['Update']
 export type UserUpdate = Database['public']['Tables']['users']['Update']
 export type ProductUpdate = Database['public']['Tables']['products']['Update']
@@ -36,36 +70,33 @@ export type SaleUpdate = Database['public']['Tables']['sales']['Update']
 export type SaleItemUpdate = Database['public']['Tables']['sale_items']['Update']
 export type CashMovementUpdate = Database['public']['Tables']['cash_movements']['Update']
 
-// Re-export enums
-export type { UserRole, PaymentType, PaymentStatus, MovementType } from './database'
-
-// Extended types with relationships
-export interface ProductWithStock extends Product {
+// Extended types
+export type ProductWithStock = Product & {
   isLowStock: boolean
   stockStatus: 'critical' | 'low' | 'normal'
 }
 
-export interface CustomerWithBalance extends Customer {
+export type CustomerWithBalance = Customer & {
   overdueAmount: number
   isOverdue: boolean
 }
 
-export interface SaleWithDetails extends Sale {
+export type SaleWithDetails = Sale & {
   items: SaleItemWithProduct[]
   customer?: Customer
   user?: User
 }
 
-export interface SaleItemWithProduct extends SaleItem {
+export type SaleItemWithProduct = SaleItem & {
   product?: Product
 }
 
-export interface CashMovementWithDetails extends CashMovement {
+export type CashMovementWithDetails = CashMovement & {
   sale?: Sale
   user?: User
 }
 
-// POS specific types
+// POS types - USING INTERFACE FOR BETTER COMPATIBILITY
 export interface CartItem {
   product: Product
   quantity: number
@@ -89,7 +120,7 @@ export interface PaymentInfo {
   customerId?: string
 }
 
-// Dashboard and reporting types
+// Dashboard types
 export interface DailySummary {
   totalSales: number
   totalAmount: number
@@ -153,7 +184,7 @@ export interface CashMovementForm {
   referenceNumber: string
 }
 
-// API response types
+// API types
 export interface ApiResponse<T> {
   data: T | null
   error: string | null
@@ -168,7 +199,7 @@ export interface PaginatedResponse<T> {
   totalPages: number
 }
 
-// Search and filter types
+// Filter types
 export interface ProductFilter {
   category?: string
   isActive?: boolean
@@ -198,7 +229,7 @@ export interface CashMovementFilter {
   userId?: string
 }
 
-// UI state types
+// UI types
 export interface LoadingState {
   isLoading: boolean
   error: string | null

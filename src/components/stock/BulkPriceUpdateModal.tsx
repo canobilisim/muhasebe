@@ -42,12 +42,12 @@ interface BulkPriceUpdateModalProps {
 type UpdateType = 'percentage' | 'fixed' | 'margin'
 type PriceType = 'purchase' | 'sale' | 'both'
 
-export const BulkPriceUpdateModal = ({ 
-  isOpen, 
-  onClose, 
-  products, 
-  onUpdate, 
-  isLoading 
+export const BulkPriceUpdateModal = ({
+  isOpen,
+  onClose,
+  products,
+  onUpdate,
+  isLoading
 }: BulkPriceUpdateModalProps) => {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([])
   const [updateType, setUpdateType] = useState<UpdateType>('percentage')
@@ -64,7 +64,7 @@ export const BulkPriceUpdateModal = ({
   const categories = [...new Set(products.map(p => p.category).filter(Boolean))] as string[]
 
   // Filter products based on category
-  const filteredProducts = category 
+  const filteredProducts = category
     ? products.filter(p => p.category === category)
     : products
 
@@ -130,9 +130,10 @@ export const BulkPriceUpdateModal = ({
       default:
         return currentPrice
     }
-  }  cons
-t handleProductToggle = (productId: string) => {
-    setSelectedProducts(prev => 
+  }
+
+  const handleProductToggle = (productId: string) => {
+    setSelectedProducts(prev =>
       prev.includes(productId)
         ? prev.filter(id => id !== productId)
         : [...prev, productId]
@@ -383,8 +384,8 @@ t handleProductToggle = (productId: string) => {
           <Button variant="outline" onClick={handleClose}>
             İptal
           </Button>
-          <Button 
-            onClick={handleUpdate} 
+          <Button
+            onClick={handleUpdate}
             disabled={!isValid || isLoading}
           >
             {isLoading ? 'Güncelleniyor...' : `${previewData.length} Ürünü Güncelle`}

@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-10-16T09:41:46.595Z",
+  "timestamp": "2025-10-16T16:23:21.856Z",
   "environment": {
     "supabaseUrl": "https://aooqwdinoxnawxmhttwj.supabase.co",
     "hasAnonKey": true,
@@ -7,8 +7,7 @@
   },
   "connection": {
     "anonKeyConnection": {
-      "success": false,
-      "error": "Invalid API key"
+      "success": true
     },
     "serviceRoleConnection": {
       "success": true
@@ -100,12 +99,13 @@
       },
       {
         "test": "Anon key RLS enforcement",
-        "success": true
+        "success": false,
+        "error": "RLS bypass edildi (güvenlik riski)"
       }
     ]
   },
   "issues": [
-    "Anon key bağlantı hatası: Invalid API key"
+    "Anon key ile users tablosuna erişim sağlandı (RLS sorunu)"
   ],
   "recommendations": [
     "Eksik database function'ları oluşturun"

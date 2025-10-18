@@ -1,13 +1,13 @@
 import { supabase } from '@/lib/supabase'
 import { 
-  Sale, 
-  SaleInsert, 
-  SaleItem, 
-  SaleItemInsert, 
-  CartItem, 
-  PaymentInfo,
-  Customer,
-  CashMovementInsert
+  type Sale, 
+  type SaleInsert, 
+  type SaleItem, 
+  type SaleItemInsert, 
+  type CartItem, 
+  type PaymentInfo,
+  type Customer,
+  type CashMovementInsert
 } from '@/types'
 import { PaymentType, PaymentStatus, MovementType } from '@/types/enums'
 

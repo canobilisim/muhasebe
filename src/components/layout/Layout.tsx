@@ -2,7 +2,6 @@ import { ReactNode, useState } from 'react'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
 import { MainContent } from './MainContent'
-import { cn } from '@/lib/utils'
 
 interface LayoutProps {
   children: ReactNode
@@ -22,9 +21,9 @@ export const Layout = ({
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen w-screen bg-white">
       {/* Desktop Sidebar */}
-      <Sidebar className="hidden lg:flex" />
+      <Sidebar className="hidden lg:flex border-r border-gray-200 h-screen flex-shrink-0" />
 
       {/* Mobile Sidebar Overlay */}
       {isMobileSidebarOpen && (
@@ -33,15 +32,16 @@ export const Layout = ({
           onClick={() => setIsMobileSidebarOpen(false)}
         >
           <div className="absolute inset-0 bg-black opacity-50" />
-          <Sidebar className="relative z-50" />
+          <Sidebar className="relative z-50 h-full" />
         </div>
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col h-full w-full overflow-hidden">
         <Topbar 
           showMenuButton 
           onMenuClick={() => setIsMobileSidebarOpen(true)}
+          className="border-b border-gray-200 flex-shrink-0"
         />
         <MainContent 
           title={title}

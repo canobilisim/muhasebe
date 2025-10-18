@@ -1,19 +1,16 @@
-import { Suspense, lazy, useState } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { Toaster } from 'react-hot-toast'
+import { Suspense, lazy, useEffect } from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { ErrorBoundary } from '@/components/layout/ErrorBoundary'
-import { PrivateRoute, AdminRoute, ManagerRoute, CashierRoute } from '@/components/layout/PrivateRoute'
+import { PrivateRoute } from '@/components/layout/PrivateRoute'
 import { PageLoading } from '@/components/ui/loading'
 import { LoginPage } from '@/pages/LoginPage'
 import DashboardPage from '@/pages/DashboardPage'
-import { AuthDebugPanel } from '@/components/debug/AuthDebugPanel'
-import { Button } from '@/components/ui/button'
-import { Bug } from 'lucide-react'
 import './App.css'
 
 // Lazy load other pages
 const TestRolesPage = lazy(() => import('@/pages/TestRolesPage').then(module => ({ default: module.TestRolesPage })))
 const POSPage = lazy(() => import('@/pages/POSPage').then(module => ({ default: module.POSPage })))
+const FastSalePage = lazy(() => import('@/pages/pos/FastSalePage').then(module => ({ default: module.default })))
 const CustomersPage = lazy(() => import('@/pages/CustomersPage').then(module => ({ default: module.CustomersPage })))
 const StockPage = lazy(() => import('@/pages/StockPage').then(module => ({ default: module.StockPage })))
 const CashPage = lazy(() => import('@/pages/CashPage').then(module => ({ default: module.CashPage })))
@@ -21,129 +18,127 @@ const ReportsPage = lazy(() => import('@/pages/ReportsPage').then(module => ({ d
 const SettingsPage = lazy(() => import('@/pages/SettingsPage').then(module => ({ default: module.SettingsPage })))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage').then(module => ({ default: module.NotFoundPage })))
 
-// Check if we're in development mode
-const isDevelopment = import.meta.env.DEV
+// Sayfa yüklenirken scroll'u en üste taşı
+function ScrollToTop() {
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+
+  return null
+}
 
 function App() {
-  const [showDebugPanel, setShowDebugPanel] = useState(false)
 
   return (
-    <ErrorBoundary>
-      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <Suspense fallback={<PageLoading />}>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/login" element={<LoginPage />} />
-            
-            {/* Protected routes */}
-            <Route 
-              path="/dashboard" 
-              element={
-                <PrivateRoute>
-                  <DashboardPage />
-                </PrivateRoute>
-              } 
-            />
-            
-            <Route 
-              path="/test-roles" 
-              element={
-                <PrivateRoute>
-                  <TestRolesPage />
-                </PrivateRoute>
-              } 
-            />
+    <div className="fixed inset-0 bg-white">
+      <ErrorBoundary>
+        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <ScrollToTop />
+          <Suspense fallback={<PageLoading />}>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/login" element={<LoginPage />} />
+              
+              {/* Protected routes */}
+              <Route 
+                path="/dashboard" 
+                element={
+                  <PrivateRoute>
+                    <div className="flex-1 flex flex-col overflow-hidden">
+                      <DashboardPage />
+                    </div>
+                  </PrivateRoute>
+                } 
+              />
+              
+              {/* Test roles page - only in development */}
+              {import.meta.env.DEV && (
+                <Route 
+                  path="/test-roles" 
+                  element={
+                    <PrivateRoute>
+                      <TestRolesPage />
+                    </PrivateRoute>
+                  } 
+                />
+              )}
 
-            {/* POS - Cashier and above */}
-            <Route 
-              path="/pos" 
-              element={
-                <CashierRoute>
+              {/* POS - Cashier and above */}
+              <Route path="/pos" element={
+                <PrivateRoute requiredRoles={['admin', 'manager', 'cashier']}>
                   <POSPage />
-                </CashierRoute>
-              } 
-            />
+                </PrivateRoute>
+                } />
+                
+                {/* New Fast Sale POS */}
+                <Route path="/pos2" element={
+                  <PrivateRoute requiredRoles={['admin', 'manager', 'cashier']}>
+                    <FastSalePage />
+                  </PrivateRoute>
+                } />
 
-            {/* Customers - Manager and above */}
-            <Route 
-              path="/customers" 
-              element={
-                <ManagerRoute>
-                  <CustomersPage />
-                </ManagerRoute>
-              } 
-            />
-
-            {/* Stock - Manager and above */}
-            <Route 
-              path="/stock" 
-              element={
-                <ManagerRoute>
-                  <StockPage />
-                </ManagerRoute>
-              } 
-            />
-
-            {/* Cash - Cashier and above */}
-            <Route 
-              path="/cash" 
-              element={
-                <CashierRoute>
-                  <CashPage />
-                </CashierRoute>
-              } 
-            />
-
-            {/* Reports - Manager and above */}
-            <Route 
-              path="/reports" 
-              element={
-                <ManagerRoute>
-                  <ReportsPage />
-                </ManagerRoute>
-              } 
-            />
-
-            {/* Settings - Admin only */}
-            <Route 
-              path="/settings" 
-              element={
-                <AdminRoute>
-                  <SettingsPage />
-                </AdminRoute>
-              } 
-            />
-            
-            {/* Default redirect */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            
-            {/* 404 - Not Found */}
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </Suspense>
-        <Toaster />
-
-        {/* Debug Panel - Development Only */}
-        {isDevelopment && (
-          <>
-            {showDebugPanel && (
-              <AuthDebugPanel onClose={() => setShowDebugPanel(false)} />
-            )}
-            
-            {!showDebugPanel && (
-              <Button
-                onClick={() => setShowDebugPanel(true)}
-                className="fixed bottom-4 right-4 h-12 w-12 rounded-full shadow-lg z-40"
-                size="icon"
-                title="Open Auth Debug Panel"
-              >
-                <Bug className="h-5 w-5" />
-              </Button>
-            )}
-          </>
-        )}
-      </Router>
-    </ErrorBoundary>
+              {/* Customers - Manager and above */}
+              <Route 
+                path="/customers" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <CustomersPage />
+                  </PrivateRoute>
+                } 
+              />
+              
+              {/* Stock - Manager and above */}
+              <Route 
+                path="/stock" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <StockPage />
+                  </PrivateRoute>
+                } 
+              />
+              
+              {/* Cash - Cashier and above */}
+              <Route 
+                path="/cash" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager', 'cashier']}>
+                    <CashPage />
+                  </PrivateRoute>
+                } 
+              />
+              
+              {/* Reports - Manager and above */}
+              <Route 
+                path="/reports" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <ReportsPage />
+                  </PrivateRoute>
+                } 
+              />
+              
+              {/* Settings - Admin only */}
+              <Route 
+                path="/settings" 
+                element={
+                  <PrivateRoute requiredRoles={['admin']}>
+                    <SettingsPage />
+                  </PrivateRoute>
+                } 
+              />
+              
+              {/* Redirect root to dashboard */}
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              
+              {/* 404 - Not Found */}
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </Suspense>
+        </Router>
+      </ErrorBoundary>
+    </div>
   )
 }
 

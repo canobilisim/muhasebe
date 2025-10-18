@@ -1,14 +1,17 @@
 // Type guards and validation utilities
-import { 
+import type { Database } from './database'
+import type { 
   UserRole, 
   PaymentType, 
   PaymentStatus, 
-  MovementType,
-  Product,
-  Customer,
-  Sale,
-  User
-} from './index'
+  MovementType
+} from './database'
+
+// Extract types directly to avoid circular dependency
+type Product = Database['public']['Tables']['products']['Row']
+type Customer = Database['public']['Tables']['customers']['Row']
+type Sale = Database['public']['Tables']['sales']['Row']
+type User = Database['public']['Tables']['users']['Row']
 
 // Type guards for enums
 export const isUserRole = (value: any): value is UserRole => {

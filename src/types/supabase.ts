@@ -74,8 +74,7 @@ export type FileObject = {
   metadata: Record<string, any>
 }
 
-// Re-export database types
-export type { Database } from './database'
+// Import database types
 import type { Database } from './database'
 
 // Helper type for table names

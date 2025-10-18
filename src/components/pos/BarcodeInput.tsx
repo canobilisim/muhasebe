@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { cn } from '@/lib/utils'
 import { Search, ShoppingCart, AlertTriangle } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -11,12 +12,14 @@ interface BarcodeInputProps {
   onProductFound?: (product: Product) => void
   onError?: (error: string) => void
   className?: string
+  autoFocus?: boolean
 }
 
 export const BarcodeInput: React.FC<BarcodeInputProps> = ({
   onProductFound,
   onError,
-  className = ''
+  className = '',
+  autoFocus = false
 }) => {
   const [isSearching, setIsSearching] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -144,14 +147,13 @@ export const BarcodeInput: React.FC<BarcodeInputProps> = ({
           <Input
             ref={inputRef}
             type="text"
-            placeholder="Barkod okutun veya ürün adı yazın..."
+            placeholder="Barkod okuyucu veya ürün ara..."
             value={barcodeInput}
             onChange={handleInputChange}
             onKeyDown={handleKeyPress}
+            className={cn('pl-10 pr-10', className)}
             disabled={isSearching}
-            className="pl-10 pr-4 py-2 text-lg"
-            autoComplete="off"
-            autoFocus
+            autoFocus={autoFocus}
           />
         </div>
         

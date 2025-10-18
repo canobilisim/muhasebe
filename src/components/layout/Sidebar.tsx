@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
+import type { UserRole } from '@/types'
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -23,7 +24,7 @@ interface NavItem {
   title: string
   href: string
   icon: React.ComponentType<{ className?: string }>
-  roles?: string[]
+  roles?: UserRole[]
 }
 
 const navItems: NavItem[] = [
@@ -35,6 +36,12 @@ const navItems: NavItem[] = [
   {
     title: 'POS Satış',
     href: '/pos',
+    icon: ShoppingCart,
+    roles: ['admin', 'manager', 'cashier']
+  },
+  {
+    title: 'Hızlı Satış (Yeni)',
+    href: '/pos2',
     icon: ShoppingCart,
     roles: ['admin', 'manager', 'cashier']
   },

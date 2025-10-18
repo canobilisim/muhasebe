@@ -83,7 +83,7 @@
     - Floating button ile aç/kapa
     - _Requirements: 5.1_
 
-- [ ] 6. Supabase yapılandırma dokümanı oluştur
+- [x] 6. Supabase yapılandırma dokümanı oluştur
   - Email Auth etkinleştirme adımları
   - Email confirmation devre dışı bırakma (development)
   - Site URL ve Redirect URLs yapılandırması
@@ -91,7 +91,7 @@
   - Troubleshooting guide
   - _Requirements: 2.1, 2.2, 2.3, 2.4_
 
-- [ ] 7. Diagnostic script'i çalıştır ve sorunları tespit et
+- [x] 7. Diagnostic script'i çalıştır ve sorunları tespit et
   - Service role key'i .env dosyasına ekle
   - Script'i çalıştır
   - Oluşturulan raporu incele
@@ -99,7 +99,7 @@
   - Öncelikli düzeltmeleri belirle
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
-- [ ] 8. Database migration'ları çalıştır ve doğrula
+- [x] 8. Database migration'ları çalıştır ve doğrula
   - Migration script'ini Supabase'e uygula (service role ile)
   - Trigger'ların çalıştığını doğrula (test insert ile)
   - Test kullanıcılarının oluşturulduğunu doğrula (auth.users ve users tablolarında)
@@ -108,8 +108,8 @@
   - Branch assignment'ların doğru olduğunu doğrula
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6_
 
-- [ ] 9. Manuel test checklist'ini tamamla
-  - [ ] 9.1 Giriş akışı testleri
+- [x] 9. Manuel test checklist'ini tamamla
+  - [x] 9.1 Giriş akışı testleri
     - Admin kullanıcısı ile giriş yap
     - Manager kullanıcısı ile giriş yap
     - Cashier kullanıcısı ile giriş yap
@@ -117,26 +117,26 @@
     - Olmayan email ile hata testi
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6_
   
-  - [ ] 9.2 Session persistence testleri
+  - [x] 9.2 Session persistence testleri
     - Giriş yap ve sayfayı yenile
     - Session'ın korunduğunu doğrula
     - Çıkış yap ve login'e yönlendirildiğini doğrula
     - _Requirements: 7.1, 7.2, 7.3, 7.4_
   
-  - [ ] 9.3 Role-based access testleri
+  - [x] 9.3 Role-based access testleri
     - Admin olarak tüm sayfalara erişimi test et
     - Manager olarak Settings dışı sayfalara erişimi test et
     - Cashier olarak sadece POS, Cash, Dashboard erişimini test et
     - Yetkisiz sayfa erişiminde "Access Denied" gösterimini test et
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
   
-  - [ ] 9.4 Hata durumları testleri
+  - [x] 9.4 Hata durumları testleri
     - Network hatası simüle et ve mesaj kontrolü yap
     - Inactive user ile giriş deneme testi
     - Session timeout simüle et
     - _Requirements: 4.6, 5.5_
 
-- [ ] 10. Production hazırlık kontrolleri
+- [-] 10. Production hazırlık kontrolleri
   - Email confirmation'ın production'da açık olduğunu doğrula
   - Debug panel'in production'da gizli olduğunu doğrula
   - Detailed error messages'ın production'da kapalı olduğunu doğrula

@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useAuthStore } from '@/stores/authStore'
-import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { X, ChevronDown, ChevronUp } from 'lucide-react'
@@ -174,10 +173,10 @@ export function AuthDebugPanel({ onClose }: AuthDebugPanelProps) {
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Expires At:</span>
+                    <span className="text-gray-600">Expires In:</span>
                     <span className="text-xs">
-                      {session.expires_at
-                        ? new Date(session.expires_at * 1000).toLocaleString('tr-TR')
+                      {session.expires_in
+                        ? `${session.expires_in}s`
                         : 'N/A'}
                     </span>
                   </div>

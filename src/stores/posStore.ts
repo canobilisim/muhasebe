@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
-import { CartItem, PaymentInfo, Product, Customer } from '@/types'
+import type { CartItem, PaymentInfo, Product, Customer } from '@/types'
 import { PaymentType } from '@/types/enums'
 import { processPayment } from '@/services/salesService'
 import { useAuthStore } from './authStore'

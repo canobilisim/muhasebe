@@ -10,7 +10,7 @@ import {
   BarChart,
   Bar
 } from 'recharts'
-import { SalesChartData, MonthlyChartData } from '@/services/dashboardService'
+import type { SalesChartData, MonthlyChartData } from '@/services/dashboardService'
 
 interface SalesChartProps {
   data: SalesChartData[] | MonthlyChartData[]

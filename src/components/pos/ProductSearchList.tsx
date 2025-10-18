@@ -72,7 +72,7 @@ export const ProductSearchList: React.FC<ProductSearchListProps> = ({
     )
   }
 
-  if (products.length === 0) {
+  if (!products || products.length === 0) {
     return (
       <Card className={`border-gray-200 ${className}`}>
         <CardContent className="p-8 text-center">

@@ -44,7 +44,7 @@ export const MainContent = ({
       )}
 
       {/* Page Content */}
-      <div className="flex-1 w-full overflow-auto">
+      <div className={cn("flex-1 w-full", className?.includes('overflow-hidden') ? 'overflow-hidden' : 'overflow-auto')}>
         {children}
       </div>
     </main>

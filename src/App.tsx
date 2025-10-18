@@ -1,10 +1,11 @@
-import { Suspense, lazy, useEffect } from 'react'
+import React, { Suspense, lazy, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { ErrorBoundary } from '@/components/layout/ErrorBoundary'
 import { PrivateRoute } from '@/components/layout/PrivateRoute'
 import { PageLoading } from '@/components/ui/loading'
 import { LoginPage } from '@/pages/LoginPage'
 import DashboardPage from '@/pages/DashboardPage'
+import { useAuthStore } from '@/stores/authStore'
 import './App.css'
 
 // Lazy load other pages
@@ -30,6 +31,61 @@ function ScrollToTop() {
 }
 
 function App() {
+  const { initialize, isInitialized, isLoading } = useAuthStore()
+  const [hasHydrated, setHasHydrated] = React.useState(false)
+
+  // Wait for Zustand to hydrate from localStorage
+  useEffect(() => {
+    const unsubscribe = useAuthStore.persist.onFinishHydration(() => {
+      setHasHydrated(true)
+    })
+    
+    // Check if already hydrated
+    if (useAuthStore.persist.hasHydrated()) {
+      setHasHydrated(true)
+    }
+
+    return unsubscribe
+  }, [])
+
+  // Initialize auth after hydration
+  useEffect(() => {
+    if (hasHydrated) {
+      const state = useAuthStore.getState()
+      
+      // If we have session but not authenticated, fix it
+      if (state.session && state.user && !state.isAuthenticated) {
+        useAuthStore.setState({
+          isAuthenticated: true,
+          userRole: state.profile?.role || null,
+          branchId: state.profile?.branch_id || null,
+        })
+      }
+      
+      if (!isInitialized && !isLoading) {
+        initialize()
+        
+        // Fallback: If initialization takes too long, force it to complete
+        const fallbackTimer = setTimeout(() => {
+          const currentState = useAuthStore.getState()
+          if (!currentState.isInitialized) {
+            useAuthStore.setState({ 
+              isInitialized: true, 
+              isLoading: false,
+              connectionStatus: 'disconnected'
+            })
+          }
+        }, 10000)
+        
+        return () => clearTimeout(fallbackTimer)
+      }
+    }
+  }, [hasHydrated, isInitialized, isLoading, initialize])
+
+  // Show loading while hydrating or initializing
+  if (!hasHydrated || !isInitialized || isLoading) {
+    return <PageLoading />
+  }
 
   return (
     <div className="fixed inset-0 bg-white">

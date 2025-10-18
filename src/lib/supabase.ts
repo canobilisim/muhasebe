@@ -7,5 +7,15 @@ validateConfig()
 
 export const supabase = createClient<Database>(
   config.supabase.url,
-  config.supabase.anonKey
+  config.supabase.anonKey,
+  {
+    auth: {
+      // Use localStorage for persistent sessions
+      storage: window.localStorage,
+      storageKey: 'supabase.auth.token',
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+    },
+  }
 )

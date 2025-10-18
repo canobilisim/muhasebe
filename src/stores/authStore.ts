@@ -5,6 +5,7 @@ import type { User, UserRole } from '@/types'
 import type { AuthUser, AuthSession } from '@/types/supabase'
 import { config } from '@/lib/config'
 import { AuthErrorHandler, type AuthError } from '@/lib/auth-error-handler'
+import { logger } from '@/lib/logger'
 
 type ConnectionStatus = 'connected' | 'disconnected' | 'checking'
 
@@ -60,14 +61,6 @@ export const useAuthStore = create<AuthState>()(
 
       // Actions
       signIn: async (email: string, password: string) => {
-        const startTime = Date.now()
-        const timestamp = new Date().toISOString()
-        
-        // Structured logging - Start
-        console.group('🔐 Auth Operation: signIn')
-        console.log('Timestamp:', timestamp)
-        console.log('Email:', email)
-        console.log('Context: User login attempt')
         
         set({ 
           isLoading: true, 
@@ -78,12 +71,12 @@ export const useAuthStore = create<AuthState>()(
 
         try {
           // Step 1: Authenticate with Supabase
-          console.log('Step 1: Calling supabase.auth.signInWithPassword...')
+          logger.log('Step 1: Calling supabase.auth.signInWithPassword...')
           const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password,
           })
-          console.log('Step 1 Result:', { 
+          logger.log('Step 1 Result:', { 
             success: !error, 
             hasUser: !!data?.user,
             hasSession: !!data?.session,
@@ -103,7 +96,7 @@ export const useAuthStore = create<AuthState>()(
             if (isConnectionError) {
               console.error('🔴 Connection error detected')
             }
-            console.groupEnd()
+            logger.groupEnd()
             
             set({ 
               error: authError.message, 
@@ -116,8 +109,8 @@ export const useAuthStore = create<AuthState>()(
 
           if (data.user && data.session) {
             // Step 2: Fetch user profile
-            console.log('Step 2: Fetching user profile from users table...')
-            console.log('User ID:', data.user.id)
+            logger.log('Step 2: Fetching user profile from users table...')
+            logger.log('User ID:', data.user.id)
             
             const { data: profile, error: profileError } = await supabase
               .from('users')
@@ -125,7 +118,7 @@ export const useAuthStore = create<AuthState>()(
               .eq('id', data.user.id)
               .single()
             
-            console.log('Step 2 Result:', { 
+            logger.log('Step 2 Result:', { 
               success: !profileError, 
               hasProfile: !!profile,
               profileError: profileError?.message 
@@ -137,7 +130,7 @@ export const useAuthStore = create<AuthState>()(
                 'signIn:profileFetch'
               )
               console.error('Profile fetch failed:', authError)
-              console.groupEnd()
+              logger.groupEnd()
               
               set({ 
                 error: authError.message, 
@@ -149,13 +142,13 @@ export const useAuthStore = create<AuthState>()(
             }
 
             // Step 3: Check if user is active
-            console.log('Step 3: Checking user active status...')
-            console.log('Is Active:', profile.is_active)
-            console.log('Role:', profile.role)
-            console.log('Branch ID:', profile.branch_id)
+            logger.log('Step 3: Checking user active status...')
+            logger.log('Is Active:', profile.is_active)
+            logger.log('Role:', profile.role)
+            logger.log('Branch ID:', profile.branch_id)
             
             if (!profile.is_active) {
-              console.warn('User is inactive, signing out...')
+              logger.warn('User is inactive, signing out...')
               await supabase.auth.signOut()
               
               const authError = AuthErrorHandler.handle(
@@ -163,7 +156,7 @@ export const useAuthStore = create<AuthState>()(
                 'signIn:authorization'
               )
               console.error('Authorization failed:', authError)
-              console.groupEnd()
+              logger.groupEnd()
               
               set({ 
                 error: authError.message, 
@@ -175,13 +168,10 @@ export const useAuthStore = create<AuthState>()(
             }
 
             // Step 4: Set authenticated state
-            console.log('Step 4: Setting authenticated state...')
-            const duration = Date.now() - startTime
-            console.log('✅ Sign in successful!')
-            console.log('Duration:', `${duration}ms`)
-            console.log('User Role:', profile.role)
-            console.log('Branch ID:', profile.branch_id)
-            console.groupEnd()
+            logger.log('Step 4: Setting authenticated state...')
+            logger.log('✅ Sign in successful!')
+            logger.log('User Role:', profile.role)
+            logger.log('Branch ID:', profile.branch_id)
             
             set({
               user: data.user,
@@ -206,7 +196,7 @@ export const useAuthStore = create<AuthState>()(
             'signIn:noData'
           )
           console.error('Sign in failed:', authError)
-          console.groupEnd()
+          logger.groupEnd()
           
           set({ 
             error: authError.message, 
@@ -218,7 +208,7 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           const authError = AuthErrorHandler.handle(error, 'signIn:exception')
           console.error('Unexpected error during sign in:', authError)
-          console.groupEnd()
+          logger.groupEnd()
           
           set({ 
             error: authError.message, 
@@ -233,17 +223,17 @@ export const useAuthStore = create<AuthState>()(
       signOut: async () => {
         const timestamp = new Date().toISOString()
         
-        console.group('🚪 Auth Operation: signOut')
-        console.log('Timestamp:', timestamp)
-        console.log('Context: User logout')
+        logger.group('🚪 Auth Operation: signOut')
+        logger.log('Timestamp:', timestamp)
+        logger.log('Context: User logout')
         
         set({ isLoading: true })
 
         try {
-          console.log('Calling supabase.auth.signOut...')
+          logger.log('Calling supabase.auth.signOut...')
           await supabase.auth.signOut()
-          console.log('✅ Sign out successful!')
-          console.groupEnd()
+          logger.log('✅ Sign out successful!')
+          logger.groupEnd()
           
           set({
             user: null,
@@ -261,8 +251,8 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           const authError = AuthErrorHandler.handle(error, 'signOut:exception')
           console.error('Sign out error:', authError)
-          console.warn('Forcing state clear despite error')
-          console.groupEnd()
+          logger.warn('Forcing state clear despite error')
+          logger.groupEnd()
           
           // Force clear state even if signOut fails
           set({
@@ -286,26 +276,25 @@ export const useAuthStore = create<AuthState>()(
         const timestamp = new Date().toISOString()
         const currentState = get()
         const maxRetries = 3
-        const timeoutMs = 5000
         
         // Structured logging - Start
-        console.group('🔄 Auth Operation: initialize')
-        console.log('Timestamp:', timestamp)
-        console.log('Attempt:', currentState.initializeAttempts + 1)
-        console.log('Max Retries:', maxRetries)
-        console.log('Context: Application initialization')
+        logger.group('🔄 Auth Operation: initialize')
+        logger.log('Timestamp:', timestamp)
+        logger.log('Attempt:', currentState.initializeAttempts + 1)
+        logger.log('Max Retries:', maxRetries)
+        logger.log('Context: Application initialization')
         
         // Prevent multiple simultaneous initializations
         if (currentState.isLoading) {
-          console.warn('Already initializing, skipping')
-          console.groupEnd()
+          logger.warn('Already initializing, skipping')
+          logger.groupEnd()
           return
         }
         
         // Check retry limit
         if (currentState.initializeAttempts >= maxRetries) {
           console.error('Max retry attempts reached, aborting')
-          console.groupEnd()
+          logger.groupEnd()
           set({ 
             isLoading: false, 
             isInitialized: true,
@@ -321,20 +310,26 @@ export const useAuthStore = create<AuthState>()(
         })
 
         try {
-          // Step 1: Get current session with timeout
-          console.log(`Step 1: Getting session (timeout: ${timeoutMs}ms)...`)
+          // Step 1: Get current session with longer timeout
+          logger.log(`Step 1: Getting session...`)
+          
           const sessionPromise = supabase.auth.getSession()
           const timeoutPromise = new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('Session timeout')), timeoutMs)
+            setTimeout(() => reject(new Error('Session check timeout after 15 seconds')), 15000)
           )
           
-          const { data: { session }, error } = await Promise.race([
-            sessionPromise, 
-            timeoutPromise
-          ]) as any
+          let sessionResult
+          try {
+            sessionResult = await Promise.race([sessionPromise, timeoutPromise]) as any
+          } catch (timeoutError) {
+            console.error('Session check timed out, assuming no session')
+            sessionResult = { data: { session: null }, error: null }
+          }
+          
+          const { data: { session }, error } = sessionResult
           
           const duration1 = Date.now() - startTime
-          console.log('Step 1 Result:', { 
+          logger.log('Step 1 Result:', { 
             success: !error,
             hasSession: !!session, 
             hasUser: !!session?.user,
@@ -345,7 +340,7 @@ export const useAuthStore = create<AuthState>()(
           if (error) {
             const authError = AuthErrorHandler.handle(error, 'initialize:sessionCheck')
             console.error('Session check failed:', authError)
-            console.groupEnd()
+            logger.groupEnd()
             
             set({ 
               isLoading: false, 
@@ -358,9 +353,9 @@ export const useAuthStore = create<AuthState>()(
 
           if (session?.user) {
             // Step 2: Fetch user profile
-            console.log('Step 2: User session found, fetching profile...')
-            console.log('User ID:', session.user.id)
-            console.log('Session expires at:', new Date(session.expires_at! * 1000).toISOString())
+            logger.log('Step 2: User session found, fetching profile...')
+            logger.log('User ID:', session.user.id)
+            logger.log('Session expires at:', new Date(session.expires_at! * 1000).toISOString())
             
             const { data: profile, error: profileError } = await supabase
               .from('users')
@@ -369,7 +364,7 @@ export const useAuthStore = create<AuthState>()(
               .single()
 
             const duration2 = Date.now() - startTime
-            console.log('Step 2 Result:', { 
+            logger.log('Step 2 Result:', { 
               success: !profileError,
               hasProfile: !!profile, 
               isActive: profile?.is_active,
@@ -381,7 +376,7 @@ export const useAuthStore = create<AuthState>()(
 
             if (profileError || !profile?.is_active) {
               // Step 3: Handle profile error or inactive user
-              console.log('Step 3: Profile error or inactive user, signing out...')
+              logger.log('Step 3: Profile error or inactive user, signing out...')
               
               if (profileError) {
                 const authError = AuthErrorHandler.handle(
@@ -391,12 +386,12 @@ export const useAuthStore = create<AuthState>()(
                 console.error('Profile fetch failed:', authError)
                 set({ lastError: authError })
               } else {
-                console.warn('User is inactive')
+                logger.warn('User is inactive')
               }
               
               await supabase.auth.signOut()
-              console.log('Signed out successfully')
-              console.groupEnd()
+              logger.log('Signed out successfully')
+              logger.groupEnd()
               
               set({
                 user: null,
@@ -413,13 +408,13 @@ export const useAuthStore = create<AuthState>()(
             }
 
             // Step 4: Set authenticated state
-            console.log('Step 3: Setting authenticated state...')
+            logger.log('Step 3: Setting authenticated state...')
             const totalDuration = Date.now() - startTime
-            console.log('✅ Initialize successful!')
-            console.log('Total Duration:', `${totalDuration}ms`)
-            console.log('User Role:', profile.role)
-            console.log('Branch ID:', profile.branch_id)
-            console.groupEnd()
+            logger.log('✅ Initialize successful!')
+            logger.log('Total Duration:', `${totalDuration}ms`)
+            logger.log('User Role:', profile.role)
+            logger.log('Branch ID:', profile.branch_id)
+            logger.groupEnd()
             
             set({
               user: session.user,
@@ -435,10 +430,10 @@ export const useAuthStore = create<AuthState>()(
             })
           } else {
             // No session found
-            console.log('Step 2: No session found, setting unauthenticated state')
+            logger.log('Step 2: No session found, setting unauthenticated state')
             const totalDuration = Date.now() - startTime
-            console.log('Duration:', `${totalDuration}ms`)
-            console.groupEnd()
+            logger.log('Duration:', `${totalDuration}ms`)
+            logger.groupEnd()
             
             set({
               user: null,
@@ -459,11 +454,11 @@ export const useAuthStore = create<AuthState>()(
           
           const currentAttempts = get().initializeAttempts
           if (currentAttempts < maxRetries) {
-            console.warn(`Will retry (${currentAttempts}/${maxRetries})`)
+            logger.warn(`Will retry (${currentAttempts}/${maxRetries})`)
           } else {
             console.error('Max retries reached, giving up')
           }
-          console.groupEnd()
+          logger.groupEnd()
           
           set({
             user: null,
@@ -481,28 +476,28 @@ export const useAuthStore = create<AuthState>()(
       },
 
       clearError: () => {
-        console.log('🧹 Clearing auth errors')
+        logger.log('🧹 Clearing auth errors')
         set({ error: null, lastError: null })
       },
 
       checkConnection: async () => {
         const timestamp = new Date().toISOString()
         
-        console.group('🔌 Auth Operation: checkConnection')
-        console.log('Timestamp:', timestamp)
-        console.log('Context: Connection health check')
+        logger.group('🔌 Auth Operation: checkConnection')
+        logger.log('Timestamp:', timestamp)
+        logger.log('Context: Connection health check')
         
         set({ connectionStatus: 'checking' })
 
         try {
           // Try to get session to verify Supabase connection
-          console.log('Attempting to connect to Supabase...')
+          logger.log('Attempting to connect to Supabase...')
           const { data, error } = await supabase.auth.getSession()
           
           if (error) {
             const authError = AuthErrorHandler.handle(error, 'checkConnection:sessionCheck')
             console.error('Connection check failed:', authError)
-            console.groupEnd()
+            logger.groupEnd()
             
             set({ 
               connectionStatus: 'disconnected',
@@ -511,9 +506,9 @@ export const useAuthStore = create<AuthState>()(
             return false
           }
 
-          console.log('✅ Connection successful!')
-          console.log('Has session:', !!data.session)
-          console.groupEnd()
+          logger.log('✅ Connection successful!')
+          logger.log('Has session:', !!data.session)
+          logger.groupEnd()
           
           set({ 
             connectionStatus: data.session ? 'connected' : 'disconnected'
@@ -522,7 +517,7 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           const authError = AuthErrorHandler.handle(error, 'checkConnection:exception')
           console.error('Connection check exception:', authError)
-          console.groupEnd()
+          logger.groupEnd()
           
           set({ 
             connectionStatus: 'disconnected',
@@ -534,6 +529,28 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
+      storage: {
+        getItem: (name) => {
+          const str = localStorage.getItem(name)
+          if (!str) return null
+          try {
+            return JSON.parse(str)
+          } catch (e) {
+            console.error('Failed to parse auth storage:', e)
+            return null
+          }
+        },
+        setItem: (name, value) => {
+          try {
+            localStorage.setItem(name, JSON.stringify(value))
+          } catch (e) {
+            console.error('Failed to save auth storage:', e)
+          }
+        },
+        removeItem: (name) => {
+          localStorage.removeItem(name)
+        },
+      },
       partialize: (state) => ({
         // Only persist essential data, not loading states or diagnostic info
         user: state.user,
@@ -544,19 +561,33 @@ export const useAuthStore = create<AuthState>()(
         userRole: state.userRole,
         branchId: state.branchId,
       }),
+      merge: (persistedState, currentState) => {
+        return {
+          ...currentState,
+          ...(persistedState as any),
+        }
+      },
+      version: 1,
+      skipHydration: false,
+      onRehydrateStorage: () => (state) => {
+        // If we have a session but not authenticated, fix it
+        if (state?.session && !state?.isAuthenticated) {
+          return {
+            ...state,
+            isAuthenticated: true,
+          }
+        }
+        return state
+      },
     }
   )
 )
 
 // Set up auth state change listener
 supabase.auth.onAuthStateChange(async (event, session) => {
-  const timestamp = new Date().toISOString()
-  console.log('🔔 Auth State Change:', { event, timestamp, hasSession: !!session })
-  
   const { initialize } = useAuthStore.getState()
   
   if (event === 'SIGNED_OUT') {
-    console.log('Handling SIGNED_OUT event')
     useAuthStore.setState({
       user: null,
       profile: null,
@@ -569,14 +600,23 @@ supabase.auth.onAuthStateChange(async (event, session) => {
       connectionStatus: 'disconnected',
     })
   } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-    console.log(`Handling ${event} event, re-initializing...`)
-    // Update connection status to checking during re-initialization
-    useAuthStore.setState({ connectionStatus: 'checking' })
-    // Re-initialize to fetch fresh profile data
-    await initialize()
+    const currentState = useAuthStore.getState()
+    
+    // Only re-initialize if we don't already have a valid session
+    if (!currentState.isAuthenticated || !currentState.session) {
+      useAuthStore.setState({ connectionStatus: 'checking' })
+      await initialize()
+    } else {
+      useAuthStore.setState({ connectionStatus: 'connected' })
+    }
   } else if (event === 'USER_UPDATED') {
-    console.log('Handling USER_UPDATED event')
-    // Connection is active if we're receiving updates
     useAuthStore.setState({ connectionStatus: 'connected' })
+  } else if (event === 'INITIAL_SESSION') {
+    const currentState = useAuthStore.getState()
+    
+    // Only initialize if not already initialized
+    if (!currentState.isInitialized && session) {
+      await initialize()
+    }
   }
 })

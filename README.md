@@ -7,6 +7,9 @@ Modern web teknolojileri kullanılarak geliştirilmiş kapsamlı POS ve muhasebe
 - **Frontend**: React 19 + TypeScript + Vite (rolldown-vite variant)
 - **Styling**: TailwindCSS + ShadCN UI
 - **Backend**: Supabase (PostgreSQL + Auth + Storage)
+  - Persistent session management with localStorage
+  - Auto-refresh token support
+  - Session detection from URL
 - **State Management**: Zustand
 - **Routing**: React Router DOM
 - **Form Management**: React Hook Form + Zod
@@ -115,7 +118,11 @@ src/
 ### ✅ Tamamlanan Özellikler
 - **Proje Kurulumu**: Vite + React + TypeScript + TailwindCSS + ShadCN UI
 - **Veritabanı Şeması**: Supabase PostgreSQL tabloları ve RLS politikaları
-- **Authentication Sistemi**: Supabase Auth entegrasyonu ve rol tabanlı erişim
+- **Authentication Sistemi**: 
+  - Supabase Auth entegrasyonu ve rol tabanlı erişim
+  - Persistent session management (localStorage)
+  - Otomatik token yenileme
+  - URL'den session algılama
 - **Layout Sistemi**: Sidebar, Topbar, MainContent bileşenleri
 - **Router Yapılandırması**: React Router DOM ile korumalı rotalar
 - **Rol Tabanlı Erişim**: Admin, Manager, Cashier rolleri ve yetki kontrolü
@@ -172,6 +179,14 @@ Uygulama test edilebilir demo hesapları içerir:
 - **Admin**: admin@demo.com / 123456
 - **Manager**: manager@demo.com / 123456
 - **Cashier**: cashier@demo.com / 123456
+
+### Geliştirme Araçları
+- **AuthDebug Component**: Authentication durumunu görselleştiren debug bileşeni
+  - Zustand auth store durumu
+  - Supabase session bilgileri
+  - LocalStorage auth verileri
+  - Yenileme ve temizleme butonları
+  - Kullanım: `<AuthDebug />` bileşenini geliştirme ortamında sayfaya ekleyin
 
 ## POS Sistemi Özellikleri
 

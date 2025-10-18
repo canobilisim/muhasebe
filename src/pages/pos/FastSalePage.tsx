@@ -171,50 +171,51 @@ const FastSalePage: React.FC = () => {
   const activeCart = state.carts.find(cart => cart.tabId === state.activeCustomerTab) || state.carts[0];
 
   return (
-    <div className="flex h-screen bg-gray-100 p-4 gap-4">
-      {/* Left Column */}
-      <div className="flex-1 flex flex-col bg-white rounded-lg shadow p-4">
-        {/* Top Bar */}
-        <div className="flex gap-2 mb-4">
-          <select 
-            className="border rounded px-3 py-2 text-sm w-32"
-            value={state.activePriceList}
-            onChange={(e) => setState(prev => ({ ...prev, activePriceList: e.target.value }))}
-          >
-            <option>Fiyat 1</option>
-            <option>Fiyat 2</option>
-            <option>Fiyat 3</option>
-          </select>
+    <Layout title="Hızlı Satış" subtitle={state.activePriceList}>
+      <div className="flex h-full bg-gray-100 gap-4 p-4">
+        {/* Left Column */}
+        <div className="flex-1 flex flex-col bg-white rounded-lg shadow p-4">
+          {/* Top Bar */}
+          <div className="flex gap-2 mb-4">
+            <select 
+              className="border rounded px-3 py-2 text-sm w-32"
+              value={state.activePriceList}
+              onChange={(e) => setState(prev => ({ ...prev, activePriceList: e.target.value }))}
+            >
+              <option>Fiyat 1</option>
+              <option>Fiyat 2</option>
+              <option>Fiyat 3</option>
+            </select>
           
-          <div className="relative flex-1">
-            <Barcode className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Ürün barkodunu okutunuz..."
-              className="pl-10"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && e.currentTarget.value) {
-                  handleBarcodeScan(e.currentTarget.value);
-                  e.currentTarget.value = '';
-                }
-              }}
-            />
+            <div className="relative flex-1">
+              <Barcode className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Ürün barkodunu okutunuz..."
+                className="pl-10"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.currentTarget.value) {
+                    handleBarcodeScan(e.currentTarget.value);
+                    e.currentTarget.value = '';
+                  }
+                }}
+              />
+            </div>
+            
+            <Button variant="outline">
+              <Search className="h-4 w-4 mr-2" />
+              Ara
+            </Button>
+            
+            <Button variant="outline">Fiyat Gör</Button>
+            <Button variant="default">
+              <Printer className="h-4 w-4 mr-2" />
+              Yazdır
+            </Button>
+            <Button variant="default">
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Ödeme Ekle
+            </Button>
           </div>
-          
-          <Button variant="outline">
-            <Search className="h-4 w-4 mr-2" />
-            Ara
-          </Button>
-          
-          <Button variant="outline">Fiyat Gör</Button>
-          <Button variant="default">
-            <Printer className="h-4 w-4 mr-2" />
-            Yazdır
-          </Button>
-          <Button variant="default">
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Ödeme Ekle
-          </Button>
-        </div>
 
         {/* Cart Tabs */}
         <Tabs 
@@ -233,46 +234,44 @@ const FastSalePage: React.FC = () => {
 
         {/* Cart Items */}
         <div className="flex-1 overflow-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[40px]"></TableHead>
-                <TableHead className="w-[160px]">Barkod</TableHead>
-                <TableHead>Ürün</TableHead>
-                <TableHead className="w-[90px] text-right">Miktar</TableHead>
-                <TableHead className="w-[120px] text-right">Fiyat</TableHead>
-                <TableHead className="w-[140px] text-right">Tutar</TableHead>
-                <TableHead className="w-[70px] text-center">G. (?)</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          <table>
+            <thead>
+              <tr>
+                <th className="w-[50px]"></th>
+                <th>Barkod</th>
+                <th>Ürün</th>
+                <th className="text-right">Miktar</th>
+                <th className="text-right">Birim Fiyat</th>
+                <th className="text-right">Tutar</th>
+                <th className="text-center">İşlem</th>
+              </tr>
+            </thead>
+            <tbody>
               {activeCart.lines.length > 0 ? (
                 activeCart.lines.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>
+                  <tr key={item.id}>
+                    <td>
                       <Button variant="ghost" size="icon">
                         <Trash2 className="h-4 w-4" />
                       </Button>
-                    </TableCell>
-                    <TableCell>{item.barcode}</TableCell>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell className="text-right">{item.qty}</TableCell>
-                    <TableCell className="text-right">{item.unitPrice.toFixed(2)} ₺</TableCell>
-                    <TableCell className="text-right">{(item.unitPrice * item.qty).toFixed(2)} ₺</TableCell>
-                    <TableCell className="text-center">-</TableCell>
-                  </TableRow>
+                    </td>
+                    <td>{item.barcode}</td>
+                    <td>{item.name}</td>
+                    <td className="text-right">{item.qty}</td>
+                    <td className="text-right">{item.unitPrice.toFixed(2)} ₺</td>
+                    <td className="text-right">{(item.unitPrice * item.qty).toFixed(2)} ₺</td>
+                    <td className="text-center">-</td>
+                  </tr>
                 ))
               ) : (
-                <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center">
+                <tr>
+                  <td colSpan={7} className="h-24 text-center">
                     Sepet boş
-                  </TableCell>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {activeCart.lines.length > 0 ? (
-                  activeCart.lines.map((item) => (
-                    <TableRow key={item.id}>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
                       <TableCell>
                         <Button variant="ghost" size="icon">
                           <Trash2 className="h-4 w-4" />

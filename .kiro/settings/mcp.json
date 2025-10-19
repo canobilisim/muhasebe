@@ -15,8 +15,10 @@
         "list_migrations",
         "execute_sql",
         "apply_migration",
-        "generate_typescript_types"
-      ]
+        "generate_typescript_types",
+        "list_projects"
+      ],
+      "disabledTools": []
     }
   }
 }

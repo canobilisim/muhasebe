@@ -95,15 +95,35 @@ export class TurkcellServiceImpl {
       const branchId = this.getCurrentBranchId()
       const targetMonth = this.formatMonth(month)
 
+      console.log('TurkcellService.getMonthlyTarget - Parameters:', {
+        branchId,
+        targetMonth,
+        month
+      })
+
       // Call the database function for monthly target
       const { data, error } = await supabase.rpc('get_monthly_turkcell_target', {
         branch_uuid: branchId,
         target_month_param: targetMonth
       })
 
+      console.log('TurkcellService.getMonthlyTarget - Response:', {
+        data,
+        error,
+        hasError: !!error
+      })
+
       if (error) {
         console.error('Error fetching monthly Turkcell target:', error)
-        throw new Error(`Aylık Turkcell hedefi alınamadı: ${error.message}`)
+        
+        // Check if it's an auth/permission error
+        if (error.message?.includes('auth') || error.message?.includes('permission') || error.message?.includes('policy')) {
+          throw new Error('Bu işlem için yetkiniz bulunmuyor. Lütfen giriş yapın.')
+        }
+        
+        // For other errors, return 0 as fallback instead of throwing
+        console.warn('Returning fallback value (0) due to error:', error.message)
+        return { target: 0 }
       }
 
       return { target: data || 0 }

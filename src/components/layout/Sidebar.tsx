@@ -13,7 +13,8 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  LogOut
+  LogOut,
+  Smartphone
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -67,6 +68,12 @@ const navItems: NavItem[] = [
     title: 'Raporlar',
     href: '/reports',
     icon: BarChart3,
+    roles: ['admin', 'manager']
+  },
+  {
+    title: 'Operatör İşlemleri',
+    href: '/operator-operations',
+    icon: Smartphone,
     roles: ['admin', 'manager']
   },
   {

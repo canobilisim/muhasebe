@@ -45,6 +45,41 @@ export type {
   TableUpdate
 } from './supabase'
 
+// Re-export Turkcell types
+export type {
+  TurkcellTransaction,
+  TurkcellTransactionInsert,
+  TurkcellTransactionUpdate,
+  TurkcellTarget,
+  TurkcellTargetInsert,
+  TurkcellTargetUpdate,
+  DailyTurkcellCountResponse,
+  MonthlyTurkcellTargetResponse,
+  MonthlyTurkcellProgressResponse,
+  SetTurkcellTargetResponse,
+  TurkcellState,
+  TurkcellDailyCardProps,
+  TurkcellMonthlyCardProps,
+  TargetSettingsFormProps,
+  TurkcellService,
+  TurkcellTargetForm,
+  TurkcellTargetFormErrors,
+  TurkcellTransactionWithDetails,
+  TurkcellTargetWithDetails,
+  TurkcellSummary,
+  TurkcellTransactionFilter,
+  TurkcellTargetFilter,
+  TurkcellTransactionTypeValue
+} from './turkcell'
+
+// Re-export Turkcell constants and utilities
+export {
+  TurkcellTransactionType,
+  TurkcellTransactionTypeLabels,
+  getTurkcellTransactionTypeLabel,
+  isValidTurkcellTransactionType
+} from './turkcell'
+
 // Table types
 export type Branch = Database['public']['Tables']['branches']['Row']
 export type User = Database['public']['Tables']['users']['Row']

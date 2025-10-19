@@ -19,11 +19,11 @@ interface PrivateRouteProps {
  * @param requiredRoles - Array of roles, user must have at least one
  * @param fallback - Custom component to show when access is denied
  */
-export const PrivateRoute = ({ 
-  children, 
-  requiredRole, 
+export const PrivateRoute = ({
+  children,
+  requiredRole,
   requiredRoles,
-  fallback 
+  fallback
 }: PrivateRouteProps) => {
   const { isAuthenticated, isInitialized, isLoading, hasRole, hasAnyRole } = useAuth()
   const location = useLocation()

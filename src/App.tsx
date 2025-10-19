@@ -16,6 +16,7 @@ const CustomersPage = lazy(() => import('@/pages/CustomersPage').then(module => 
 const StockPage = lazy(() => import('@/pages/StockPage').then(module => ({ default: module.StockPage })))
 const CashPage = lazy(() => import('@/pages/CashPage').then(module => ({ default: module.CashPage })))
 const ReportsPage = lazy(() => import('@/pages/ReportsPage').then(module => ({ default: module.ReportsPage })))
+const OperatorOperationsPage = lazy(() => import('@/pages/OperatorOperationsPage').then(module => ({ default: module.OperatorOperationsPage })))
 const SettingsPage = lazy(() => import('@/pages/SettingsPage').then(module => ({ default: module.SettingsPage })))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage').then(module => ({ default: module.NotFoundPage })))
 
@@ -171,6 +172,16 @@ function App() {
                 element={
                   <PrivateRoute requiredRoles={['admin', 'manager']}>
                     <ReportsPage />
+                  </PrivateRoute>
+                } 
+              />
+              
+              {/* Operator Operations - Manager and above */}
+              <Route 
+                path="/operator-operations" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <OperatorOperationsPage />
                   </PrivateRoute>
                 } 
               />

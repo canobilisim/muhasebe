@@ -1,6 +1,3 @@
-// Database type definitions for Supabase
-// Auto-generated types based on database schema
-
 export type Json =
   | string
   | number
@@ -9,346 +6,163 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-// Enum types
-export type UserRole = 'admin' | 'manager' | 'cashier'
-export type PaymentType = 'cash' | 'pos' | 'credit' | 'partial'
-export type PaymentStatus = 'paid' | 'pending' | 'overdue'
-export type MovementType = 'income' | 'expense' | 'sale' | 'opening' | 'closing'
-
-// Database table interfaces
-export interface Database {
+export type Database = {
   public: {
     Tables: {
-      branches: {
+      turkcell_targets: {
         Row: {
-          id: string
-          name: string
-          address: string | null
-          phone: string | null
-          tax_number: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          address?: string | null
-          phone?: string | null
-          tax_number?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          address?: string | null
-          phone?: string | null
-          tax_number?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      users: {
-        Row: {
-          id: string
           branch_id: string | null
-          email: string
-          full_name: string
-          role: UserRole
-          is_active: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id: string
-          branch_id?: string | null
-          email: string
-          full_name: string
-          role?: UserRole
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          branch_id?: string | null
-          email?: string
-          full_name?: string
-          role?: UserRole
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      products: {
-        Row: {
-          id: string
-          branch_id: string | null
-          barcode: string
-          name: string
-          category: string | null
-          purchase_price: number
-          sale_price: number
-          stock_quantity: number
-          critical_stock_level: number
-          is_active: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          branch_id?: string | null
-          barcode: string
-          name: string
-          category?: string | null
-          purchase_price?: number
-          sale_price?: number
-          stock_quantity?: number
-          critical_stock_level?: number
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          branch_id?: string | null
-          barcode?: string
-          name?: string
-          category?: string | null
-          purchase_price?: number
-          sale_price?: number
-          stock_quantity?: number
-          critical_stock_level?: number
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      customers: {
-        Row: {
-          id: string
-          branch_id: string | null
-          name: string
-          phone: string | null
-          email: string | null
-          address: string | null
-          tax_number: string | null
-          credit_limit: number
-          current_balance: number
-          is_active: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          branch_id?: string | null
-          name: string
-          phone?: string | null
-          email?: string | null
-          address?: string | null
-          tax_number?: string | null
-          credit_limit?: number
-          current_balance?: number
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          branch_id?: string | null
-          name?: string
-          phone?: string | null
-          email?: string | null
-          address?: string | null
-          tax_number?: string | null
-          credit_limit?: number
-          current_balance?: number
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      sales: {
-        Row: {
-          id: string
-          branch_id: string | null
-          user_id: string | null
-          customer_id: string | null
-          sale_number: string
-          total_amount: number
-          discount_amount: number
-          tax_amount: number
-          net_amount: number
-          payment_type: PaymentType
-          payment_status: PaymentStatus
-          paid_amount: number
-          change_amount: number
-          notes: string | null
-          sale_date: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          branch_id?: string | null
-          user_id?: string | null
-          customer_id?: string | null
-          sale_number?: string
-          total_amount?: number
-          discount_amount?: number
-          tax_amount?: number
-          net_amount?: number
-          payment_type: PaymentType
-          payment_status?: PaymentStatus
-          paid_amount?: number
-          change_amount?: number
-          notes?: string | null
-          sale_date?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          branch_id?: string | null
-          user_id?: string | null
-          customer_id?: string | null
-          sale_number?: string
-          total_amount?: number
-          discount_amount?: number
-          tax_amount?: number
-          net_amount?: number
-          payment_type?: PaymentType
-          payment_status?: PaymentStatus
-          paid_amount?: number
-          change_amount?: number
-          notes?: string | null
-          sale_date?: string
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      sale_items: {
-        Row: {
-          id: string
-          sale_id: string | null
-          product_id: string | null
-          quantity: number
-          unit_price: number
-          discount_amount: number
-          total_amount: number
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          sale_id?: string | null
-          product_id?: string | null
-          quantity?: number
-          unit_price: number
-          discount_amount?: number
-          total_amount: number
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          sale_id?: string | null
-          product_id?: string | null
-          quantity?: number
-          unit_price?: number
-          discount_amount?: number
-          total_amount?: number
-          created_at?: string
-        }
-      }
-      cash_movements: {
-        Row: {
-          id: string
-          branch_id: string | null
-          user_id: string | null
-          sale_id: string | null
-          movement_type: MovementType
-          amount: number
+          created_at: string | null
           description: string | null
-          reference_number: string | null
-          movement_date: string
-          created_at: string
+          id: string
+          target_count: number
+          target_month: string
+          updated_at: string | null
+          user_id: string | null
         }
         Insert: {
-          id?: string
           branch_id?: string | null
-          user_id?: string | null
-          sale_id?: string | null
-          movement_type: MovementType
-          amount: number
+          created_at?: string | null
           description?: string | null
-          reference_number?: string | null
-          movement_date?: string
-          created_at?: string
+          id?: string
+          target_count: number
+          target_month: string
+          updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
-          id?: string
           branch_id?: string | null
-          user_id?: string | null
-          sale_id?: string | null
-          movement_type?: MovementType
-          amount?: number
+          created_at?: string | null
           description?: string | null
-          reference_number?: string | null
-          movement_date?: string
-          created_at?: string
+          id?: string
+          target_count?: number
+          target_month?: string
+          updated_at?: string | null
+          user_id?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "turkcell_targets_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "turkcell_targets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      turkcell_transactions: {
+        Row: {
+          branch_id: string | null
+          count: number
+          created_at: string | null
+          description: string | null
+          id: string
+          reference_number: string | null
+          transaction_date: string
+          transaction_type: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          count?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          reference_number?: string | null
+          transaction_date?: string
+          transaction_type?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          count?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          reference_number?: string | null
+          transaction_date?: string
+          transaction_type?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "turkcell_transactions_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "turkcell_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      get_user_branch_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
+      get_daily_turkcell_count: {
+        Args: { branch_uuid: string; target_date?: string }
+        Returns: number
       }
-      is_admin: {
-        Args: Record<PropertyKey, never>
+      get_monthly_turkcell_progress: {
+        Args: { branch_uuid: string; target_month_param?: string }
+        Returns: {
+          progress_percentage: number
+          target_count: number
+          total_count: number
+        }[]
+      }
+      get_monthly_turkcell_target: {
+        Args: { branch_uuid: string; target_month_param?: string }
+        Returns: number
+      }
+      set_monthly_turkcell_target: {
+        Args: {
+          branch_uuid: string
+          target_count_param: number
+          target_month_param?: string
+          user_uuid?: string
+        }
         Returns: boolean
-      }
-      generate_sale_number: {
-        Args: {
-          branch_uuid: string
-        }
-        Returns: string
-      }
-      get_low_stock_products: {
-        Args: {
-          branch_uuid: string
-        }
-        Returns: {
-          id: string
-          barcode: string
-          name: string
-          stock_quantity: number
-          critical_stock_level: number
-        }[]
-      }
-      get_daily_sales_summary: {
-        Args: {
-          branch_uuid: string
-          target_date?: string
-        }
-        Returns: {
-          total_sales: number
-          total_amount: number
-          cash_sales: number
-          pos_sales: number
-          credit_sales: number
-        }[]
       }
     }
     Enums: {
-      user_role: UserRole
-      payment_type: PaymentType
-      payment_status: PaymentStatus
-      movement_type: MovementType
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
     }
   }
 }
 
-export default Database
+// Turkcell specific types
+export type TurkcellTransaction = Database['public']['Tables']['turkcell_transactions']['Row']
+export type TurkcellTransactionInsert = Database['public']['Tables']['turkcell_transactions']['Insert']
+export type TurkcellTransactionUpdate = Database['public']['Tables']['turkcell_transactions']['Update']
+
+export type TurkcellTarget = Database['public']['Tables']['turkcell_targets']['Row']
+export type TurkcellTargetInsert = Database['public']['Tables']['turkcell_targets']['Insert']
+export type TurkcellTargetUpdate = Database['public']['Tables']['turkcell_targets']['Update']
+
+// Helper function types
+export type TurkcellProgressResult = {
+  total_count: number
+  target_count: number
+  progress_percentage: number
+}

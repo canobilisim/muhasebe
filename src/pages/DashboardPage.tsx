@@ -3,7 +3,7 @@ import { useDashboard } from '@/hooks/useDashboard'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Layout } from '@/components/layout/Layout'
-import { KPICard, SalesChart } from '@/components/dashboard'
+import { KPICard, SalesChart, TurkcellDailyCard, TurkcellMonthlyCard } from '@/components/dashboard'
 import { Link } from 'react-router-dom'
 import { 
   TrendingUp, 
@@ -94,6 +94,17 @@ const DashboardPage = () => {
             icon={AlertTriangle}
             className={((kpis?.lowStockProducts || 0) + (kpis?.pendingPayments || 0)) > 0 ? 'border-orange-200 bg-orange-50' : ''}
           />
+        </div>
+
+        {/* Turkcell KPI Cards with Error Boundaries */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="md:col-span-1">
+            <TurkcellDailyCard />
+          </div>
+          
+          <div className="md:col-span-1">
+            <TurkcellMonthlyCard />
+          </div>
         </div>
 
         {/* Payment Type Breakdown */}

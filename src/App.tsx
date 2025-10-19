@@ -10,7 +10,7 @@ import './App.css'
 
 // Lazy load other pages
 const TestRolesPage = lazy(() => import('@/pages/TestRolesPage').then(module => ({ default: module.TestRolesPage })))
-const POSPage = lazy(() => import('@/pages/POSPage').then(module => ({ default: module.POSPage })))
+
 const FastSalePage = lazy(() => import('@/pages/pos/FastSalePage').then(module => ({ default: module.default })))
 const CustomersPage = lazy(() => import('@/pages/CustomersPage').then(module => ({ default: module.CustomersPage })))
 const StockPage = lazy(() => import('@/pages/StockPage').then(module => ({ default: module.StockPage })))
@@ -122,12 +122,7 @@ function App() {
                 />
               )}
 
-              {/* POS - Cashier and above */}
-              <Route path="/pos" element={
-                <PrivateRoute requiredRoles={['admin', 'manager', 'cashier']}>
-                  <POSPage />
-                </PrivateRoute>
-                } />
+
                 
                 {/* New Fast Sale POS */}
                 <Route path="/pos2" element={

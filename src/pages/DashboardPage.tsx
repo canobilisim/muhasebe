@@ -160,7 +160,7 @@ const DashboardPage = () => {
               <CardDescription>Satış işlemleri</CardDescription>
             </CardHeader>
             <CardContent>
-              <Link to="/pos">
+              <Link to="/pos2">
                 <Button className="w-full">
                   POS'a Git
                 </Button>

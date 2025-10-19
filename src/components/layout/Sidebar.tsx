@@ -34,14 +34,9 @@ const navItems: NavItem[] = [
     href: '/dashboard',
     icon: LayoutDashboard,
   },
+
   {
     title: 'POS Satış',
-    href: '/pos',
-    icon: ShoppingCart,
-    roles: ['admin', 'manager', 'cashier']
-  },
-  {
-    title: 'Hızlı Satış (Yeni)',
     href: '/pos2',
     icon: ShoppingCart,
     roles: ['admin', 'manager', 'cashier']

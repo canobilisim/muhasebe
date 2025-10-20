@@ -11,6 +11,8 @@ export interface Product {
   vatRate: number
   category: string
   lineTotal?: number
+  isMiscellaneous?: boolean
+  note?: string
 }
 
 export interface Cart {

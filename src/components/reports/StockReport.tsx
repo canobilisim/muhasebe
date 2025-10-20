@@ -18,11 +18,25 @@ export const StockReport = () => {
     isActive: true
   })
 
+  // branchId değiştiğinde filters'ı güncelle
+  useEffect(() => {
+    if (branchId) {
+      setFilters(prev => ({ ...prev, branchId }))
+    }
+  }, [branchId])
+
   const fetchData = async () => {
+    if (!branchId) {
+      console.log('Branch ID not available yet, skipping fetch')
+      return
+    }
+    
     try {
       setLoading(true)
       setError(null)
+      console.log('Fetching stock report with filters:', filters)
       const result = await reportsService.getStockReport(filters)
+      console.log('Stock report result:', result)
       setData(result)
     } catch (err) {
       console.error('Stock report fetch error:', err)
@@ -32,16 +46,21 @@ export const StockReport = () => {
     }
   }
 
+  // branchId hazır olduğunda ve filters değiştiğinde veri çek
   useEffect(() => {
-    fetchData()
-  }, [])
+    if (branchId && filters.branchId) {
+      fetchData()
+    }
+  }, [branchId, filters.branchId])
 
   const handleApplyFilters = () => {
     fetchData()
   }
 
   const handleClearFilters = () => {
-    setFilters({ branchId, isActive: true })
+    const newFilters = { branchId, isActive: true }
+    setFilters(newFilters)
+    setTimeout(() => fetchData(), 100)
   }
 
   const handleExportExcel = () => {

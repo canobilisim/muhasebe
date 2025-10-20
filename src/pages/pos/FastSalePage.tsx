@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { Barcode, Search, Printer, Trash2, Loader2, Plus } from 'lucide-react';
+import { Barcode, Search, Printer, Trash2, Loader2, Plus, FileText } from 'lucide-react';
 import type { POSState, POSProduct as Product, POSCart as Cart } from '@/types';
 import { Layout } from '@/components/layout/Layout';
 import { ProductService } from '@/services/productService';
@@ -70,6 +70,15 @@ const FastSalePage: React.FC = () => {
     'tab-4': null,
     'tab-5': null,
   });
+
+  // Muhtelif ürün state
+  const [miscItemNote, setMiscItemNote] = useState('');
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [noteForItem, setNoteForItem] = useState<string | null>(null);
+  
+  // Satış notu state
+  const [showSaleNoteModal, setShowSaleNoteModal] = useState(false);
+  const [saleNote, setSaleNote] = useState('');
 
   // Use fast sale store instead of local state
   const {
@@ -759,6 +768,7 @@ const FastSalePage: React.FC = () => {
     // Optimistic update - Sepeti hemen temizle
     clearCart();
     setShowSplitPaymentModal(false);
+    setSaleNote(''); // Satış notunu temizle
     showToast.success('Satış kaydediliyor...');
 
     try {
@@ -766,10 +776,12 @@ const FastSalePage: React.FC = () => {
       await SaleService.createSale({
         customerId: activeCustomer?.id || null,
         items: activeCart.lines.map(item => ({
-          productId: item.id,
+          productId: item.isMiscellaneous ? null : item.id,
           quantity: item.qty,
           unitPrice: item.unitPrice,
           discount: item.discount,
+          note: item.note,
+          isMiscellaneous: item.isMiscellaneous,
         })),
         totalAmount: activeCart.gross,
         discountAmount: activeCart.discountTotal,
@@ -780,6 +792,7 @@ const FastSalePage: React.FC = () => {
         cashAmount: splitPayments?.cash || (paymentType === 'cash' ? paidAmount : 0),
         posAmount: splitPayments?.pos || (paymentType === 'pos' ? paidAmount : 0),
         creditAmount: splitPayments?.credit || (paymentType === 'credit' ? activeCart.net : 0),
+        notes: saleNote || undefined,
       });
 
       showToast.success('Satış başarıyla kaydedildi!');
@@ -890,6 +903,110 @@ const FastSalePage: React.FC = () => {
     });
   };
 
+  // Muhtelif ürün ekleme - direkt 0₺ olarak ekle
+  const addMiscellaneousItem = () => {
+    const miscItem: Product = {
+      id: `misc-${Date.now()}`,
+      barcode: 'MUHTELIF',
+      name: 'Muhtelif Ürün',
+      unitPrice: 0,
+      qty: 1,
+      lineTotal: 0,
+      isMiscellaneous: true,
+      discount: 0,
+      currency: 'TRY',
+      vatRate: 0,
+      category: 'Muhtelif',
+    };
+
+    addToCart(miscItem);
+    showToast.success('Muhtelif ürün eklendi');
+  };
+
+  // Not kaydetme
+  const saveItemNote = () => {
+    if (!noteForItem) return;
+
+    setState((prev: POSState) => {
+      const updatedCarts = prev.carts.map((cart, index) => {
+        if (index !== prev.carts.findIndex(c => c.tabId === prev.activeCustomerTab)) {
+          return cart;
+        }
+
+        const updatedLines = cart.lines.map(item => {
+          if (item.id === noteForItem) {
+            return {
+              ...item,
+              note: miscItemNote || undefined,
+            };
+          }
+          return item;
+        });
+
+        return {
+          ...cart,
+          lines: updatedLines,
+        };
+      });
+
+      return {
+        ...prev,
+        carts: updatedCarts,
+      };
+    });
+
+    setShowNoteModal(false);
+    setNoteForItem(null);
+    setMiscItemNote('');
+    showToast.success('Not kaydedildi');
+  };
+
+  // Fiyat güncelleme
+  const updateItemPrice = (itemId: string, newPrice: number) => {
+    if (newPrice < 0) return;
+
+    setState((prev: POSState) => {
+      const updatedCarts = prev.carts.map((cart, index) => {
+        if (index !== prev.carts.findIndex(c => c.tabId === prev.activeCustomerTab)) {
+          return cart;
+        }
+
+        const updatedLines = cart.lines.map(item => {
+          if (item.id === itemId) {
+            return {
+              ...item,
+              unitPrice: newPrice,
+              lineTotal: newPrice * item.qty,
+            };
+          }
+          return item;
+        });
+
+        const updatedCart = {
+          ...cart,
+          lines: updatedLines,
+        };
+
+        return calculateCartTotals(updatedCart);
+      });
+
+      return {
+        ...prev,
+        carts: updatedCarts,
+      };
+    });
+  };
+
+  // Not gösterme/düzenleme
+  const openNoteModal = (itemId: string) => {
+    const item = activeCart.lines.find(l => l.id === itemId);
+    if (item && item.isMiscellaneous) {
+      setNoteForItem(itemId);
+      setMiscItemNote(item.note || '');
+      setShowNoteModal(true);
+    }
+  };
+
   // Memoize active cart to ensure proper re-rendering
   const activeCart = useMemo(() => {
     const cart = state.carts.find((cart: Cart) => cart.tabId === state.activeCustomerTab) || state.carts[0];
@@ -929,7 +1046,6 @@ const FastSalePage: React.FC = () => {
                 ref={barcodeInputRef}
                 placeholder={searchMode === 'barcode' ? 'Barkod okutunuz...' : 'Ürün adı yazınız (min 3 karakter)...'}
                 className="pl-10"
-                disabled={isSearching}
                 value={searchQuery}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -1013,12 +1129,28 @@ const FastSalePage: React.FC = () => {
                 Fiyat Gör
               </Button>
               <Button
-                variant="default"
-                className="flex-1 sm:flex-none"
-                onClick={handlePrint}
+                variant="outline"
+                size="icon"
+                onClick={addMiscellaneousItem}
+                title="Muhtelif Ürün Ekle"
               >
-                <Printer className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Yazdır</span>
+                <Plus className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setShowSaleNoteModal(true)}
+                title="Satış Notu"
+              >
+                <FileText className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="default"
+                size="icon"
+                onClick={handlePrint}
+                title="Yazdır"
+              >
+                <Printer className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -1080,7 +1212,22 @@ const FastSalePage: React.FC = () => {
                         </Button>
                       </TableCell>
                       <TableCell className="hidden sm:table-cell text-center text-xs">{item.barcode}</TableCell>
-                      <TableCell className="text-center text-xs sm:text-sm">{item.name}</TableCell>
+                      <TableCell className="text-center text-xs sm:text-sm">
+                        <div className="flex items-center justify-center gap-1">
+                          {item.name}
+                          {item.isMiscellaneous && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openNoteModal(item.id)}
+                              className="h-6 w-6 p-0"
+                              title={item.note || 'Not ekle'}
+                            >
+                              <FileText className={`h-3 w-3 ${item.note ? 'text-blue-600' : 'text-gray-400'}`} />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-center">
                         <Input
                           type="number"
@@ -1093,7 +1240,19 @@ const FastSalePage: React.FC = () => {
                           className="w-16 h-8 text-center text-sm p-1 mx-auto"
                         />
                       </TableCell>
-                      <TableCell className="text-right hidden md:table-cell text-xs sm:text-sm">{item.unitPrice.toFixed(2)} ₺</TableCell>
+                      <TableCell className="text-right hidden md:table-cell text-xs sm:text-sm">
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={item.unitPrice}
+                          onChange={(e) => {
+                            const newPrice = parseFloat(e.target.value) || 0;
+                            updateItemPrice(item.id, newPrice);
+                          }}
+                          className="w-24 h-8 text-right text-sm p-1 ml-auto"
+                        />
+                      </TableCell>
                       <TableCell className="text-right text-xs sm:text-sm font-medium">{(item.unitPrice * item.qty).toFixed(2)} ₺</TableCell>
                     </TableRow>
                   ))
@@ -1472,6 +1631,81 @@ const FastSalePage: React.FC = () => {
         hasCustomer={!!selectedCustomers[state.activeCustomerTab]}
         onConfirm={handleSplitPayment}
       />
+
+      {/* Ürün Notu Modal - Küçük ve basit */}
+      <Dialog open={showNoteModal} onOpenChange={setShowNoteModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Ürün Notu</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              type="text"
+              placeholder="Not girin..."
+              value={miscItemNote}
+              onChange={(e) => setMiscItemNote(e.target.value)}
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  saveItemNote();
+                }
+              }}
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowNoteModal(false);
+                setNoteForItem(null);
+                setMiscItemNote('');
+              }}
+            >
+              İptal
+            </Button>
+            <Button onClick={saveItemNote}>
+              Kaydet
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Satış Notu Modal */}
+      <Dialog open={showSaleNoteModal} onOpenChange={setShowSaleNoteModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Satış Notu</DialogTitle>
+            <DialogDescription>
+              Bu not satış kaydına eklenecektir
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <textarea
+              className="w-full min-h-[100px] p-3 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Satış ile ilgili notlarınızı buraya yazın..."
+              value={saleNote}
+              onChange={(e) => setSaleNote(e.target.value)}
+              autoFocus
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowSaleNoteModal(false);
+              }}
+            >
+              İptal
+            </Button>
+            <Button onClick={() => {
+              setShowSaleNoteModal(false);
+              showToast.success('Satış notu kaydedildi');
+            }}>
+              Kaydet
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };

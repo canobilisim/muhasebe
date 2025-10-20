@@ -87,14 +87,14 @@ export const ReportFilters = ({
                 <div className="space-y-2">
                   <Label>Ödeme Tipi</Label>
                   <Select
-                    value={filters.paymentType || ''}
-                    onValueChange={(value) => handleFilterChange('paymentType', value || undefined)}
+                    value={filters.paymentType || 'all'}
+                    onValueChange={(value) => handleFilterChange('paymentType', value === 'all' ? undefined : value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Tümü" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Tümü</SelectItem>
+                      <SelectItem value="all">Tümü</SelectItem>
                       <SelectItem value="cash">Nakit</SelectItem>
                       <SelectItem value="pos">POS</SelectItem>
                       <SelectItem value="credit">Açık Hesap</SelectItem>
@@ -105,14 +105,14 @@ export const ReportFilters = ({
                 <div className="space-y-2">
                   <Label>Ödeme Durumu</Label>
                   <Select
-                    value={filters.paymentStatus || ''}
-                    onValueChange={(value) => handleFilterChange('paymentStatus', value || undefined)}
+                    value={filters.paymentStatus || 'all'}
+                    onValueChange={(value) => handleFilterChange('paymentStatus', value === 'all' ? undefined : value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Tümü" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Tümü</SelectItem>
+                      <SelectItem value="all">Tümü</SelectItem>
                       <SelectItem value="paid">Ödendi</SelectItem>
                       <SelectItem value="pending">Bekliyor</SelectItem>
                     </SelectContent>
@@ -126,14 +126,14 @@ export const ReportFilters = ({
               <div className="space-y-2">
                 <Label>Durum</Label>
                 <Select
-                  value={filters.isActive?.toString() || ''}
-                  onValueChange={(value) => handleFilterChange('isActive', value === '' ? undefined : value === 'true')}
+                  value={filters.isActive === undefined ? 'all' : filters.isActive.toString()}
+                  onValueChange={(value) => handleFilterChange('isActive', value === 'all' ? undefined : value === 'true')}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Tümü" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Tümü</SelectItem>
+                    <SelectItem value="all">Tümü</SelectItem>
                     <SelectItem value="true">Aktif</SelectItem>
                     <SelectItem value="false">Pasif</SelectItem>
                   </SelectContent>

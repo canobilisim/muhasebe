@@ -4,10 +4,12 @@ import type { SaleInsert, SaleItemInsert } from '@/types';
 export interface CreateSaleParams {
   customerId: string | null;
   items: Array<{
-    productId: string;
+    productId: string | null;
     quantity: number;
     unitPrice: number;
     discount: number;
+    note?: string;
+    isMiscellaneous?: boolean;
   }>;
   totalAmount: number;
   discountAmount: number;
@@ -18,6 +20,7 @@ export interface CreateSaleParams {
   cashAmount?: number;
   posAmount?: number;
   creditAmount?: number;
+  notes?: string;
 }
 
 export class SaleService {
@@ -61,6 +64,7 @@ export class SaleService {
         paid_amount: params.paidAmount,
         change_amount: params.changeAmount,
         sale_date: new Date().toISOString(),
+        notes: params.notes || null,
       };
 
       const { data: sale, error: saleError } = await supabase
@@ -72,7 +76,7 @@ export class SaleService {
       if (saleError) throw saleError;
       if (!sale) throw new Error('Satış kaydı oluşturulamadı');
 
-      // Satış kalemlerini ekle
+      // Satış kalemlerini ekle (ÖNCE bu yapılmalı - RLS politikası için)
       const saleItems: SaleItemInsert[] = params.items.map(item => ({
         sale_id: sale.id,
         product_id: item.productId,
@@ -80,29 +84,31 @@ export class SaleService {
         unit_price: item.unitPrice,
         discount_amount: item.unitPrice * item.quantity * item.discount,
         total_amount: item.unitPrice * item.quantity * (1 - item.discount),
+        note: item.note || null,
+        is_miscellaneous: item.isMiscellaneous || false,
       }));
 
-      // Paralel işlemler - Hepsini aynı anda başlat
-      const promises = [
-        // Satış kalemlerini ekle
-        supabase.from('sale_items').insert(saleItems).then(r => r.error ? Promise.reject(r.error) : r),
-        // Kasa hareketlerini kaydet
-        this.recordCashMovements(sale.id, params, userData.branch_id),
-        // Stok güncellemelerini ekle
-        this.updateStockBatch(params.items),
-      ];
+      const { error: itemsError } = await supabase
+        .from('sale_items')
+        .insert(saleItems);
 
-      // Müşteri bakiyesini güncelle (açık hesap varsa)
-      if (params.customerId && params.creditAmount && params.creditAmount > 0) {
-        promises.push(this.updateCustomerBalance(params.customerId, params.creditAmount));
+      if (itemsError) {
+        console.error('Sale items error:', itemsError);
+        throw itemsError;
       }
 
-      // Tüm işlemleri paralel çalıştır
-      await Promise.all(promises);
+      // NOT: Aşağıdaki işlemler trigger'lar tarafından otomatik yapılıyor:
+      // - Stok güncellemesi: trigger_update_product_stock (sale_items INSERT)
+      // - Müşteri bakiyesi: trigger_update_customer_balance (sales INSERT)
+      // - Kasa hareketleri: trigger_create_sale_cash_movement (sales INSERT)
+      // Bu yüzden manuel güncelleme yapmıyoruz
 
       return { success: true, sale };
     } catch (error) {
       console.error('Error creating sale:', error);
+      if (error && typeof error === 'object' && 'message' in error) {
+        console.error('Error details:', JSON.stringify(error, null, 2));
+      }
       throw error;
     }
   }

@@ -279,6 +279,8 @@ export type Database = {
           created_at: string | null
           discount_amount: number | null
           id: string
+          is_miscellaneous: boolean | null
+          note: string | null
           product_id: string | null
           quantity: number
           sale_id: string | null
@@ -289,6 +291,8 @@ export type Database = {
           created_at?: string | null
           discount_amount?: number | null
           id?: string
+          is_miscellaneous?: boolean | null
+          note?: string | null
           product_id?: string | null
           quantity?: number
           sale_id?: string | null
@@ -299,6 +303,8 @@ export type Database = {
           created_at?: string | null
           discount_amount?: number | null
           id?: string
+          is_miscellaneous?: boolean | null
+          note?: string | null
           product_id?: string | null
           quantity?: number
           sale_id?: string | null

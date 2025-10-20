@@ -170,16 +170,8 @@ export const ProductForm = ({
     const isValid = await validateForm()
     if (!isValid) return
 
-    // Hızlı satış sıralamasını güncelle
-    if (formData.show_in_fast_sale && formData.fast_sale_category_id) {
-      const { ProductService } = await import('@/services/productService');
-      await ProductService.reorderProducts(
-        formData.fast_sale_category_id,
-        formData.fast_sale_order,
-        product?.id,
-        product?.fast_sale_order || undefined
-      );
-    }
+    // NOT: Hızlı satış sıralaması adjust_fast_sale_order trigger'ı tarafından otomatik yapılıyor
+    // Manuel güncelleme yapmıyoruz
 
     const result = await onSubmit(formData)
     if (result.success) {

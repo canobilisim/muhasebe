@@ -71,11 +71,13 @@ export const reportsService = {
     }
 
     if (filters.startDate) {
-      query = query.gte('sale_date', filters.startDate)
+      // Başlangıç tarihinin başlangıcı (00:00:00)
+      query = query.gte('sale_date', `${filters.startDate}T00:00:00`)
     }
 
     if (filters.endDate) {
-      query = query.lte('sale_date', filters.endDate)
+      // Bitiş tarihinin sonu (23:59:59)
+      query = query.lte('sale_date', `${filters.endDate}T23:59:59`)
     }
 
     if (filters.customerId) {
@@ -133,7 +135,7 @@ export const reportsService = {
 
     return data.map(customer => {
       const totalPurchases = customer.sales.reduce((sum, sale) => sum + sale.net_amount, 0)
-      const lastPurchaseDate = customer.sales.length > 0 
+      const lastPurchaseDate = customer.sales.length > 0
         ? customer.sales.sort((a, b) => new Date(b.sale_date).getTime() - new Date(a.sale_date).getTime())[0].sale_date
         : undefined
 
@@ -197,11 +199,13 @@ export const reportsService = {
     }
 
     if (filters.startDate) {
-      query = query.gte('sale_date', filters.startDate)
+      // Başlangıç tarihinin başlangıcı (00:00:00)
+      query = query.gte('sale_date', `${filters.startDate}T00:00:00`)
     }
 
     if (filters.endDate) {
-      query = query.lte('sale_date', filters.endDate)
+      // Bitiş tarihinin sonu (23:59:59)
+      query = query.lte('sale_date', `${filters.endDate}T23:59:59`)
     }
 
     const { data, error } = await query
@@ -281,8 +285,8 @@ export const reportsService = {
           'Tutar': item.total_amount,
           'İndirim': item.discount_amount,
           'Net Tutar': item.net_amount,
-          'Ödeme Tipi': item.payment_type === 'cash' ? 'Nakit' : 
-                       item.payment_type === 'pos' ? 'POS' : 'Açık Hesap',
+          'Ödeme Tipi': item.payment_type === 'cash' ? 'Nakit' :
+            item.payment_type === 'pos' ? 'POS' : 'Açık Hesap',
           'Durum': item.payment_status === 'paid' ? 'Ödendi' : 'Bekliyor',
           'Kullanıcı': item.user_name
         }))
@@ -294,7 +298,7 @@ export const reportsService = {
           'E-posta': item.email || '',
           'Bakiye': item.current_balance,
           'Toplam Alışveriş': item.total_purchases,
-          'Son Alışveriş': item.last_purchase_date ? 
+          'Son Alışveriş': item.last_purchase_date ?
             new Date(item.last_purchase_date).toLocaleDateString('tr-TR') : '',
           'Kayıt Tarihi': new Date(item.created_at).toLocaleDateString('tr-TR')
         }))

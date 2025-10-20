@@ -17,11 +17,25 @@ export const CustomersReport = () => {
     branchId
   })
 
+  // branchId değiştiğinde filters'ı güncelle
+  useEffect(() => {
+    if (branchId) {
+      setFilters(prev => ({ ...prev, branchId }))
+    }
+  }, [branchId])
+
   const fetchData = async () => {
+    if (!branchId) {
+      console.log('Branch ID not available yet, skipping fetch')
+      return
+    }
+    
     try {
       setLoading(true)
       setError(null)
+      console.log('Fetching customers report with filters:', filters)
       const result = await reportsService.getCustomersReport(filters)
+      console.log('Customers report result:', result)
       setData(result)
     } catch (err) {
       console.error('Customers report fetch error:', err)
@@ -31,16 +45,21 @@ export const CustomersReport = () => {
     }
   }
 
+  // branchId hazır olduğunda ve filters değiştiğinde veri çek
   useEffect(() => {
-    fetchData()
-  }, [])
+    if (branchId && filters.branchId) {
+      fetchData()
+    }
+  }, [branchId, filters.branchId])
 
   const handleApplyFilters = () => {
     fetchData()
   }
 
   const handleClearFilters = () => {
-    setFilters({ branchId })
+    const newFilters = { branchId }
+    setFilters(newFilters)
+    setTimeout(() => fetchData(), 100)
   }
 
   const handleExportExcel = () => {

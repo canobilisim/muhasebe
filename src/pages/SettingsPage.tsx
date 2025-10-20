@@ -1,10 +1,13 @@
+import { useState } from 'react'
 import { Layout } from '@/components/layout/Layout'
 import { useAuthStore } from '@/stores/authStore'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Settings, Building2, Users, MapPin } from 'lucide-react'
+import { Settings, Building2, Users, MapPin, Zap } from 'lucide-react'
+import { FastSaleCategoryManager } from '@/components/settings/FastSaleCategoryManager'
 
 export const SettingsPage = () => {
   const { userRole, profile } = useAuthStore()
+  const [showFastSaleModal, setShowFastSaleModal] = useState(false)
 
   return (
     <Layout 
@@ -30,55 +33,92 @@ export const SettingsPage = () => {
           </CardContent>
         </Card>
 
-        {/* Company Settings Placeholder */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="w-5 h-5" />
-              Firma Ayarları
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-500">
-              Firma bilgileri, logo yükleme ve diğer ayarlar buraya eklenecek.
-            </p>
-          </CardContent>
-        </Card>
+        {/* Quick Settings Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Fast Sale Categories - Admin/Manager only */}
+          {(userRole === 'admin' || userRole === 'manager') && (
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setShowFastSaleModal(true)}>
+              <CardContent className="pt-6">
+                <div className="flex flex-col items-center text-center space-y-3">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                    <Zap className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Hızlı Satış Kategorileri</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Hızlı satış ekranı kategorilerini yönetin
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-        {/* User Management Placeholder - Admin/Manager only */}
-        {(userRole === 'admin' || userRole === 'manager') && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Kullanıcı Yönetimi
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-500">
-                Kullanıcı ekleme, düzenleme ve silme işlemleri buraya eklenecek.
-              </p>
+          {/* Company Settings Placeholder */}
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer opacity-50">
+            <CardContent className="pt-6">
+              <div className="flex flex-col items-center text-center space-y-3">
+                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                  <Building2 className="w-6 h-6 text-gray-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Firma Ayarları</h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Firma bilgileri ve logo yönetimi
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
-        )}
 
-        {/* Branch Management Placeholder - Admin only */}
-        {userRole === 'admin' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="w-5 h-5" />
-                Şube Yönetimi
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-500">
-                Şube ekleme, düzenleme ve silme işlemleri buraya eklenecek.
-              </p>
-            </CardContent>
-          </Card>
-        )}
+          {/* User Management - Admin/Manager only */}
+          {(userRole === 'admin' || userRole === 'manager') && (
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer opacity-50">
+              <CardContent className="pt-6">
+                <div className="flex flex-col items-center text-center space-y-3">
+                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                    <Users className="w-6 h-6 text-gray-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Kullanıcı Yönetimi</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Kullanıcı ekleme ve düzenleme
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Branch Management - Admin only */}
+          {userRole === 'admin' && (
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer opacity-50">
+              <CardContent className="pt-6">
+                <div className="flex flex-col items-center text-center space-y-3">
+                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                    <MapPin className="w-6 h-6 text-gray-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Şube Yönetimi</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Şube ekleme ve düzenleme
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
       </div>
+
+      {/* Fast Sale Category Manager Modal */}
+      {showFastSaleModal && (
+        <FastSaleCategoryManager 
+          isOpen={showFastSaleModal} 
+          onClose={() => setShowFastSaleModal(false)} 
+        />
+      )}
     </Layout>
   )
 }

@@ -78,9 +78,11 @@ export const StockPage = () => {
         result = await createProduct(data as ProductInsert)
       }
 
+      // Modal'ı her zaman kapat (başarılı veya başarısız)
+      setIsProductModalOpen(false)
+      setSelectedProduct(null)
+
       if (result.success) {
-        setIsProductModalOpen(false)
-        setSelectedProduct(null)
         // Refresh categories in case a new one was added
         const categoriesResponse = await ProductService.getCategories()
         if (categoriesResponse.success && categoriesResponse.data) {

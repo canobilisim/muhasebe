@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { FormattedInput } from '@/components/ui/formatted-input'
 import { CustomerService } from '@/services/customerService'
 import type { Customer, CustomerInsert, CustomerUpdate } from '@/types'
 
@@ -15,7 +16,7 @@ interface CustomerFormProps {
 export const CustomerForm = ({ customer, onSave, onCancel }: CustomerFormProps) => {
   const [formData, setFormData] = useState({
     name: '',
-    phone: '',
+    phone: '0',
     email: '',
     address: '',
     tax_number: '',
@@ -28,7 +29,7 @@ export const CustomerForm = ({ customer, onSave, onCancel }: CustomerFormProps) 
     if (customer) {
       setFormData({
         name: customer.name || '',
-        phone: customer.phone || '',
+        phone: customer.phone || '0',
         email: customer.email || '',
         address: customer.address || '',
         tax_number: customer.tax_number || '',
@@ -62,7 +63,7 @@ export const CustomerForm = ({ customer, onSave, onCancel }: CustomerFormProps) 
         // Update existing customer
         const updateData: CustomerUpdate = {
           name: formData.name.trim(),
-          phone: formData.phone.trim() || null,
+          phone: formData.phone && formData.phone !== '0' ? formData.phone.trim() : null,
           email: formData.email.trim() || null,
           address: formData.address.trim() || null,
           tax_number: formData.tax_number.trim() || null,
@@ -73,7 +74,7 @@ export const CustomerForm = ({ customer, onSave, onCancel }: CustomerFormProps) 
         // Create new customer
         const insertData: CustomerInsert = {
           name: formData.name.trim(),
-          phone: formData.phone.trim() || null,
+          phone: formData.phone && formData.phone !== '0' ? formData.phone.trim() : null,
           email: formData.email.trim() || null,
           address: formData.address.trim() || null,
           tax_number: formData.tax_number.trim() || null,
@@ -110,11 +111,11 @@ export const CustomerForm = ({ customer, onSave, onCancel }: CustomerFormProps) 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Müşteri Adı *</Label>
-              <Input
+              <FormattedInput
                 id="name"
-                type="text"
+                formatterType="name"
                 value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
+                onChange={(value) => handleInputChange('name', value)}
                 placeholder="Müşteri adını girin"
                 required
               />
@@ -122,22 +123,21 @@ export const CustomerForm = ({ customer, onSave, onCancel }: CustomerFormProps) 
 
             <div className="space-y-2">
               <Label htmlFor="phone">Telefon</Label>
-              <Input
+              <FormattedInput
                 id="phone"
-                type="tel"
+                formatterType="phone"
                 value={formData.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
-                placeholder="Telefon numarasını girin"
+                onChange={(value) => handleInputChange('phone', value)}
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="email">E-posta</Label>
-              <Input
+              <FormattedInput
                 id="email"
-                type="email"
+                formatterType="email"
                 value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
+                onChange={(value) => handleInputChange('email', value)}
                 placeholder="E-posta adresini girin"
               />
             </div>

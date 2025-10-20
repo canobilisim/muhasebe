@@ -74,9 +74,31 @@ export class CustomerService {
   // Create new customer
   static async createCustomer(customer: CustomerInsert): Promise<Customer> {
     try {
+      // Get current user's branch_id
+      const { data: userData } = await supabase.auth.getUser()
+      if (!userData.user) {
+        throw new Error('Kullanıcı oturumu bulunamadı')
+      }
+
+      const { data: userProfile } = await supabase
+        .from('users')
+        .select('branch_id')
+        .eq('id', userData.user.id)
+        .single()
+
+      if (!userProfile?.branch_id) {
+        throw new Error('Kullanıcı şubesi bulunamadı')
+      }
+
+      // Add branch_id to customer data
+      const customerWithBranch = {
+        ...customer,
+        branch_id: userProfile.branch_id,
+      }
+
       const { data, error } = await supabase
         .from('customers')
-        .insert(customer)
+        .insert(customerWithBranch)
         .select()
         .single()
 

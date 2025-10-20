@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { FormattedInput } from '@/components/ui/formatted-input'
 import { Building2, Upload, Save, Loader2 } from 'lucide-react'
 
 interface CompanyInfoFormData {
@@ -30,7 +31,7 @@ export const CompanyInfoForm = () => {
   const [formData, setFormData] = useState<CompanyInfoFormData>({
     name: '',
     address: '',
-    phone: '',
+    phone: '0',
     tax_number: '',
   })
 
@@ -45,7 +46,7 @@ export const CompanyInfoForm = () => {
       setFormData({
         name: settings.name || '',
         address: settings.address || '',
-        phone: settings.phone || '',
+        phone: settings.phone || '0',
         tax_number: settings.tax_number || '',
       })
     }
@@ -89,7 +90,7 @@ export const CompanyInfoForm = () => {
       const result = await updateSettings({
         name: formData.name.trim(),
         address: formData.address.trim() || null,
-        phone: formData.phone.trim() || null,
+        phone: formData.phone && formData.phone !== '0' ? formData.phone.trim() : null,
         tax_number: formData.tax_number.trim() || null,
       })
 
@@ -198,12 +199,11 @@ export const CompanyInfoForm = () => {
           {/* Phone */}
           <div className="space-y-2">
             <Label htmlFor="company-phone">Telefon</Label>
-            <Input
+            <FormattedInput
               id="company-phone"
-              type="tel"
+              formatterType="phone"
               value={formData.phone}
-              onChange={(e) => handleInputChange('phone', e.target.value)}
-              placeholder="Telefon numarasını girin"
+              onChange={(value) => handleInputChange('phone', value)}
               disabled={!canEditSettings}
             />
           </div>

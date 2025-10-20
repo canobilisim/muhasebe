@@ -22,6 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { FormattedInput } from '@/components/ui/formatted-input'
 import { Building, Plus, Edit, Loader2, Save } from 'lucide-react'
 import type { Database } from '@/types/database'
 
@@ -47,7 +48,7 @@ export const BranchManagement = () => {
   const [formData, setFormData] = useState<BranchFormData>({
     name: '',
     address: '',
-    phone: '',
+    phone: '0',
     tax_number: '',
   })
 
@@ -86,14 +87,14 @@ export const BranchManagement = () => {
         setFormData({
           name: selectedBranch.name,
           address: selectedBranch.address || '',
-          phone: selectedBranch.phone || '',
+          phone: selectedBranch.phone || '0',
           tax_number: selectedBranch.tax_number || '',
         })
       } else {
         setFormData({
           name: '',
           address: '',
-          phone: '',
+          phone: '0',
           tax_number: '',
         })
       }
@@ -130,7 +131,7 @@ export const BranchManagement = () => {
         result = await settingsService.updateCompanySettings(selectedBranch.id, {
           name: formData.name.trim(),
           address: formData.address.trim() || null,
-          phone: formData.phone.trim() || null,
+          phone: formData.phone && formData.phone !== '0' ? formData.phone.trim() : null,
           tax_number: formData.tax_number.trim() || null,
         })
       } else {
@@ -138,7 +139,7 @@ export const BranchManagement = () => {
         const branchData: BranchInsert = {
           name: formData.name.trim(),
           address: formData.address.trim() || null,
-          phone: formData.phone.trim() || null,
+          phone: formData.phone && formData.phone !== '0' ? formData.phone.trim() : null,
           tax_number: formData.tax_number.trim() || null,
         }
         result = await settingsService.createCompanySettings(branchData)
@@ -330,12 +331,11 @@ export const BranchManagement = () => {
             {/* Phone */}
             <div className="space-y-2">
               <Label htmlFor="branch-phone">Telefon</Label>
-              <Input
+              <FormattedInput
                 id="branch-phone"
-                type="tel"
+                formatterType="phone"
                 value={formData.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
-                placeholder="Telefon numarasını girin"
+                onChange={(value) => handleInputChange('phone', value)}
                 disabled={isSaving}
               />
             </div>

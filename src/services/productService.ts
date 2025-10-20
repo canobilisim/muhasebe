@@ -480,4 +480,206 @@ export class ProductService {
       }
     }
   }
+
+  /**
+   * Get fast sale products grouped by category
+   */
+  static async getFastSaleProducts(): Promise<ApiResponse<{
+    categories: Array<{ id: string; name: string; display_order: number }>;
+    products: Array<{
+      id: string;
+      barcode: string;
+      name: string;
+      sale_price_1: number;
+      sale_price_2: number;
+      sale_price_3: number;
+      category_id: string;
+      category_name: string;
+      fast_sale_order: number;
+    }>;
+  }>> {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        return { data: null, error: 'Kullanıcı oturumu bulunamadı', success: false };
+      }
+
+      const { data: userProfile } = await supabase
+        .from('users')
+        .select('branch_id')
+        .eq('id', userData.user.id)
+        .single();
+
+      if (!userProfile?.branch_id) {
+        return { data: null, error: 'Kullanıcı şubesi bulunamadı', success: false };
+      }
+
+      // Get categories
+      const { data: categories, error: catError } = await supabase
+        .from('fast_sale_categories')
+        .select('id, name, display_order')
+        .eq('branch_id', userProfile.branch_id)
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+
+      if (catError) throw catError;
+
+      // Get products with category info
+      const { data: products, error: prodError } = await supabase
+        .from('products')
+        .select(`
+          id,
+          barcode,
+          name,
+          sale_price_1,
+          sale_price_2,
+          sale_price_3,
+          fast_sale_order,
+          fast_sale_category_id,
+          fast_sale_categories!inner (
+            id,
+            name
+          )
+        `)
+        .eq('branch_id', userProfile.branch_id)
+        .eq('is_active', true)
+        .eq('show_in_fast_sale', true)
+        .not('fast_sale_category_id', 'is', null)
+        .order('fast_sale_order', { ascending: true });
+
+      if (prodError) throw prodError;
+
+      // Transform products data
+      const transformedProducts = products?.map((p: any) => ({
+        id: p.id,
+        barcode: p.barcode,
+        name: p.name,
+        sale_price_1: p.sale_price_1 || 0,
+        sale_price_2: p.sale_price_2 || p.sale_price_1 || 0,
+        sale_price_3: p.sale_price_3 || p.sale_price_1 || 0,
+        category_id: p.fast_sale_category_id,
+        category_name: p.fast_sale_categories.name,
+        fast_sale_order: p.fast_sale_order || 0,
+      })) || [];
+
+      return {
+        data: {
+          categories: categories || [],
+          products: transformedProducts,
+        },
+        error: null,
+        success: true,
+      };
+    } catch (error) {
+      console.error('Error getting fast sale products:', error);
+      return {
+        data: null,
+        error: 'Hızlı satış ürünleri getirilirken hata oluştu',
+        success: false,
+      };
+    }
+  }
+
+  /**
+   * Kategorideki bir sonraki sıra numarasını al
+   */
+  static async getNextOrderNumber(categoryId: string): Promise<number> {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('fast_sale_order')
+        .eq('fast_sale_category_id', categoryId)
+        .eq('show_in_fast_sale', true)
+        .order('fast_sale_order', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error getting next order number:', error);
+        return 1;
+      }
+
+      return (data?.fast_sale_order || 0) + 1;
+    } catch (error) {
+      console.error('Error getting next order number:', error);
+      return 1;
+    }
+  }
+
+  /**
+   * Sıra numarası değiştiğinde diğer ürünlerin sırasını güncelle
+   */
+  static async reorderProducts(
+    categoryId: string,
+    newOrder: number,
+    productId?: string,
+    oldOrder?: number
+  ): Promise<void> {
+    try {
+      // Kategorideki tüm ürünleri al
+      const { data: products, error } = await supabase
+        .from('products')
+        .select('id, fast_sale_order')
+        .eq('fast_sale_category_id', categoryId)
+        .eq('show_in_fast_sale', true)
+        .order('fast_sale_order', { ascending: true });
+
+      if (error) throw error;
+      if (!products) return;
+
+      const updates: Array<{ id: string; fast_sale_order: number }> = [];
+
+      // Yeni ürün ekleme (oldOrder yok)
+      if (!oldOrder || !productId) {
+        // Yeni sıradan sonraki tüm ürünleri +1 kaydır
+        products.forEach((product) => {
+          const currentOrder = product.fast_sale_order || 0;
+          if (currentOrder >= newOrder) {
+            updates.push({
+              id: product.id,
+              fast_sale_order: currentOrder + 1,
+            });
+          }
+        });
+      } else {
+        // Mevcut ürün sıra değiştirme
+        products.forEach((product) => {
+          if (product.id === productId) return; // Düzenlenen ürünü atla
+
+          const currentOrder = product.fast_sale_order || 0;
+
+          if (oldOrder < newOrder) {
+            // Aşağı taşıma (örn: 2 → 4)
+            // oldOrder ile newOrder arası ürünleri -1 kaydır
+            if (currentOrder > oldOrder && currentOrder <= newOrder) {
+              updates.push({
+                id: product.id,
+                fast_sale_order: currentOrder - 1,
+              });
+            }
+          } else if (oldOrder > newOrder) {
+            // Yukarı taşıma (örn: 4 → 2)
+            // newOrder ile oldOrder arası ürünleri +1 kaydır
+            if (currentOrder >= newOrder && currentOrder < oldOrder) {
+              updates.push({
+                id: product.id,
+                fast_sale_order: currentOrder + 1,
+              });
+            }
+          }
+          // oldOrder === newOrder ise hiçbir şey yapma
+        });
+      }
+
+      // Toplu güncelleme
+      for (const update of updates) {
+        await supabase
+          .from('products')
+          .update({ fast_sale_order: update.fast_sale_order })
+          .eq('id', update.id);
+      }
+    } catch (error) {
+      console.error('Error reordering products:', error);
+    }
+  }
 }

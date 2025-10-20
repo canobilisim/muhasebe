@@ -158,6 +158,44 @@ export type Database = {
           },
         ]
       }
+      fast_sale_categories: {
+        Row: {
+          branch_id: string | null
+          created_at: string | null
+          display_order: number
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fast_sale_categories_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           barcode: string
@@ -165,11 +203,17 @@ export type Database = {
           category: string | null
           created_at: string | null
           critical_stock_level: number | null
+          fast_sale_category_id: string | null
+          fast_sale_order: number | null
           id: string
           is_active: boolean | null
           name: string
           purchase_price: number
           sale_price: number
+          sale_price_1: number | null
+          sale_price_2: number | null
+          sale_price_3: number | null
+          show_in_fast_sale: boolean | null
           stock_quantity: number
           updated_at: string | null
         }
@@ -179,11 +223,17 @@ export type Database = {
           category?: string | null
           created_at?: string | null
           critical_stock_level?: number | null
+          fast_sale_category_id?: string | null
+          fast_sale_order?: number | null
           id?: string
           is_active?: boolean | null
           name: string
           purchase_price?: number
           sale_price?: number
+          sale_price_1?: number | null
+          sale_price_2?: number | null
+          sale_price_3?: number | null
+          show_in_fast_sale?: boolean | null
           stock_quantity?: number
           updated_at?: string | null
         }
@@ -193,11 +243,17 @@ export type Database = {
           category?: string | null
           created_at?: string | null
           critical_stock_level?: number | null
+          fast_sale_category_id?: string | null
+          fast_sale_order?: number | null
           id?: string
           is_active?: boolean | null
           name?: string
           purchase_price?: number
           sale_price?: number
+          sale_price_1?: number | null
+          sale_price_2?: number | null
+          sale_price_3?: number | null
+          show_in_fast_sale?: boolean | null
           stock_quantity?: number
           updated_at?: string | null
         }
@@ -207,6 +263,13 @@ export type Database = {
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_fast_sale_category_id_fkey"
+            columns: ["fast_sale_category_id"]
+            isOneToOne: false
+            referencedRelation: "fast_sale_categories"
             referencedColumns: ["id"]
           },
         ]

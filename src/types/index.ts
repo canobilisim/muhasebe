@@ -80,6 +80,13 @@ export {
   isValidTurkcellTransactionType
 } from './turkcell'
 
+// Re-export POS types
+export type {
+  Product as POSProduct,
+  Cart as POSCart,
+  POSState
+} from './pos'
+
 // Table types
 export type Branch = Database['public']['Tables']['branches']['Row']
 export type User = Database['public']['Tables']['users']['Row']
@@ -88,6 +95,7 @@ export type Customer = Database['public']['Tables']['customers']['Row']
 export type Sale = Database['public']['Tables']['sales']['Row']
 export type SaleItem = Database['public']['Tables']['sale_items']['Row']
 export type CashMovement = Database['public']['Tables']['cash_movements']['Row']
+export type FastSaleCategory = Database['public']['Tables']['fast_sale_categories']['Row']
 
 export type BranchInsert = Database['public']['Tables']['branches']['Insert']
 export type UserInsert = Database['public']['Tables']['users']['Insert']
@@ -96,6 +104,7 @@ export type CustomerInsert = Database['public']['Tables']['customers']['Insert']
 export type SaleInsert = Database['public']['Tables']['sales']['Insert']
 export type SaleItemInsert = Database['public']['Tables']['sale_items']['Insert']
 export type CashMovementInsert = Database['public']['Tables']['cash_movements']['Insert']
+export type FastSaleCategoryInsert = Database['public']['Tables']['fast_sale_categories']['Insert']
 
 export type BranchUpdate = Database['public']['Tables']['branches']['Update']
 export type UserUpdate = Database['public']['Tables']['users']['Update']
@@ -104,11 +113,26 @@ export type CustomerUpdate = Database['public']['Tables']['customers']['Update']
 export type SaleUpdate = Database['public']['Tables']['sales']['Update']
 export type SaleItemUpdate = Database['public']['Tables']['sale_items']['Update']
 export type CashMovementUpdate = Database['public']['Tables']['cash_movements']['Update']
+export type FastSaleCategoryUpdate = Database['public']['Tables']['fast_sale_categories']['Update']
 
 // Extended types
 export type ProductWithStock = Product & {
   isLowStock: boolean
   stockStatus: 'critical' | 'low' | 'normal'
+}
+
+export type ProductWithFastSale = Product & {
+  fast_sale_category?: FastSaleCategory
+}
+
+export type FastSaleProduct = {
+  id: string
+  barcode: string
+  name: string
+  sale_price: number
+  category_name: string
+  category_id: string
+  display_order: number
 }
 
 export type CustomerWithBalance = Customer & {
@@ -201,6 +225,15 @@ export interface ProductForm {
   salePrice: number
   stockQuantity: number
   criticalStockLevel: number
+  showInFastSale?: boolean
+  fastSaleCategoryId?: string
+  fastSaleOrder?: number
+}
+
+export interface FastSaleCategoryForm {
+  name: string
+  displayOrder: number
+  isActive: boolean
 }
 
 export interface CustomerForm {

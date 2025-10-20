@@ -100,6 +100,8 @@ src/
 - `types/database.ts`: Supabase veritabanı tipleri
 - `types/enums.ts`: Enum tanımları (UserRole, PaymentType, vb.)
 - `types/guards.ts`: Type guard fonksiyonları ve validasyonlar
+- `types/pos.ts`: POS hızlı satış sayfası için özel tipler
+- `types/turkcell.ts`: Turkcell işlemleri ve hedef takibi tipleri
 - Full TypeScript desteği ile compile-time tip güvenliği
 
 ## Özellikler
@@ -313,6 +315,56 @@ updateCartItemDiscount(productId: string, discountAmount: number): void
 setPaymentType(type: PaymentType): void
 setPaidAmount(amount: number): void
 processPayment(): Promise<boolean>
+```
+
+### POS Fast Sale Types
+```typescript
+// POS tipleri types/pos.ts'den export edilir ve types/index.ts üzerinden erişilebilir
+import type { POSProduct, POSCart, POSState } from '@/types'
+
+// Hızlı satış sayfası için özel tip tanımları
+interface POSProduct {
+  id: string
+  barcode: string
+  name: string
+  unitPrice: number
+  qty: number
+  discount: number
+  currency: string
+  vatRate: number
+  category: string
+  lineTotal?: number
+}
+
+interface POSCart {
+  tabId: string
+  customerLabel: string
+  lines: POSProduct[]
+  gross: number
+  discountTotal: number
+  net: number
+}
+
+interface POSState {
+  activePriceList: string
+  activeCustomerTab: string
+  discountValue: number
+  discountType: string
+  currency: string
+  paid: number
+  total: number
+  net: number
+  change: number
+  limit: number
+  remaining: number
+  carts: POSCart[]
+  catalog: POSProduct[]
+  categories: string[]
+  quickAmounts: number[]
+  quickAdjustments: number[]
+  selectedCategory: string
+  now: string
+}
 ```
 
 ## MCP (Model Context Protocol) Entegrasyonu

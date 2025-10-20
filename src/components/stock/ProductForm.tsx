@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Product, ProductInsert, ProductUpdate } from '@/types'
+import { Product, ProductInsert, ProductUpdate, FastSaleCategory } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert } from '@/components/ui/alert'
 import { Loader2 } from 'lucide-react'
+import { FastSaleCategoryService } from '@/services/fastSaleCategoryService'
 
 interface ProductFormProps {
   product?: Product | null
@@ -26,14 +27,25 @@ export const ProductForm = ({
     name: '',
     category: '',
     purchase_price: 0,
-    sale_price: 0,
+    sale_price_1: 0,
+    sale_price_2: 0,
+    sale_price_3: 0,
     stock_quantity: 0,
     critical_stock_level: 5,
-    is_active: true
+    is_active: true,
+    show_in_fast_sale: false,
+    fast_sale_category_id: '',
+    fast_sale_order: 1
   })
   
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [barcodeChecking, setBarcodeChecking] = useState(false)
+  const [fastSaleCategories, setFastSaleCategories] = useState<FastSaleCategory[]>([])
+  const [loadingCategories, setLoadingCategories] = useState(false)
+
+  useEffect(() => {
+    loadFastSaleCategories()
+  }, [])
 
   useEffect(() => {
     if (product) {
@@ -42,13 +54,50 @@ export const ProductForm = ({
         name: product.name,
         category: product.category || '',
         purchase_price: product.purchase_price,
-        sale_price: product.sale_price,
+        sale_price_1: product.sale_price_1 || product.sale_price || 0,
+        sale_price_2: product.sale_price_2 || product.sale_price || 0,
+        sale_price_3: product.sale_price_3 || product.sale_price || 0,
         stock_quantity: product.stock_quantity,
         critical_stock_level: product.critical_stock_level,
-        is_active: product.is_active
+        is_active: product.is_active,
+        show_in_fast_sale: product.show_in_fast_sale || false,
+        fast_sale_category_id: product.fast_sale_category_id || '',
+        fast_sale_order: product.fast_sale_order || 1
       })
     }
   }, [product])
+
+  // Kategori değiştiğinde otomatik sıra numarası ata
+  useEffect(() => {
+    if (formData.show_in_fast_sale && formData.fast_sale_category_id && !product) {
+      // Yeni ürün ekleniyorsa otomatik sıra numarası al
+      loadNextOrderNumber(formData.fast_sale_category_id);
+    }
+  }, [formData.fast_sale_category_id, formData.show_in_fast_sale]);
+
+  const loadNextOrderNumber = async (categoryId: string) => {
+    try {
+      const { ProductService } = await import('@/services/productService');
+      const nextOrder = await ProductService.getNextOrderNumber(categoryId);
+      setFormData(prev => ({ ...prev, fast_sale_order: nextOrder }));
+    } catch (error) {
+      console.error('Error loading next order number:', error);
+    }
+  };
+
+  const loadFastSaleCategories = async () => {
+    setLoadingCategories(true)
+    try {
+      const result = await FastSaleCategoryService.getAll()
+      if (result.success && result.data) {
+        setFastSaleCategories(result.data)
+      }
+    } catch (error) {
+      console.error('Error loading fast sale categories:', error)
+    } finally {
+      setLoadingCategories(false)
+    }
+  }
 
   const validateForm = async () => {
     const newErrors: Record<string, string> = {}
@@ -77,12 +126,20 @@ export const ProductForm = ({
       newErrors.purchase_price = 'Alış fiyatı negatif olamaz'
     }
 
-    if (formData.sale_price < 0) {
-      newErrors.sale_price = 'Satış fiyatı negatif olamaz'
+    if (formData.sale_price_1 <= 0) {
+      newErrors.sale_price_1 = 'Fiyat 1 zorunludur ve 0\'dan büyük olmalıdır'
     }
 
-    if (formData.sale_price < formData.purchase_price) {
-      newErrors.sale_price = 'Satış fiyatı alış fiyatından düşük olamaz'
+    if (formData.sale_price_2 < 0) {
+      newErrors.sale_price_2 = 'Fiyat 2 negatif olamaz'
+    }
+
+    if (formData.sale_price_3 < 0) {
+      newErrors.sale_price_3 = 'Fiyat 3 negatif olamaz'
+    }
+
+    if (formData.sale_price_1 < formData.purchase_price) {
+      newErrors.sale_price_1 = 'Satış fiyatı alış fiyatından düşük olamaz'
     }
 
     if (formData.stock_quantity < 0) {
@@ -91,6 +148,16 @@ export const ProductForm = ({
 
     if (formData.critical_stock_level < 0) {
       newErrors.critical_stock_level = 'Kritik stok seviyesi negatif olamaz'
+    }
+
+    // Hızlı satış validasyonları
+    if (formData.show_in_fast_sale) {
+      if (!formData.fast_sale_category_id) {
+        newErrors.fast_sale_category_id = 'Hızlı satış kategorisi seçmelisiniz'
+      }
+      if (formData.fast_sale_order < 1 || formData.fast_sale_order > 99) {
+        newErrors.fast_sale_order = 'Sıra numarası 1-99 arasında olmalıdır'
+      }
     }
 
     setErrors(newErrors)
@@ -102,6 +169,17 @@ export const ProductForm = ({
     
     const isValid = await validateForm()
     if (!isValid) return
+
+    // Hızlı satış sıralamasını güncelle
+    if (formData.show_in_fast_sale && formData.fast_sale_category_id) {
+      const { ProductService } = await import('@/services/productService');
+      await ProductService.reorderProducts(
+        formData.fast_sale_category_id,
+        formData.fast_sale_order,
+        product?.id,
+        product?.fast_sale_order || undefined
+      );
+    }
 
     const result = await onSubmit(formData)
     if (result.success) {
@@ -191,18 +269,62 @@ export const ProductForm = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="sale_price">Satış Fiyatı (₺)</Label>
+          <Label htmlFor="sale_price_1">Satış Fiyatı 1 (₺) *</Label>
           <Input
-            id="sale_price"
+            id="sale_price_1"
             type="number"
             min="0"
             step="0.01"
-            value={formData.sale_price}
-            onChange={(e) => handleInputChange('sale_price', parseFloat(e.target.value) || 0)}
-            className={errors.sale_price ? 'border-red-500' : ''}
+            value={formData.sale_price_1}
+            onChange={(e) => {
+              const value = parseFloat(e.target.value) || 0;
+              handleInputChange('sale_price_1', value);
+              // Eğer fiyat 2 ve 3 boşsa, otomatik doldur
+              if (!formData.sale_price_2 || formData.sale_price_2 === 0) {
+                handleInputChange('sale_price_2', value);
+              }
+              if (!formData.sale_price_3 || formData.sale_price_3 === 0) {
+                handleInputChange('sale_price_3', value);
+              }
+            }}
+            className={errors.sale_price_1 ? 'border-red-500' : ''}
           />
-          {errors.sale_price && (
-            <p className="text-sm text-red-600">{errors.sale_price}</p>
+          {errors.sale_price_1 && (
+            <p className="text-sm text-red-600">{errors.sale_price_1}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="sale_price_2">Satış Fiyatı 2 (₺)</Label>
+          <Input
+            id="sale_price_2"
+            type="number"
+            min="0"
+            step="0.01"
+            value={formData.sale_price_2}
+            onChange={(e) => handleInputChange('sale_price_2', parseFloat(e.target.value) || 0)}
+            className={errors.sale_price_2 ? 'border-red-500' : ''}
+            placeholder="Boş bırakılırsa Fiyat 1 kullanılır"
+          />
+          {errors.sale_price_2 && (
+            <p className="text-sm text-red-600">{errors.sale_price_2}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="sale_price_3">Satış Fiyatı 3 (₺)</Label>
+          <Input
+            id="sale_price_3"
+            type="number"
+            min="0"
+            step="0.01"
+            value={formData.sale_price_3}
+            onChange={(e) => handleInputChange('sale_price_3', parseFloat(e.target.value) || 0)}
+            className={errors.sale_price_3 ? 'border-red-500' : ''}
+            placeholder="Boş bırakılırsa Fiyat 1 kullanılır"
+          />
+          {errors.sale_price_3 && (
+            <p className="text-sm text-red-600">{errors.sale_price_3}</p>
           )}
         </div>
 
@@ -231,6 +353,66 @@ export const ProductForm = ({
             />
             Aktif
           </Label>
+        </div>
+      </div>
+
+      {/* Hızlı Satış Ayarları */}
+      <div className="border-t pt-4 mt-4">
+        <h3 className="text-lg font-semibold mb-4">Hızlı Satış Ayarları</h3>
+        
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={formData.show_in_fast_sale}
+                onChange={(e) => handleInputChange('show_in_fast_sale', e.target.checked)}
+                className="rounded"
+              />
+              Hızlı satışta göster
+            </Label>
+          </div>
+
+          {formData.show_in_fast_sale && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-6">
+              <div className="space-y-2">
+                <Label htmlFor="fast_sale_category_id">Hızlı Satış Kategorisi *</Label>
+                <select
+                  id="fast_sale_category_id"
+                  value={formData.fast_sale_category_id}
+                  onChange={(e) => handleInputChange('fast_sale_category_id', e.target.value)}
+                  className="w-full border rounded px-3 py-2"
+                  disabled={loadingCategories}
+                >
+                  <option value="">Kategori Seçin</option>
+                  {fastSaleCategories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.fast_sale_category_id && (
+                  <p className="text-sm text-red-600">{errors.fast_sale_category_id}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="fast_sale_order">Sıra Numarası (1-99) *</Label>
+                <Input
+                  id="fast_sale_order"
+                  type="number"
+                  min="1"
+                  max="99"
+                  value={formData.fast_sale_order}
+                  onChange={(e) => handleInputChange('fast_sale_order', parseInt(e.target.value) || 1)}
+                  className={errors.fast_sale_order ? 'border-red-500' : ''}
+                />
+                {errors.fast_sale_order && (
+                  <p className="text-sm text-red-600">{errors.fast_sale_order}</p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

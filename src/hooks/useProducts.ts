@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { ProductService } from '@/services/productService'
 import { Product, ProductFilter, ProductInsert, ProductUpdate } from '@/types'
+import { useFastSaleStore } from '@/stores/fastSaleStore'
 
 export const useProducts = (initialFilter: ProductFilter = {}) => {
   const [products, setProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<ProductFilter>(initialFilter)
+  const refreshFastSaleData = useFastSaleStore(state => state.refreshData)
 
   const fetchProducts = async () => {
     setIsLoading(true)
@@ -34,6 +36,10 @@ export const useProducts = (initialFilter: ProductFilter = {}) => {
       const response = await ProductService.createProduct(productData)
       if (response.success && response.data) {
         setProducts(prev => [...prev, response.data!])
+        // Refresh fast sale cache if product is added to fast sale
+        if (productData.show_in_fast_sale) {
+          refreshFastSaleData()
+        }
         return { success: true, data: response.data }
       } else {
         setError(response.error || 'Ürün oluşturulurken hata oluştu')
@@ -60,6 +66,15 @@ export const useProducts = (initialFilter: ProductFilter = {}) => {
             product.id === id ? response.data! : product
           )
         )
+        // Refresh fast sale cache if product fast sale settings changed
+        if (productData.show_in_fast_sale !== undefined || 
+            productData.fast_sale_category_id !== undefined || 
+            productData.fast_sale_order !== undefined ||
+            productData.sale_price_1 !== undefined ||
+            productData.sale_price_2 !== undefined ||
+            productData.sale_price_3 !== undefined) {
+          refreshFastSaleData()
+        }
         return { success: true, data: response.data }
       } else {
         setError(response.error || 'Ürün güncellenirken hata oluştu')
@@ -82,6 +97,8 @@ export const useProducts = (initialFilter: ProductFilter = {}) => {
       const response = await ProductService.deleteProduct(id)
       if (response.success) {
         setProducts(prev => prev.filter(product => product.id !== id))
+        // Refresh fast sale cache in case deleted product was in fast sale
+        refreshFastSaleData()
         return { success: true }
       } else {
         setError(response.error || 'Ürün silinirken hata oluştu')

@@ -1,11 +1,13 @@
 import React, { Suspense, lazy, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { Toaster } from 'react-hot-toast'
 import { ErrorBoundary } from '@/components/layout/ErrorBoundary'
 import { PrivateRoute } from '@/components/layout/PrivateRoute'
 import { PageLoading } from '@/components/ui/loading'
 import { LoginPage } from '@/pages/LoginPage'
 import DashboardPage from '@/pages/DashboardPage'
 import { useAuthStore } from '@/stores/authStore'
+import { useFastSaleStore } from '@/stores/fastSaleStore'
 import './App.css'
 
 // Lazy load other pages
@@ -32,7 +34,8 @@ function ScrollToTop() {
 }
 
 function App() {
-  const { initialize, isInitialized, isLoading } = useAuthStore()
+  const { initialize, isInitialized, isLoading, isAuthenticated } = useAuthStore()
+  const loadFastSaleData = useFastSaleStore(state => state.loadData)
   const [hasHydrated, setHasHydrated] = React.useState(false)
 
   // Wait for Zustand to hydrate from localStorage
@@ -83,6 +86,14 @@ function App() {
     }
   }, [hasHydrated, isInitialized, isLoading, initialize])
 
+  // Preload fast sale data when user is authenticated
+  useEffect(() => {
+    if (isAuthenticated && isInitialized) {
+      // Arka planda hızlı satış verilerini yükle
+      loadFastSaleData()
+    }
+  }, [isAuthenticated, isInitialized, loadFastSaleData])
+
   // Show loading while hydrating or initializing
   if (!hasHydrated || !isInitialized || isLoading) {
     return <PageLoading />
@@ -90,6 +101,7 @@ function App() {
 
   return (
     <div className="fixed inset-0 bg-white">
+      <Toaster />
       <ErrorBoundary>
         <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <ScrollToTop />

@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
   DialogContent,
@@ -158,17 +157,6 @@ export const SalesReport = () => {
       case 'pos': return 'POS'
       case 'credit': return 'Açık Hesap'
       default: return type
-    }
-  }
-
-  const getPaymentStatusBadge = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return <Badge variant="default" className="bg-green-100 text-green-800">Ödendi</Badge>
-      case 'pending':
-        return <Badge variant="secondary" className="bg-orange-100 text-orange-800">Bekliyor</Badge>
-      default:
-        return <Badge variant="outline">{status}</Badge>
     }
   }
 
@@ -379,7 +367,6 @@ export const SalesReport = () => {
                     <TableHead className="text-right">Tutar</TableHead>
                     <TableHead className="text-right">Net Tutar</TableHead>
                     <TableHead>Ödeme</TableHead>
-                    <TableHead>Durum</TableHead>
                     <TableHead>Kullanıcı</TableHead>
                     {isAdmin() && <TableHead className="text-center">İşlem</TableHead>}
                   </TableRow>
@@ -408,9 +395,6 @@ export const SalesReport = () => {
                       </TableCell>
                       <TableCell>
                         {getPaymentTypeLabel(sale.payment_type)}
-                      </TableCell>
-                      <TableCell>
-                        {getPaymentStatusBadge(sale.payment_status)}
                       </TableCell>
                       <TableCell>
                         {sale.user_name}

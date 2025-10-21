@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -28,6 +29,7 @@ interface BalanceReportData {
 }
 
 export const CustomerBalanceReport = () => {
+  const navigate = useNavigate()
   const [reportData, setReportData] = useState<BalanceReportData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -232,7 +234,11 @@ export const CustomerBalanceReport = () => {
                       : 0
                     
                     return (
-                      <TableRow key={customer.id}>
+                      <TableRow 
+                        key={customer.id}
+                        className="cursor-pointer hover:bg-gray-50"
+                        onClick={() => navigate(`/customers/${customer.id}`)}
+                      >
                         <TableCell className="font-medium">{customer.name}</TableCell>
                         <TableCell>
                           {customer.phone && (
@@ -282,12 +288,15 @@ export const CustomerBalanceReport = () => {
                     <TableHead>Satış Tarihi</TableHead>
                     <TableHead className="text-right">Tutar</TableHead>
                     <TableHead className="text-right">Gecikme (Gün)</TableHead>
-                    <TableHead>Durum</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {reportData.overduePayments.map((payment) => (
-                    <TableRow key={payment.sale.id}>
+                    <TableRow 
+                      key={payment.sale.id}
+                      className="cursor-pointer hover:bg-gray-50"
+                      onClick={() => navigate(`/customers/${payment.customer.id}`)}
+                    >
                       <TableCell className="font-medium">
                         <div>
                           <div>{payment.customer.name}</div>
@@ -303,11 +312,6 @@ export const CustomerBalanceReport = () => {
                       <TableCell className="text-right">
                         <Badge variant="destructive">
                           {payment.daysPastDue} gün
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {payment.sale.payment_status === 'pending' ? 'Bekliyor' : 'Ödendi'}
                         </Badge>
                       </TableCell>
                     </TableRow>
@@ -335,7 +339,11 @@ export const CustomerBalanceReport = () => {
                     const remainingLimit = customer.credit_limit - customer.current_balance
                     
                     return (
-                      <TableRow key={customer.id}>
+                      <TableRow 
+                        key={customer.id}
+                        className="cursor-pointer hover:bg-gray-50"
+                        onClick={() => navigate(`/customers/${customer.id}`)}
+                      >
                         <TableCell className="font-medium">
                           <div>
                             <div>{customer.name}</div>

@@ -28,7 +28,7 @@ export class CustomerBalanceService {
           sales (
             id,
             total_amount,
-            payment_status,
+            payment_type,
             sale_date,
             created_at
           )
@@ -60,7 +60,7 @@ export class CustomerBalanceService {
         const overdueAmount = sales
           .filter((sale: any) => {
             const daysPastDue = Math.floor((Date.now() - new Date(sale.sale_date).getTime()) / (1000 * 60 * 60 * 24))
-            return sale.payment_status === 'pending' && daysPastDue > 30
+            return sale.payment_type === 'credit' && daysPastDue > 30
           })
           .reduce((sum: number, sale: any) => sum + sale.total_amount, 0)
 
@@ -84,14 +84,18 @@ export class CustomerBalanceService {
   // Get overdue payments
   static async getOverduePayments(): Promise<OverduePayment[]> {
     try {
+      const today = new Date().toISOString()
+      
       const { data, error } = await supabase
         .from('sales')
         .select(`
           *,
           customers (*)
         `)
-        .eq('payment_status', 'pending')
+        .eq('payment_type', 'credit')
         .not('customer_id', 'is', null)
+        .not('due_date', 'is', null)
+        .lt('due_date', today)
 
       if (error) {
         throw new Error(`Vadesi geçen ödemeler alınamadı: ${error.message}`)
@@ -100,14 +104,14 @@ export class CustomerBalanceService {
       const overduePayments: OverduePayment[] = []
 
       for (const sale of data || []) {
-        const daysPastDue = Math.floor((Date.now() - new Date(sale.sale_date).getTime()) / (1000 * 60 * 60 * 24))
-        
-        if (daysPastDue > 30 && sale.customers) { // 30 days payment term
+        if (sale.due_date && sale.customers) {
+          const daysPastDue = Math.floor((Date.now() - new Date(sale.due_date).getTime()) / (1000 * 60 * 60 * 24))
+          
           overduePayments.push({
             customer: sale.customers,
             sale,
             daysPastDue,
-            overdueAmount: sale.net_amount - sale.paid_amount
+            overdueAmount: (sale.net_amount || 0) - (sale.paid_amount || 0)
           })
         }
       }

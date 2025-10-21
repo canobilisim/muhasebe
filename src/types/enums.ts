@@ -14,11 +14,7 @@ export const PaymentType = {
   PARTIAL: 'partial'
 } as const
 
-export const PaymentStatus = {
-  PAID: 'paid',
-  PENDING: 'pending',
-  OVERDUE: 'overdue'
-} as const
+
 
 export const MovementType = {
   INCOME: 'income',
@@ -42,11 +38,7 @@ export const PaymentTypeLabels = {
   [PaymentType.PARTIAL]: 'Parçalı Ödeme'
 } as const
 
-export const PaymentStatusLabels = {
-  [PaymentStatus.PAID]: 'Ödendi',
-  [PaymentStatus.PENDING]: 'Bekliyor',
-  [PaymentStatus.OVERDUE]: 'Vadesi Geçti'
-} as const
+
 
 export const MovementTypeLabels = {
   [MovementType.INCOME]: 'Gelir',
@@ -57,11 +49,7 @@ export const MovementTypeLabels = {
 } as const
 
 // Color mappings for UI
-export const PaymentStatusColors = {
-  [PaymentStatus.PAID]: 'success',
-  [PaymentStatus.PENDING]: 'warning',
-  [PaymentStatus.OVERDUE]: 'destructive'
-} as const
+
 
 export const MovementTypeColors = {
   [MovementType.INCOME]: 'success',
@@ -80,9 +68,7 @@ export const getPaymentTypeLabel = (type: keyof typeof PaymentType | string): st
   return PaymentTypeLabels[type as keyof typeof PaymentTypeLabels] || type
 }
 
-export const getPaymentStatusLabel = (status: keyof typeof PaymentStatus | string): string => {
-  return PaymentStatusLabels[status as keyof typeof PaymentStatusLabels] || status
-}
+
 
 export const getMovementTypeLabel = (type: keyof typeof MovementType | string): string => {
   return MovementTypeLabels[type as keyof typeof MovementTypeLabels] || type
@@ -97,9 +83,7 @@ export const isValidPaymentType = (type: string): type is keyof typeof PaymentTy
   return Object.values(PaymentType).includes(type as any)
 }
 
-export const isValidPaymentStatus = (status: string): status is keyof typeof PaymentStatus => {
-  return Object.values(PaymentStatus).includes(status as any)
-}
+
 
 export const isValidMovementType = (type: string): type is keyof typeof MovementType => {
   return Object.values(MovementType).includes(type as any)

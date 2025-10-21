@@ -9,7 +9,7 @@ import {
   type Customer,
   type CashMovementInsert
 } from '@/types'
-import { PaymentType, PaymentStatus, MovementType } from '@/types/enums'
+import { PaymentType, MovementType } from '@/types/enums'
 
 export interface ProcessPaymentRequest {
   cartItems: CartItem[]
@@ -55,11 +55,6 @@ export async function processPayment(request: ProcessPaymentRequest): Promise<Pr
       throw new Error(`Satış numarası oluşturulamadı: ${saleNumberError.message}`)
     }
 
-    // Determine payment status
-    const paymentStatus = 
-      paymentInfo.type === PaymentType.CREDIT ? PaymentStatus.PENDING :
-      paymentInfo.paidAmount >= totalAmount ? PaymentStatus.PAID : PaymentStatus.PENDING
-
     // Create sale record
     const saleData: SaleInsert = {
       branch_id: branchId,
@@ -71,7 +66,6 @@ export async function processPayment(request: ProcessPaymentRequest): Promise<Pr
       tax_amount: taxAmount,
       net_amount: totalAmount,
       payment_type: paymentInfo.type,
-      payment_status: paymentStatus,
       paid_amount: paymentInfo.paidAmount,
       change_amount: paymentInfo.changeAmount,
       sale_date: new Date().toISOString()

@@ -15,6 +15,7 @@ const TestRolesPage = lazy(() => import('@/pages/TestRolesPage').then(module => 
 
 const FastSalePage = lazy(() => import('@/pages/pos/FastSalePage').then(module => ({ default: module.default })))
 const CustomersPage = lazy(() => import('@/pages/CustomersPage').then(module => ({ default: module.CustomersPage })))
+const CustomerDetailPage = lazy(() => import('@/pages/CustomerDetailPage').then(module => ({ default: module.CustomerDetailPage })))
 const StockPage = lazy(() => import('@/pages/StockPage').then(module => ({ default: module.StockPage })))
 const CashPage = lazy(() => import('@/pages/CashPage').then(module => ({ default: module.CashPage })))
 const ReportsPage = lazy(() => import('@/pages/ReportsPage').then(module => ({ default: module.ReportsPage })))
@@ -149,6 +150,16 @@ function App() {
                 element={
                   <PrivateRoute requiredRoles={['admin', 'manager']}>
                     <CustomersPage />
+                  </PrivateRoute>
+                } 
+              />
+              
+              {/* Customer Detail - Manager and above */}
+              <Route 
+                path="/customers/:id" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <CustomerDetailPage />
                   </PrivateRoute>
                 } 
               />

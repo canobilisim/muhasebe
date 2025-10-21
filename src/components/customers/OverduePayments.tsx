@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -15,6 +16,7 @@ import { CustomerBalanceService, type OverduePayment } from '@/services/customer
 import { AlertTriangle, Phone, Mail, Calendar } from 'lucide-react'
 
 export const OverduePayments = () => {
+  const navigate = useNavigate()
   const [overduePayments, setOverduePayments] = useState<OverduePayment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -44,7 +46,8 @@ export const OverduePayments = () => {
     }).format(amount)
   }
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return '-'
     return new Date(dateString).toLocaleDateString('tr-TR')
   }
 
@@ -129,7 +132,11 @@ export const OverduePayments = () => {
               </TableHeader>
               <TableBody>
                 {overduePayments.map((payment) => (
-                  <TableRow key={payment.sale.id}>
+                  <TableRow 
+                    key={payment.sale.id}
+                    className="cursor-pointer hover:bg-gray-50"
+                    onClick={() => navigate(`/customers/${payment.customer.id}`)}
+                  >
                     <TableCell>
                       <div className="space-y-1">
                         <div className="font-semibold">{payment.customer.name}</div>
@@ -179,7 +186,7 @@ export const OverduePayments = () => {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">
-                      <div className="flex justify-center gap-2">
+                      <div className="flex justify-center gap-2" onClick={(e) => e.stopPropagation()}>
                         {payment.customer.phone && (
                           <Button
                             variant="outline"

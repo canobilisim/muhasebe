@@ -9,7 +9,6 @@ export interface SalesReportData {
   discount_amount: number
   net_amount: number
   payment_type: string
-  payment_status: string
   user_name: string
 }
 
@@ -60,7 +59,6 @@ export const reportsService = {
         discount_amount,
         net_amount,
         payment_type,
-        payment_status,
         customer:customers(name),
         user:users(full_name)
       `)
@@ -88,9 +86,7 @@ export const reportsService = {
       query = query.eq('payment_type', filters.paymentType)
     }
 
-    if (filters.paymentStatus) {
-      query = query.eq('payment_status', filters.paymentStatus)
-    }
+
 
     const { data, error } = await query
 
@@ -105,7 +101,6 @@ export const reportsService = {
       discount_amount: sale.discount_amount,
       net_amount: sale.net_amount,
       payment_type: sale.payment_type,
-      payment_status: sale.payment_status,
       user_name: sale.user?.full_name || 'Bilinmiyor'
     }))
   },
@@ -287,7 +282,6 @@ export const reportsService = {
           'Net Tutar': item.net_amount,
           'Ödeme Tipi': item.payment_type === 'cash' ? 'Nakit' :
             item.payment_type === 'pos' ? 'POS' : 'Açık Hesap',
-          'Durum': item.payment_status === 'paid' ? 'Ödendi' : 'Bekliyor',
           'Kullanıcı': item.user_name
         }))
 

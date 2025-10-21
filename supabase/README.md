@@ -62,7 +62,7 @@ INSERT INTO users (id, branch_id, email, full_name, role) VALUES
 - **users**: Kullanıcı bilgileri (Supabase Auth ile entegre)
 - **products**: Ürün bilgileri ve stok
 - **customers**: Müşteri bilgileri ve borç takibi
-- **sales**: Satış işlemleri
+- **sales**: Satış işlemleri (vade tarihi takibi dahil)
 - **sale_items**: Satış kalem detayları
 - **cash_movements**: Kasa hareketleri
 
@@ -72,6 +72,7 @@ INSERT INTO users (id, branch_id, email, full_name, role) VALUES
 - **Otomatik Tetikleyiciler**: Stok güncellemeleri, müşteri bakiye hesaplamaları
 - **Fonksiyonlar**: Satış numarası üretimi, raporlama fonksiyonları
 - **İndeksler**: Performans optimizasyonu için gerekli indeksler
+- **Vade Takibi**: Açık hesap satışlar için vade tarihi ve vadesi geçmiş satış sorguları
 
 ## Güvenlik
 

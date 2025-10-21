@@ -151,6 +151,23 @@ export class CustomerService {
     }
   }
 
+  // Permanently delete customer (hard delete - cascades to sales and payments)
+  static async permanentlyDeleteCustomer(id: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('customers')
+        .delete()
+        .eq('id', id)
+
+      if (error) {
+        throw new Error(`Müşteri kalıcı olarak silinemedi: ${error.message}`)
+      }
+    } catch (error) {
+      console.error('Error permanently deleting customer:', error)
+      throw error
+    }
+  }
+
   // Get customers with outstanding balance
   static async getCustomersWithBalance(): Promise<Customer[]> {
     try {
@@ -179,7 +196,7 @@ export class CustomerService {
         .from('customers')
         .select('*')
         .or(`name.ilike.%${query}%,phone.ilike.%${query}%`)
-        .eq('is_active', true)
+        .order('is_active', { ascending: false }) // Aktif müşteriler önce
         .order('name', { ascending: true })
         .limit(10)
 
@@ -197,16 +214,146 @@ export class CustomerService {
   // Update customer balance
   static async updateCustomerBalance(id: string, amount: number): Promise<void> {
     try {
-      const { error } = await supabase.rpc('update_customer_balance', {
-        customer_id: id,
-        amount_change: amount
-      })
+      // Mevcut bakiyeyi al
+      const { data: customer, error: fetchError } = await supabase
+        .from('customers')
+        .select('current_balance')
+        .eq('id', id)
+        .single()
 
-      if (error) {
-        throw new Error(`Müşteri bakiyesi güncellenemedi: ${error.message}`)
+      if (fetchError) throw fetchError
+
+      // Yeni bakiyeyi hesapla ve güncelle
+      const newBalance = (customer.current_balance || 0) + amount
+      const { error: updateError } = await supabase
+        .from('customers')
+        .update({ current_balance: newBalance })
+        .eq('id', id)
+
+      if (updateError) {
+        throw new Error(`Müşteri bakiyesi güncellenemedi: ${updateError.message}`)
       }
     } catch (error) {
       console.error('Error updating customer balance:', error)
+      throw error
+    }
+  }
+
+  // Müşteri bakiyesini yeniden hesapla (tüm işlemlerden)
+  static async recalculateCustomerBalance(customerId: string): Promise<void> {
+    try {
+      // Tüm veresiye satışları topla
+      const { data: creditSales, error: salesError } = await supabase
+        .from('sales')
+        .select('net_amount')
+        .eq('customer_id', customerId)
+        .eq('payment_type', 'credit')
+
+      if (salesError) throw salesError
+
+      // Tüm ödemeleri topla
+      const { data: payments, error: paymentsError } = await supabase
+        .from('customer_payments')
+        .select('amount')
+        .eq('customer_id', customerId)
+
+      if (paymentsError) throw paymentsError
+
+      // Bakiyeyi hesapla: toplam veresiye satışlar - toplam ödemeler
+      const totalCreditSales = (creditSales || []).reduce((sum, sale) => sum + (sale.net_amount || 0), 0)
+      const totalPayments = (payments || []).reduce((sum, payment) => sum + (payment.amount || 0), 0)
+      const calculatedBalance = Math.max(0, totalCreditSales - totalPayments)
+
+      // Bakiyeyi güncelle
+      const { error: updateError } = await supabase
+        .from('customers')
+        .update({ 
+          current_balance: calculatedBalance,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', customerId)
+
+      if (updateError) {
+        throw new Error(`Müşteri bakiyesi güncellenemedi: ${updateError.message}`)
+      }
+    } catch (error) {
+      console.error('Error recalculating customer balance:', error)
+      throw error
+    }
+  }
+
+  // Müşterinin tüm işlemlerini getir (satışlar + ödemeler birleşik)
+  static async getCustomerTransactions(customerId: string): Promise<any[]> {
+    try {
+      // Satışları getir
+      const { data: sales, error: salesError } = await supabase
+        .from('sales')
+        .select(`
+          *,
+          items:sale_items(
+            *,
+            product:products(*)
+          ),
+          user:users(*)
+        `)
+        .eq('customer_id', customerId)
+        .order('sale_date', { ascending: false })
+
+      if (salesError) throw salesError
+
+      // Ödemeleri getir
+      const { data: payments, error: paymentsError } = await supabase
+        .from('customer_payments')
+        .select(`
+          *,
+          user:users(*)
+        `)
+        .eq('customer_id', customerId)
+        .order('payment_date', { ascending: false })
+
+      if (paymentsError) throw paymentsError
+
+      // Birleştir ve sırala
+      const transactions = [
+        ...(sales || []).map(sale => ({
+          id: sale.id,
+          type: 'sale' as const,
+          date: sale.sale_date,
+          amount: sale.net_amount, // Tüm satışları göster
+          paymentType: sale.payment_type,
+          description: `Satış No: ${sale.sale_number}`,
+          sale
+        })),
+        ...(payments || []).map(payment => ({
+          id: payment.id,
+          type: 'payment' as const,
+          date: payment.payment_date,
+          amount: payment.amount, // Ödemeleri pozitif göster
+          paymentType: payment.payment_type,
+          description: `Ödeme No: ${payment.payment_number || 'Bilinmiyor'}`,
+          payment
+        }))
+      ].sort((a, b) => {
+        const dateA = a.date ? new Date(a.date).getTime() : 0
+        const dateB = b.date ? new Date(b.date).getTime() : 0
+        return dateB - dateA
+      })
+
+      // Bakiye hesapla (running balance) - sadece veresiye satışlar ve ödemeler
+      let runningBalance = 0
+      const transactionsWithBalance = transactions.reverse().map(t => {
+        // Sadece veresiye satışlar bakiyeyi artırır, ödemeler azaltır
+        if (t.type === 'sale' && t.paymentType === 'credit') {
+          runningBalance += t.amount
+        } else if (t.type === 'payment') {
+          runningBalance -= t.amount
+        }
+        return { ...t, balance: runningBalance }
+      }).reverse()
+
+      return transactionsWithBalance
+    } catch (error) {
+      console.error('Error fetching customer transactions:', error)
       throw error
     }
   }

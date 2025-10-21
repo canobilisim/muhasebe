@@ -3,7 +3,6 @@ import type { Database } from './database'
 import type { 
   UserRole, 
   PaymentType, 
-  PaymentStatus, 
   MovementType
 } from './database'
 
@@ -22,9 +21,7 @@ export const isPaymentType = (value: any): value is PaymentType => {
   return typeof value === 'string' && ['cash', 'pos', 'credit', 'partial'].includes(value)
 }
 
-export const isPaymentStatus = (value: any): value is PaymentStatus => {
-  return typeof value === 'string' && ['paid', 'pending', 'overdue'].includes(value)
-}
+
 
 export const isMovementType = (value: any): value is MovementType => {
   return typeof value === 'string' && ['income', 'expense', 'sale', 'opening', 'closing'].includes(value)
@@ -59,8 +56,7 @@ export const isSale = (value: any): value is Sale => {
     typeof value.id === 'string' &&
     typeof value.sale_number === 'string' &&
     typeof value.net_amount === 'number' &&
-    isPaymentType(value.payment_type) &&
-    isPaymentStatus(value.payment_status)
+    isPaymentType(value.payment_type)
   )
 }
 

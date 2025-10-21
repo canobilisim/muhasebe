@@ -21,6 +21,7 @@ export interface CreateSaleParams {
   posAmount?: number;
   creditAmount?: number;
   notes?: string;
+  dueDate?: string | null;
 }
 
 export class SaleService {
@@ -44,12 +45,6 @@ export class SaleService {
       // Satış numarası oluştur (basitleştirilmiş)
       const saleNumber = this.generateQuickSaleNumber();
 
-      // Ödeme durumunu belirle
-      const paymentStatus = params.paymentType === 'credit' || 
-                           (params.paymentType === 'partial' && (params.creditAmount || 0) > 0)
-        ? 'pending'
-        : 'paid';
-
       // Satış kaydını oluştur
       const saleData: SaleInsert = {
         sale_number: saleNumber,
@@ -60,10 +55,10 @@ export class SaleService {
         discount_amount: params.discountAmount,
         net_amount: params.netAmount,
         payment_type: params.paymentType,
-        payment_status: paymentStatus,
         paid_amount: params.paidAmount,
         change_amount: params.changeAmount,
         sale_date: new Date().toISOString(),
+        due_date: params.dueDate || null,
         notes: params.notes || null,
       };
 
@@ -121,6 +116,60 @@ export class SaleService {
     const dateStr = now.toISOString().split('T')[0].replace(/-/g, '');
     const timeStr = now.getTime().toString().slice(-6); // Son 6 hane
     return `${dateStr}${timeStr}`;
+  }
+
+  /**
+   * Müşteriye ait satışları getirir
+   */
+  static async getCustomerSales(customerId: string): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('sales')
+        .select(`
+          *,
+          items:sale_items(
+            *,
+            product:products(*)
+          ),
+          customer:customers(*),
+          user:users(*)
+        `)
+        .eq('customer_id', customerId)
+        .order('sale_date', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching customer sales:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Satış detayını getirir
+   */
+  static async getSaleById(saleId: string): Promise<any> {
+    try {
+      const { data, error } = await supabase
+        .from('sales')
+        .select(`
+          *,
+          items:sale_items(
+            *,
+            product:products(*)
+          ),
+          customer:customers(*),
+          user:users(*)
+        `)
+        .eq('id', saleId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error fetching sale:', error);
+      throw error;
+    }
   }
 
   /**
@@ -210,6 +259,59 @@ export class SaleService {
 
     if (movements.length > 0) {
       await supabase.from('cash_movements').insert(movements);
+    }
+  }
+
+  /**
+   * Satış kaydını sil (admin only)
+   */
+  static async deleteSale(saleId: string): Promise<void> {
+    try {
+      // Önce satış bilgilerini al (müşteri bakiyesini güncellemek için)
+      const { data: sale, error: fetchError } = await supabase
+        .from('sales')
+        .select('customer_id, net_amount, payment_type')
+        .eq('id', saleId)
+        .single()
+
+      if (fetchError) {
+        throw new Error(`Satış bilgileri alınamadı: ${fetchError.message}`)
+      }
+
+      // Satışı sil
+      const { error } = await supabase
+        .from('sales')
+        .delete()
+        .eq('id', saleId)
+
+      if (error) {
+        throw new Error(`Satış silinemedi: ${error.message}`)
+      }
+
+      // Eğer veresiye satış ise müşteri bakiyesini güncelle
+      if (sale.customer_id && sale.payment_type === 'credit') {
+        const { data: customer, error: customerError } = await supabase
+          .from('customers')
+          .select('current_balance')
+          .eq('id', sale.customer_id)
+          .single()
+
+        if (!customerError && customer) {
+          // Satış silindi, bakiyeden düş
+          const newBalance = Math.max(0, (customer.current_balance || 0) - (sale.net_amount || 0))
+          
+          await supabase
+            .from('customers')
+            .update({ 
+              current_balance: newBalance,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', sale.customer_id)
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting sale:', error)
+      throw error
     }
   }
 }

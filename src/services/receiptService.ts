@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf'
 import { SaleWithDetails, Customer, User } from '@/types'
-import { PaymentTypeLabels, PaymentStatusLabels } from '@/types/enums'
+import { PaymentTypeLabels } from '@/types/enums'
 
 export interface ReceiptData {
   sale: SaleWithDetails
@@ -138,7 +138,7 @@ export function generateReceiptPDF(receiptData: ReceiptData): jsPDF {
     addLineWithRightText('Para Üstü:', `${sale.change_amount.toFixed(2)} TL`)
   }
   
-  addLineWithRightText('Durum:', PaymentStatusLabels[sale.payment_status as keyof typeof PaymentStatusLabels])
+
 
   yPosition += 4
   addSeparatorLine()

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
@@ -11,11 +12,19 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { Barcode, Search, Printer, Trash2, Loader2, Plus, FileText } from 'lucide-react';
+import { Barcode, Search, Printer, Trash2, Loader2, Plus, FileText, AlertTriangle, TrendingUp } from 'lucide-react';
 import type { POSState, POSProduct as Product, POSCart as Cart } from '@/types';
 import { Layout } from '@/components/layout/Layout';
 import { ProductService } from '@/services/productService';
 import { CustomerService } from '@/services/customerService';
+import { CustomerPaymentService } from '@/services/customerPaymentService';
+
+// Yerel tarihi YYYY-MM-DD formatında döndürür
+const getLocalDateString = () => {
+  const now = new Date()
+  const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000))
+  return localDate.toISOString().split('T')[0]
+}
 import { showToast } from '@/lib/toast';
 import { useFastSaleStore } from '@/stores/fastSaleStore';
 import { QuickCustomerModal } from '@/components/pos/QuickCustomerModal';
@@ -56,14 +65,14 @@ const FastSalePage: React.FC = () => {
   } | null>(null);
   const [isPriceChecking, setIsPriceChecking] = useState(false);
   const priceCheckInputRef = useRef<HTMLInputElement>(null);
-  
+
   // Customer selection state
-  const [customers, setCustomers] = useState<Array<{ id: string; name: string; phone: string | null; current_balance: number | null; credit_limit: number | null }>>([]);
+  const [customers, setCustomers] = useState<Array<{ id: string; name: string; phone: string | null; current_balance: number | null; credit_limit: number | null; is_active: boolean | null }>>([]);
   const [customerSearchQuery, setCustomerSearchQuery] = useState('');
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [isSearchingCustomers, setIsSearchingCustomers] = useState(false);
   const [showQuickCustomerModal, setShowQuickCustomerModal] = useState(false);
-  const [selectedCustomers, setSelectedCustomers] = useState<Record<string, { id: string; name: string; phone: string | null; current_balance: number; credit_limit: number } | null>>({
+  const [selectedCustomers, setSelectedCustomers] = useState<Record<string, { id: string; name: string; phone: string | null; current_balance: number; credit_limit: number; is_active: boolean } | null>>({
     'tab-1': null,
     'tab-2': null,
     'tab-3': null,
@@ -75,10 +84,23 @@ const FastSalePage: React.FC = () => {
   const [miscItemNote, setMiscItemNote] = useState('');
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [noteForItem, setNoteForItem] = useState<string | null>(null);
-  
+
   // Satış notu state
   const [showSaleNoteModal, setShowSaleNoteModal] = useState(false);
   const [saleNote, setSaleNote] = useState('');
+
+  // Vade tarihi state
+  const [useDueDate, setUseDueDate] = useState(false);
+  const [dueDate, setDueDate] = useState('');
+
+  // Pasif müşteri onay modalı state
+  const [showInactiveCustomerModal, setShowInactiveCustomerModal] = useState(false);
+  const [pendingInactiveCustomer, setPendingInactiveCustomer] = useState<typeof customers[0] | null>(null);
+
+  // Ödeme alma modalı state
+  const [showPaymentReceiveModal, setShowPaymentReceiveModal] = useState(false);
+  const [paymentReceiveAmount, setPaymentReceiveAmount] = useState('');
+  const [paymentReceiveType, setPaymentReceiveType] = useState<'cash' | 'pos'>('cash');
 
   // Use fast sale store instead of local state
   const {
@@ -359,7 +381,46 @@ const FastSalePage: React.FC = () => {
   };
 
   // Select customer
-  const selectCustomer = (customer: typeof customers[0]) => {
+  const selectCustomer = async (customer: typeof customers[0]) => {
+    // Pasif müşteri kontrolü - modal göster
+    if (customer.is_active === false) {
+      setPendingInactiveCustomer(customer);
+      setShowInactiveCustomerModal(true);
+      return;
+    }
+
+    // Aktif müşteri - direkt seç
+    completeCustomerSelection(customer);
+  };
+
+  // Pasif müşteri onaylandığında
+  const handleInactiveCustomerConfirm = async (activateCustomer: boolean) => {
+    if (!pendingInactiveCustomer) return;
+
+    const customer = pendingInactiveCustomer;
+
+    if (activateCustomer) {
+      try {
+        // Müşteriyi aktif et
+        await CustomerService.updateCustomer(customer.id, { is_active: true });
+        showToast.success(`${customer.name} aktif edildi`);
+        customer.is_active = true;
+      } catch (error) {
+        showToast.error('Müşteri aktif edilemedi');
+        setShowInactiveCustomerModal(false);
+        setPendingInactiveCustomer(null);
+        return;
+      }
+    }
+
+    // Müşteriyi seç
+    completeCustomerSelection(customer);
+    setShowInactiveCustomerModal(false);
+    setPendingInactiveCustomer(null);
+  };
+
+  // Müşteri seçimini tamamla
+  const completeCustomerSelection = (customer: typeof customers[0]) => {
     const activeTab = state.activeCustomerTab;
     setSelectedCustomers(prev => ({
       ...prev,
@@ -369,6 +430,7 @@ const FastSalePage: React.FC = () => {
         phone: customer.phone,
         current_balance: customer.current_balance || 0,
         credit_limit: customer.credit_limit || 0,
+        is_active: customer.is_active ?? true,
       }
     }));
 
@@ -394,7 +456,7 @@ const FastSalePage: React.FC = () => {
   const clearCustomer = () => {
     const activeTab = state.activeCustomerTab;
     const tabIndex = state.carts.findIndex(c => c.tabId === activeTab);
-    
+
     setSelectedCustomers(prev => ({
       ...prev,
       [activeTab]: null
@@ -415,9 +477,9 @@ const FastSalePage: React.FC = () => {
   };
 
   // Handle new customer created
-  const handleCustomerCreated = (customer: { id: string; name: string; phone: string | null; current_balance: number; credit_limit: number }) => {
+  const handleCustomerCreated = (customer: { id: string; name: string; phone: string | null; current_balance: number; credit_limit: number; is_active?: boolean }) => {
     // Automatically select the newly created customer
-    selectCustomer(customer);
+    selectCustomer({ ...customer, is_active: customer.is_active ?? true });
   };
 
   // Open price check modal
@@ -756,10 +818,16 @@ const FastSalePage: React.FC = () => {
     }
 
     const activeCustomer = selectedCustomers[state.activeCustomerTab];
-    
+
     // Açık hesap için müşteri kontrolü
     if ((paymentType === 'credit' || (splitPayments && splitPayments.credit > 0)) && !activeCustomer) {
       showToast.error('Açık hesap için müşteri seçmelisiniz!');
+      return;
+    }
+
+    // Pasif müşteri ile açık hesap kontrolü
+    if ((paymentType === 'credit' || (splitPayments && splitPayments.credit > 0)) && activeCustomer && !activeCustomer.is_active) {
+      showToast.error('Pasif müşteri ile açık hesap satış yapılamaz!');
       return;
     }
 
@@ -769,6 +837,8 @@ const FastSalePage: React.FC = () => {
     clearCart();
     setShowSplitPaymentModal(false);
     setSaleNote(''); // Satış notunu temizle
+    setUseDueDate(false); // Vade tarihi checkbox'ını temizle
+    setDueDate(''); // Vade tarihini temizle
     showToast.success('Satış kaydediliyor...');
 
     try {
@@ -793,6 +863,7 @@ const FastSalePage: React.FC = () => {
         posAmount: splitPayments?.pos || (paymentType === 'pos' ? paidAmount : 0),
         creditAmount: splitPayments?.credit || (paymentType === 'credit' ? activeCart.net : 0),
         notes: saleNote || undefined,
+        dueDate: (useDueDate && dueDate && (paymentType === 'credit' || paymentType === 'partial')) ? dueDate : null,
       });
 
       showToast.success('Satış başarıyla kaydedildi!');
@@ -921,6 +992,65 @@ const FastSalePage: React.FC = () => {
 
     addToCart(miscItem);
     showToast.success('Muhtelif ürün eklendi');
+  };
+
+  // Ödeme alma işlemi
+  const handlePaymentReceive = async () => {
+    const amount = parseFloat(paymentReceiveAmount);
+
+    if (!amount || amount <= 0) {
+      showToast.error('Lütfen geçerli bir tutar girin');
+      return;
+    }
+
+    const activeCustomer = selectedCustomers[state.activeCustomerTab];
+    if (!activeCustomer) {
+      showToast.error('Müşteri seçmelisiniz!');
+      return;
+    }
+
+    setIsProcessingPayment(true);
+
+    try {
+      // Ödeme kaydı oluştur
+      await CustomerPaymentService.createPayment({
+        customer_id: activeCustomer.id,
+        amount: amount,
+        payment_type: paymentReceiveType,
+        payment_date: new Date().toISOString(),
+        notes: null
+      });
+
+      // Müşteri bakiyesini güncelle
+      await CustomerService.updateCustomer(activeCustomer.id, {
+        current_balance: (activeCustomer.current_balance || 0) - amount
+      });
+
+      // Seçili müşterinin bakiyesini güncelle
+      setSelectedCustomers(prev => ({
+        ...prev,
+        [state.activeCustomerTab]: {
+          ...activeCustomer,
+          current_balance: (activeCustomer.current_balance || 0) - amount
+        }
+      }));
+
+      // State'i güncelle
+      setState(prev => ({
+        ...prev,
+        remaining: prev.remaining + amount
+      }));
+
+      setShowPaymentReceiveModal(false);
+      setPaymentReceiveAmount('');
+      setPaymentReceiveType('cash');
+      showToast.success(`${amount.toFixed(2)} ₺ ödeme alındı`);
+    } catch (error) {
+      console.error('Payment receive error:', error);
+      showToast.error('Ödeme kaydedilirken bir hata oluştu');
+    } finally {
+      setIsProcessingPayment(false);
+    }
   };
 
   // Not kaydetme
@@ -1139,6 +1269,20 @@ const FastSalePage: React.FC = () => {
               <Button
                 variant="outline"
                 size="icon"
+                onClick={() => {
+                  if (!selectedCustomers[state.activeCustomerTab]) {
+                    showToast.error('Ödeme almak için müşteri seçmelisiniz!');
+                    return;
+                  }
+                  setShowPaymentReceiveModal(true);
+                }}
+                title="Ödeme Al"
+              >
+                <TrendingUp className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
                 onClick={() => setShowSaleNoteModal(true)}
                 title="Satış Notu"
               >
@@ -1320,17 +1464,22 @@ const FastSalePage: React.FC = () => {
                   {isSearchingCustomers && (
                     <Loader2 className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />
                   )}
-                  
+
                   {/* Customer Dropdown */}
                   {showCustomerDropdown && customers.length > 0 && (
                     <div className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
                       {customers.map((customer) => (
                         <div
                           key={customer.id}
-                          className="p-2 cursor-pointer border-b last:border-b-0 hover:bg-gray-50"
+                          className={`p-2 cursor-pointer border-b last:border-b-0 hover:bg-gray-50 ${customer.is_active === false ? 'bg-gray-100' : ''}`}
                           onClick={() => selectCustomer(customer)}
                         >
-                          <div className="font-medium text-sm">{customer.name}</div>
+                          <div className="flex items-center justify-between">
+                            <div className="font-medium text-sm">{customer.name}</div>
+                            {customer.is_active === false && (
+                              <span className="text-xs bg-gray-500 text-white px-2 py-0.5 rounded">Pasif</span>
+                            )}
+                          </div>
                           <div className="text-xs text-gray-500 flex justify-between">
                             <span>{customer.phone || 'Telefon yok'}</span>
                             {customer.current_balance && customer.current_balance > 0 && (
@@ -1342,20 +1491,20 @@ const FastSalePage: React.FC = () => {
                     </div>
                   )}
                 </div>
-                
+
                 {selectedCustomers[state.activeCustomerTab] ? (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="text-xs"
                     onClick={clearCustomer}
                   >
                     Temizle
                   </Button>
                 ) : (
-                  <Button 
-                    variant="default" 
-                    size="sm" 
+                  <Button
+                    variant="default"
+                    size="sm"
                     className="text-xs"
                     onClick={() => {
                       setShowQuickCustomerModal(true);
@@ -1367,24 +1516,60 @@ const FastSalePage: React.FC = () => {
                   </Button>
                 )}
               </div>
-              
+
               {/* Selected Customer Info */}
               {selectedCustomers[state.activeCustomerTab] && (
-                <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs">
-                  <div className="font-medium text-blue-900">
-                    {selectedCustomers[state.activeCustomerTab]!.name}
+                <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs space-y-2">
+                  <div>
+                    <div className="font-medium text-blue-900">
+                      {selectedCustomers[state.activeCustomerTab]!.name}
+                    </div>
+                    <div className="text-blue-700 flex justify-between mt-1">
+                      <span>{selectedCustomers[state.activeCustomerTab]!.phone || 'Telefon yok'}</span>
+                      {selectedCustomers[state.activeCustomerTab]!.current_balance > 0 && (
+                        <span className="text-red-600 font-medium">
+                          Borç: {selectedCustomers[state.activeCustomerTab]!.current_balance.toFixed(2)} ₺
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-blue-700 flex justify-between mt-1">
-                    <span>{selectedCustomers[state.activeCustomerTab]!.phone || 'Telefon yok'}</span>
-                    {selectedCustomers[state.activeCustomerTab]!.current_balance > 0 && (
-                      <span className="text-red-600 font-medium">
-                        Borç: {selectedCustomers[state.activeCustomerTab]!.current_balance.toFixed(2)} ₺
-                      </span>
+
+                  {/* Vade Tarihi Seçimi */}
+                  <div className="border-t border-blue-200 pt-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={useDueDate}
+                        onChange={(e) => {
+                          setUseDueDate(e.target.checked);
+                          if (!e.target.checked) {
+                            setDueDate('');
+                          }
+                        }}
+                        className="w-4 h-4 rounded border-gray-300"
+                      />
+                      <span className="text-blue-900 font-medium">Vade Tarihi Belirle</span>
+                    </label>
+                    <p className="text-[10px] text-blue-700 mt-1">
+                      * Sadece açık hesap ve karma ödemelerde geçerlidir
+                    </p>
+
+                    {useDueDate && (
+                      <div className="mt-2">
+                        <Input
+                          type="date"
+                          value={dueDate}
+                          onChange={(e) => setDueDate(e.target.value)}
+                          min={getLocalDateString()}
+                          className="text-xs h-8"
+                          placeholder="Vade tarihi seçin"
+                        />
+                      </div>
                     )}
                   </div>
                 </div>
               )}
-              
+
               <div className="flex flex-col sm:flex-row justify-between text-[10px] sm:text-xs text-muted-foreground gap-1">
                 <span>{state.now}</span>
                 <span>
@@ -1702,6 +1887,146 @@ const FastSalePage: React.FC = () => {
               showToast.success('Satış notu kaydedildi');
             }}>
               Kaydet
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Ödeme Alma Modal */}
+      <Dialog open={showPaymentReceiveModal} onOpenChange={setShowPaymentReceiveModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Ödeme Al</DialogTitle>
+            <DialogDescription>
+              {selectedCustomers[state.activeCustomerTab]?.name} için ödeme kaydı oluşturun
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="payment-receive-amount">Ödeme Tutarı (₺)</Label>
+              <Input
+                id="payment-receive-amount"
+                type="number"
+                min="0"
+                step="0.01"
+                value={paymentReceiveAmount}
+                onChange={(e) => setPaymentReceiveAmount(e.target.value)}
+                placeholder="0.00"
+                autoFocus
+              />
+              {selectedCustomers[state.activeCustomerTab] && selectedCustomers[state.activeCustomerTab]!.current_balance > 0 && (
+                <p className="text-sm text-gray-500">
+                  Güncel Borç: {selectedCustomers[state.activeCustomerTab]!.current_balance.toFixed(2)} ₺
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Ödeme Tipi</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={paymentReceiveType === 'cash' ? 'default' : 'outline'}
+                  className="flex-1"
+                  onClick={() => setPaymentReceiveType('cash')}
+                >
+                  Nakit
+                </Button>
+                <Button
+                  type="button"
+                  variant={paymentReceiveType === 'pos' ? 'default' : 'outline'}
+                  className="flex-1"
+                  onClick={() => setPaymentReceiveType('pos')}
+                >
+                  Kredi Kartı
+                </Button>
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowPaymentReceiveModal(false);
+                setPaymentReceiveAmount('');
+                setPaymentReceiveType('cash');
+              }}
+              disabled={isProcessingPayment}
+            >
+              İptal
+            </Button>
+            <Button
+              onClick={handlePaymentReceive}
+              disabled={isProcessingPayment || !paymentReceiveAmount || parseFloat(paymentReceiveAmount) <= 0}
+            >
+              {isProcessingPayment ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  İşleniyor...
+                </>
+              ) : (
+                'Ödemeyi Kaydet'
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Pasif Müşteri Onay Modal */}
+      <Dialog open={showInactiveCustomerModal} onOpenChange={(open) => {
+        if (!open) {
+          setShowInactiveCustomerModal(false);
+          setPendingInactiveCustomer(null);
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-yellow-600" />
+              Müşteri Pasif Durumda
+            </DialogTitle>
+            <DialogDescription>
+              <strong>{pendingInactiveCustomer?.name}</strong> müşterisi pasif durumda.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex gap-3">
+                <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-yellow-900 mb-1">Önemli Uyarı</p>
+                  <p className="text-sm text-yellow-800">
+                    Pasif müşteriler ile açık hesap (veresiye) satış yapılamaz.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="text-sm text-gray-700">
+              <p className="font-medium mb-2">Ne yapmak istersiniz?</p>
+              <ul className="space-y-2 ml-4">
+                <li className="flex items-start gap-2">
+                  <span className="text-green-600 font-bold">•</span>
+                  <span><strong>Aktif Et:</strong> Müşteri aktif edilir ve tüm işlemler yapılabilir</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-gray-600 font-bold">•</span>
+                  <span><strong>Pasif Kalsın:</strong> Müşteri seçilir ancak açık hesap satış yapılamaz</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => handleInactiveCustomerConfirm(false)}
+            >
+              Pasif Kalsın
+            </Button>
+            <Button
+              onClick={() => handleInactiveCustomerConfirm(true)}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Aktif Et
             </Button>
           </div>
         </DialogContent>

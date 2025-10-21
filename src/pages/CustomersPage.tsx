@@ -13,7 +13,7 @@ import type { Customer } from '@/types'
 export const CustomersPage = () => {
   const [activeTab, setActiveTab] = useState<'list' | 'balance' | 'overdue'>('list')
   const [searchQuery, setSearchQuery] = useState('')
-  const [showActiveOnly, setShowActiveOnly] = useState(true)
+  const [showActiveOnly, setShowActiveOnly] = useState(false)
   const [showBalanceOnly, setShowBalanceOnly] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingCustomer, setEditingCustomer] = useState<Customer | undefined>()
@@ -30,7 +30,7 @@ export const CustomersPage = () => {
     prevPage
   } = useCustomers({
     search: searchQuery,
-    isActive: showActiveOnly,
+    isActive: showActiveOnly ? true : undefined,
     hasBalance: showBalanceOnly
   })
 
@@ -42,7 +42,8 @@ export const CustomersPage = () => {
   const handleFilterChange = (filterType: 'active' | 'balance', value: boolean) => {
     if (filterType === 'active') {
       setShowActiveOnly(value)
-      updateFilter({ isActive: value })
+      // Filtre kapalıyken undefined gönder (tüm müşterileri göster)
+      updateFilter({ isActive: value ? true : undefined })
     } else {
       setShowBalanceOnly(value)
       updateFilter({ hasBalance: value })

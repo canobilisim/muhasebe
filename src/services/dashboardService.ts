@@ -138,7 +138,7 @@ export const dashboardService = {
       .from('sales')
       .select('id')
       .eq('branch_id', branchId)
-      .eq('payment_status', 'pending')
+      .eq('payment_type', 'credit')
 
     if (pendingPaymentsError) throw pendingPaymentsError
 

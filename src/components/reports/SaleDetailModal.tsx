@@ -12,6 +12,20 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 
+// Yerel saati datetime-local input formatında döndürür
+const getLocalDateTimeString = () => {
+  const now = new Date()
+  const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000))
+  return localDate.toISOString().slice(0, 16)
+}
+
+// Date'i yerel datetime-local formatına çevirir
+const dateToLocalDateTimeString = (date: string | Date) => {
+  const d = new Date(date)
+  const localDate = new Date(d.getTime() - (d.getTimezoneOffset() * 60000))
+  return localDate.toISOString().slice(0, 16)
+}
+
 interface SaleItem {
   id: string
   product_id: string
@@ -34,7 +48,6 @@ interface SaleDetail {
   discount_amount: number
   net_amount: number
   payment_type: string
-  payment_status: string
   paid_amount: number
   change_amount: number
   notes: string | null
@@ -65,13 +78,11 @@ export const SaleDetailModal = ({ saleId, open, onClose, onUpdate, onDelete }: S
   const [formData, setFormData] = useState<{
     customer_id: string
     payment_type: string
-    payment_status: string
     notes: string
     sale_date: string
   }>({
     customer_id: '',
     payment_type: '',
-    payment_status: '',
     notes: '',
     sale_date: ''
   })
@@ -126,7 +137,6 @@ export const SaleDetailModal = ({ saleId, open, onClose, onUpdate, onDelete }: S
           discount_amount,
           net_amount,
           payment_type,
-          payment_status,
           paid_amount,
           change_amount,
           notes,
@@ -166,7 +176,6 @@ export const SaleDetailModal = ({ saleId, open, onClose, onUpdate, onDelete }: S
         discount_amount: sale.discount_amount || 0,
         net_amount: sale.net_amount || 0,
         payment_type: sale.payment_type,
-        payment_status: sale.payment_status,
         paid_amount: sale.paid_amount || 0,
         change_amount: sale.change_amount || 0,
         notes: sale.notes,
@@ -188,9 +197,8 @@ export const SaleDetailModal = ({ saleId, open, onClose, onUpdate, onDelete }: S
       setFormData({
         customer_id: detail.customer_id || '',
         payment_type: detail.payment_type as any,
-        payment_status: detail.payment_status as any,
         notes: detail.notes || '',
-        sale_date: detail.sale_date ? new Date(detail.sale_date).toISOString().slice(0, 16) : ''
+        sale_date: detail.sale_date ? dateToLocalDateTimeString(detail.sale_date) : ''
       })
     } catch (err) {
       console.error('Error fetching sale detail:', err)
@@ -221,9 +229,7 @@ export const SaleDetailModal = ({ saleId, open, onClose, onUpdate, onDelete }: S
       if (formData.payment_type) {
         updateData.payment_type = formData.payment_type
       }
-      if (formData.payment_status) {
-        updateData.payment_status = formData.payment_status
-      }
+
 
       console.log('Updating sale with data:', updateData)
 
@@ -275,18 +281,7 @@ export const SaleDetailModal = ({ saleId, open, onClose, onUpdate, onDelete }: S
     }
   }
 
-  const getPaymentStatusBadge = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return <Badge variant="default" className="bg-green-100 text-green-800">Ödendi</Badge>
-      case 'pending':
-        return <Badge variant="secondary" className="bg-orange-100 text-orange-800">Bekliyor</Badge>
-      case 'overdue':
-        return <Badge variant="destructive">Gecikmiş</Badge>
-      default:
-        return <Badge variant="outline">{status}</Badge>
-    }
-  }
+
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -455,26 +450,7 @@ export const SaleDetailModal = ({ saleId, open, onClose, onUpdate, onDelete }: S
                   <p className="font-medium">{getPaymentTypeLabel(saleDetail.payment_type)}</p>
                 )}
               </div>
-              <div>
-                <Label>Ödeme Durumu</Label>
-                {editMode ? (
-                  <Select
-                    value={formData.payment_status}
-                    onValueChange={(value) => setFormData({ ...formData, payment_status: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="paid">Ödendi</SelectItem>
-                      <SelectItem value="pending">Bekliyor</SelectItem>
-                      <SelectItem value="overdue">Gecikmiş</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <div>{getPaymentStatusBadge(saleDetail.payment_status)}</div>
-                )}
-              </div>
+
             </div>
 
             {/* Notlar */}
@@ -576,9 +552,8 @@ export const SaleDetailModal = ({ saleId, open, onClose, onUpdate, onDelete }: S
                     setFormData({
                       customer_id: saleDetail.customer_id || '',
                       payment_type: saleDetail.payment_type,
-                      payment_status: saleDetail.payment_status,
                       notes: saleDetail.notes || '',
-                      sale_date: saleDetail.sale_date ? new Date(saleDetail.sale_date).toISOString().slice(0, 16) : ''
+                      sale_date: saleDetail.sale_date ? dateToLocalDateTimeString(saleDetail.sale_date) : ''
                     })
                   }}
                   disabled={saving}

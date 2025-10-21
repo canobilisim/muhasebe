@@ -74,15 +74,39 @@ src/
 - `authStore.ts`: Kullanıcı kimlik doğrulama ve yetkilendirme
 
 **Modül Bileşenleri**
-- **POS**: `BarcodeInput`, `ProductSearch`, `PaymentTypeButtons`, `ReceiptModal`
-- **Müşteriler**: `CustomerTable`, `CustomerForm`, `CustomerBalanceReport`, `OverduePayments`
+- **POS**: `BarcodeInput`, `ProductSearch`, `PaymentTypeButtons`, `ReceiptModal`, `QuickCustomerModal`, `SplitPaymentModal`
+- **Müşteriler**: 
+  - `CustomerTable` - Müşteri listesi tablosu
+  - `CustomerForm` - Müşteri ekleme/düzenleme formu
+  - `CustomerModal` - Müşteri modal diyalogu
+  - `CustomerBalanceReport` - Bakiye raporu
+  - `OverduePayments` - Vadesi geçmiş ödemeler
+  - `CustomerSalesTable` - Müşteri satış geçmişi tablosu
+  - `CustomerTransactionsTable` - Birleşik işlem geçmişi (satış + ödeme, admin silme yetkisi)
+  - `SaleDetailModal` - Satış detay görüntüleme modal (ürünler, özetler, notlar)
+  - `SaleEditModal` - Satış düzenleme modal (vade, durum, notlar)
+  - `PaymentDetailModal` - Ödeme detay görüntüleme modal (ödeme numarası, tutar, tip, tarih)
 - **Stok**: `ProductTable`, `ProductForm`, `StockFilters`, `DeleteProductDialog`
 - **Kasa**: `CashSummary`, `CashMovementsTable`, `IncomeExpenseModal`, `DailyCashReport`
+- **UI Bileşenleri**: 
+  - `ConfirmDialog` - Yeniden kullanılabilir onay diyalogu (danger, warning, info varyantları)
+  - `Dialog`, `DialogContent`, `DialogHeader`, `DialogTitle`, `DialogDescription` - ShadCN UI dialog bileşenleri
+  - `Table`, `TableBody`, `TableCell`, `TableHead`, `TableHeader`, `TableRow` - ShadCN UI tablo bileşenleri
+
+**Sayfa Bileşenleri**
+- **Dashboard**: Ana sayfa, KPI'lar ve grafikler
+- **Customers**: Müşteri listesi ve yönetimi
+- **CustomerDetail**: Müşteri detay sayfası (bilgiler, istatistikler, alışveriş geçmişi)
+- **Stock**: Stok yönetimi
+- **Cash**: Kasa işlemleri
+- **Reports**: Raporlama
+- **Settings**: Sistem ayarları
 
 **Servisler**
 - `dashboardService.ts`: Dashboard KPI'ları ve satış analitiği
 - `productService.ts`: Ürün CRUD işlemleri ve stok kontrolü
 - `customerService.ts`: Müşteri yönetimi ve borç takibi
+- `customerPaymentService.ts`: Müşteri ödeme kayıtları yönetimi
 - `cashService.ts`: Kasa işlemleri ve raporlama
 - `salesService.ts`: Satış işlemleri ve fiş oluşturma
 - `receiptService.ts`: PDF fiş oluşturma ve WhatsApp entegrasyonu
@@ -115,6 +139,78 @@ src/
 - 🏢 **Multi-tenant**: Şube bazlı veri izolasyonu
 - 🤖 **AI Entegrasyonu**: Kiro AI asistanı ile MCP protokolü üzerinden Supabase entegrasyonu
 
+## Son Güncellemeler
+
+### 21 Ekim 2024
+
+#### UI İyileştirmeleri ✅ (YENİ - 21 Ekim 2024)
+- **Ödeme Modal Geliştirmesi**: Müşteri detay sayfasında ödeme alma deneyimi iyileştirildi
+  - "Ödeme Al" butonuna tıklandığında tarih/saat alanı otomatik olarak güncel değerle doldurulur
+  - Kullanıcı manuel tarih girişi yapmak zorunda kalmaz
+  - Ödeme kayıtlarında tutarlı zaman damgası sağlanır
+  - **Timezone Desteği**: `getLocalDateTimeString()` yardımcı fonksiyonu eklendi
+    - Kullanıcının yerel saat dilimini otomatik algılar
+    - Timezone offset hesaplaması ile doğru yerel saat gösterimi
+    - `datetime-local` input formatına uygun string dönüşümü
+    - Kod: `new Date(now.getTime() - (now.getTimezoneOffset() * 60000))`
+
+#### Dokümantasyon Düzeltmesi ✅
+- **Ödeme Numarası Format Tutarlılığı**: Tüm dokümantasyonda ödeme numarası formatı `ODM-YYYYMMDD-NNNNNN` olarak standardize edildi
+  - Migration comment'i düzeltildi (6 haneli format)
+  - README ve migration dokümantasyonu güncellendi
+  - Gerçek implementasyon ile tutarlılık sağlandı
+
+#### Ödeme Numarası Sistemi ✅ (YENİ)
+- **Otomatik Ödeme Numarası**: Müşteri ödemelerine otomatik benzersiz numara atama
+  - Format: `ODM-YYYYMMDD-NNNNNN` (örn: "ODM-20241021-000001")
+  - Şube bazlı ve günlük sıralı numaralandırma (6 haneli)
+  - `generate_payment_number` RPC fonksiyonu ile güvenli oluşturma
+  - Race condition koruması ile çakışma engelleme
+  - Migration: `007_add_payment_number.sql`
+  - Trigger ile otomatik atama (`trigger_set_payment_number`)
+  - **Düzeltme**: Dokümantasyon format tutarlılığı sağlandı
+
+#### İşlem Silme Sistemi ✅
+- **CustomerTransactionsTable**: İşlem geçmişi tablosuna silme özelliği eklendi
+  - Admin kullanıcılar için satış ve ödeme silme butonları
+  - Rol tabanlı erişim kontrolü (RBAC) ile güvenlik
+  - `onDeleteSale` ve `onDeletePayment` callback fonksiyonları
+  - ⚠️ **Bilinen Sorun**: `isAdmin` import hatası düzeltilmeli (useAuth hook kullanılmalı)
+  - Detaylı dokümantasyon: `docs/CUSTOMER_TRANSACTIONS_TABLE.md`
+
+- **CustomerDetailPage**: İşlem silme onay sistemi eklendi ✅
+  - Müşteri detay sayfasından satış ve ödeme kayıtları silinebilir
+  - Güvenli onay diyalogu ile kullanıcı bilgilendirmesi
+  - `ConfirmDialog` bileşeni ile tutarlı UX deneyimi
+  - Silme işlemi sonrası otomatik sayfa yenileme
+  - Admin yetkisi kontrolü ile güvenlik
+  - İşlem tipi bazlı dinamik mesajlar (satış/ödeme)
+  - `SaleService.deleteSale()` ve `CustomerPaymentService.deletePayment()` entegrasyonu
+
+#### UI İyileştirmeleri ✅ (YENİ)
+- **Ödeme Modal Geliştirmesi**: Müşteri detay sayfasında ödeme alma modal'ı iyileştirildi
+  - "Ödeme Al" butonuna tıklandığında tarih alanı otomatik olarak güncel tarih/saat ile doldurulur
+  - Kullanıcı deneyimi iyileştirmesi - manuel tarih girişi gerekliliği azaltıldı
+  - Ödeme kayıtlarında doğru zaman damgası sağlanması
+  - **Timezone Desteği**: Yerel saat dilimi otomatik algılama ve dönüşüm
+
+- **SaleService**: Satış silme işlemi geliştirildi ✅
+  - Veresiye satışlar için otomatik müşteri bakiyesi güncelleme
+  - Satış silindiğinde müşteri borcundan düşürme
+  - Veri bütünlüğü koruması ve hata yönetimi
+  - Cascade delete ile ilişkili kayıtların temizlenmesi
+  - Admin yetkisi gerektiren güvenli silme işlemi
+  
+- **SaleDetailModal**: Satış detay modal bileşeni güncellendi
+  - Kod yapısı ve formatı iyileştirildi
+  - Responsive tasarım optimizasyonları
+  - Tablo görünümü ve veri gösterimi iyileştirmeleri
+
+#### Dokümantasyon Güncellemeleri
+- `docs/CUSTOMER_TRANSACTIONS_TABLE.md` - İşlem geçmişi tablosu detaylı dokümantasyonu
+- `docs/SALE_DELETE_ENHANCEMENT.md` - Satış silme özelliği geliştirmeleri
+- `docs/KNOWN_ISSUES.md` - Bilinen sorunlar ve çözüm önerileri
+
 ## Mevcut Durum
 
 ### ✅ Tamamlanan Özellikler
@@ -142,7 +238,33 @@ src/
   - CRUD işlemleri ve müşteri listesi
   - Borç takibi ve bakiye hesaplama
   - Vadesi yaklaşan tahsilatlar
+  - Vade tarihi takibi (açık hesap satışlar için)
   - Excel/PDF export fonksiyonları
+  - Müşteri ödeme kayıtları yönetimi (CustomerPaymentService)
+  - **Otomatik Ödeme Numarası Sistemi**: 
+    - Benzersiz ödeme numarası oluşturma (ODM-YYYYMMDD-NNNNNN formatı)
+    - Şube bazlı prefix ve günlük sıralı numaralandırma
+    - Race condition koruması ile güvenli atama
+    - Trigger ile otomatik oluşturma (`generate_payment_number` RPC fonksiyonu)
+  - Hızlı satış ekranından direkt ödeme alma
+  - Birleşik işlem geçmişi (satışlar + ödemeler)
+  - Aktif/Pasif müşteri durumu yönetimi
+  - Pasif müşteri uyarı sistemi (açık hesap satış engelleme)
+  - Müşteri detay sayfası
+    - Müşteri bilgileri ve istatistikleri (bakiye, toplam alışveriş, son alışveriş, durum)
+    - Alışveriş geçmişi tablosu (CustomerSalesTable)
+    - İşlem geçmişi tablosu (CustomerTransactionsTable) - satışlar ve ödemeler birleşik görünüm
+    - Satış detay görüntüleme modal (SaleDetailModal):
+      - Satış numarası ve tarih bilgisi
+      - Müşteri ve ödeme tipi gösterimi
+      - Ürün listesi (barkod, miktar, birim fiyat, indirim, toplam)
+      - Satış özeti (ara toplam, indirim, net toplam, ödenen, para üstü)
+      - Satış notları görüntüleme
+      - Responsive tasarım ve scroll desteği
+    - Bakiye ve kredi limiti takibi
+    - Vade tarihi görüntüleme
+    - Running balance hesaplama (her işlem sonrası bakiye)
+    - Ödeme alma modal (nakit/kredi kartı, tarih seçimi)
 - **Stok Yönetimi**: 
   - Ürün listesi ve CRUD işlemleri
   - Stok kontrolü ve kritik stok uyarıları
@@ -204,10 +326,78 @@ Uygulama test edilebilir demo hesapları içerir:
 
 ### Müşteri Yönetimi Özellikleri
 - **Müşteri Listesi**: Arama, filtreleme ve sayfalama
-- **CRUD İşlemleri**: Müşteri ekleme, düzenleme, silme
+- **CRUD İşlemleri**: Müşteri ekleme, düzenleme, silme (soft/hard delete)
 - **Borç Takibi**: Güncel bakiye ve ödeme geçmişi
-- **Vadeli Satışlar**: Kredi limiti kontrolü
+- **Vadeli Satışlar**: Kredi limiti kontrolü ve vade tarihi takibi
 - **Raporlama**: Excel/PDF export, vadesi yaklaşan tahsilatlar
+- **Aktif/Pasif Durum Yönetimi**:
+  - Müşteri aktif/pasif durumu kontrolü
+  - Pasif müşteri seçiminde uyarı sistemi
+  - Pasif müşteri ile açık hesap satış engelleme
+  - Müşteri aktifleştirme seçeneği
+- **İşlem Geçmişi**: Satışlar ve ödemelerin birleşik görünümü (CustomerTransactionsTable)
+  - Satış ve ödeme işlemlerini tek tabloda gösterim
+  - Running balance hesaplama (her işlem sonrası bakiye)
+  - İşlem tipi göstergeleri (satış/ödeme badge'leri)
+  - Ödeme tipi bilgisi (nakit, kredi kartı, veresiye, karma)
+  - Tıklanabilir satırlar (detay görüntüleme için)
+  - Satış detayı için SaleDetailModal açılır
+  - Ödeme detayı için PaymentDetailModal açılır
+  - Admin kullanıcılar için satış ve ödeme silme butonları
+  - Rol tabanlı silme yetkisi kontrolü (useAuth hook ile)
+- **Müşteri Detay Sayfası**:
+  - Müşteri bilgi kartları (bakiye, toplam alışveriş, son alışveriş, durum)
+  - İletişim bilgileri ve vergi bilgileri
+  - Alışveriş geçmişi tablosu (CustomerSalesTable)
+  - **Satış Detay Modal (SaleDetailModal)**:
+    - Satış numarası ve tarih bilgisi
+    - Müşteri ve ödeme tipi gösterimi
+    - Detaylı ürün listesi tablosu:
+      - Ürün adı ve barkod bilgisi
+      - Miktar, birim fiyat, indirim
+      - Satır toplamları
+    - Satış özeti bölümü:
+      - Ara toplam hesaplama
+      - İndirim tutarı (varsa)
+      - Net toplam (kalın vurgu)
+      - Ödenen tutar ve para üstü
+    - Satış notları görüntüleme
+    - Responsive tasarım (max-w-4xl, scroll desteği)
+    - İkonlu başlıklar ve görsel zenginleştirme
+  - Satış düzenleme modal (SaleEditModal):
+    - Vade tarihi güncelleme (açık hesap satışlar için)
+    - Ödeme durumu değiştirme (Ödendi, Bekliyor, Vadesi Geçti)
+    - Satış notları ekleme ve düzenleme
+    - Vadesi geçmiş satış uyarıları
+    - Satış bilgileri özeti (tarih, müşteri, tutar, ödeme tipi)
+  - Ödeme detay görüntüleme modal (PaymentDetailModal):
+    - **Otomatik Ödeme Numarası Gösterimi**: ODM-YYYYMMDD-NNNN formatında benzersiz numara
+    - Ödeme tutarı ve tipi (nakit/kredi kartı)
+    - Ödeme tarihi ve saati
+    - İşlemi yapan kullanıcı bilgisi
+    - Ödeme notları
+    - Görsel olarak zenginleştirilmiş arayüz (ikonlar ve renkli kartlar)
+  - Ödeme alma modal:
+    - Nakit veya kredi kartı ile ödeme alma
+    - Tarih ve saat seçimi (otomatik güncel tarih/saat doldurma)
+    - **Timezone Desteği**: `getLocalDateTimeString()` ile yerel saat dilimi dönüşümü
+    - Güncel borç gösterimi
+    - Otomatik bakiye güncelleme
+    - CustomerPaymentService ile ödeme kaydı oluşturma
+    - UI iyileştirmesi: Modal açıldığında tarih alanı otomatik doldurulur
+  - **İşlem silme sistemi**:
+    - Admin kullanıcılar için satış ve ödeme silme yetkisi
+    - Güvenli onay diyalogu ile kullanıcı bilgilendirmesi
+    - İşlem tipi bazlı dinamik mesajlar (satış/ödeme)
+    - Silme işlemi sonrası otomatik veri yenileme
+    - `SaleService.deleteSale()` ve `CustomerPaymentService.deletePayment()` entegrasyonu
+  - Müşteri silme işlemi:
+    - İki aşamalı onay sistemi (ConfirmDialog bileşeni ile)
+    - İşlem geçmişi olan müşteriler için ek uyarı
+    - Kalıcı silme (cascade delete - tüm satış ve ödeme kayıtları silinir)
+    - Güvenli silme akışı ve kullanıcı bilgilendirmesi
+  - Ödeme durumu ve tip gösterimi
+  - Vade tarihi takibi (açık hesap satışlar için)
 
 ### Stok Yönetimi Özellikleri
 - **Ürün Listesi**: Kategori bazlı filtreleme ve arama
@@ -238,6 +428,10 @@ Uygulama test edilebilir demo hesapları içerir:
 - **Analytics Engine**: Gerçek zamanlı KPI hesaplama ve trend analizi
 - **Data Aggregation**: Optimize edilmiş veri toplama ve gruplama işlemleri
 - **AI Integration**: MCP protokolü ile Kiro AI asistanı entegrasyonu
+- **Timezone Support**: Yerel saat dilimi desteği ve otomatik dönüşüm
+  - `getLocalDateTimeString()` yardımcı fonksiyonu ile timezone offset hesaplama
+  - `datetime-local` input formatına uygun tarih/saat gösterimi
+  - Kullanıcının yerel saat dilimini otomatik algılama
 
 ## API Yapısı
 
@@ -283,12 +477,172 @@ ProductService.isOutOfStock(product: Product): boolean
 ```typescript
 // Müşteri CRUD işlemleri
 CustomerService.getCustomers(filter?: CustomerFilter): Promise<ApiResponse<Customer[]>>
+CustomerService.getCustomerById(id: string): Promise<Customer>
 CustomerService.createCustomer(customer: CustomerInsert): Promise<ApiResponse<Customer>>
 CustomerService.updateCustomer(id: string, customer: CustomerUpdate): Promise<ApiResponse<Customer>>
+CustomerService.deleteCustomer(id: string): Promise<void>  // Soft delete (is_active = false)
+CustomerService.permanentlyDeleteCustomer(id: string): Promise<void>  // Hard delete (cascades to sales and payments)
 
 // Borç takibi
 CustomerService.getCustomerBalance(customerId: string): Promise<ApiResponse<CustomerBalance>>
 CustomerService.getOverduePayments(): Promise<ApiResponse<OverduePayment[]>>
+```
+
+### CustomerPaymentService
+```typescript
+// Ödeme kaydı oluşturma
+CustomerPaymentService.createPayment(payment: Omit<CustomerPaymentInsert, 'branch_id' | 'user_id' | 'payment_number'>): Promise<CustomerPayment>
+
+// Müşteri ödemelerini getirme
+CustomerPaymentService.getCustomerPayments(customerId: string): Promise<CustomerPaymentWithDetails[]>
+
+// Ödeme silme
+CustomerPaymentService.deletePayment(id: string): Promise<void>
+
+// Ödeme veri yapısı
+interface CustomerPayment {
+  id: string
+  customer_id: string
+  amount: number
+  payment_type: 'cash' | 'pos'
+  payment_date: string
+  payment_number: string | null  // Otomatik oluşturulan benzersiz ödeme numarası
+  notes?: string | null
+  branch_id: string
+  user_id: string
+  created_at: string
+}
+
+interface CustomerPaymentWithDetails extends CustomerPayment {
+  customer?: Customer
+  user?: User
+}
+
+// Kullanım örneği - Hızlı satış ekranından ödeme alma
+const payment = await CustomerPaymentService.createPayment({
+  customer_id: 'customer-uuid',
+  amount: 1000,
+  payment_type: 'cash',
+  payment_date: new Date().toISOString(),
+  notes: 'Hızlı satış ekranından alınan ödeme'
+})
+// Returns: { id, customer_id, amount, payment_type, payment_date, payment_number: "ODM-20241021-000001", ... }
+
+// Ödeme numarası otomatik oluşturulur:
+// - Format: ODM-YYYYMMDD-NNNNNN (örn: "ODM-20241021-000001")
+// - Şube prefiksi (branch name'in ilk 3 harfi, varsayılan: "ODM")
+// - Günlük sıralı numaralandırma (her gün 1'den başlar)
+// - Benzersizlik garantisi (race condition koruması)
+
+// Ardından müşteri bakiyesi güncellenir
+await CustomerService.updateCustomer(customerId, {
+  current_balance: currentBalance - amount
+})
+```
+
+### CustomerService - Transaction History
+```typescript
+// Müşterinin tüm işlemlerini getir (satışlar + ödemeler birleşik)
+CustomerService.getCustomerTransactions(customerId: string): Promise<CustomerTransaction[]>
+
+// İşlem veri yapısı
+interface CustomerTransaction {
+  id: string
+  type: 'sale' | 'payment'
+  date: string | null
+  amount: number  // Satışlar için pozitif, ödemeler için negatif
+  paymentType: string
+  description: string
+  balance: number  // Running balance (işlem sonrası bakiye)
+  sale?: SaleWithDetails  // Satış ise detayları
+  payment?: CustomerPaymentWithDetails  // Ödeme ise detayları
+}
+
+// Kullanım örneği - Müşteri işlem geçmişi
+const transactions = await CustomerService.getCustomerTransactions(customerId)
+// transactions array'i satış ve ödemeleri tarih sırasına göre birleştirir
+// Her işlem için running balance hesaplanır
+```
+
+### SaleService
+```typescript
+// Satış oluşturma
+SaleService.createSale(params: CreateSaleParams): Promise<{ success: boolean, sale: Sale }>
+
+// CreateSaleParams interface
+interface CreateSaleParams {
+  customerId: string | null
+  items: Array<{
+    productId: string | null
+    quantity: number
+    unitPrice: number
+    discount: number
+    note?: string
+    isMiscellaneous?: boolean
+  }>
+  totalAmount: number
+  discountAmount: number
+  netAmount: number
+  paymentType: 'cash' | 'pos' | 'credit' | 'partial'
+  paidAmount: number
+  changeAmount: number
+  cashAmount?: number
+  posAmount?: number
+  creditAmount?: number
+  notes?: string
+  dueDate?: string | null  // Vade tarihi - açık hesap satışlar için
+}
+
+// Müşteri satış geçmişi
+SaleService.getCustomerSales(customerId: string): Promise<SaleWithDetails[]>
+
+// Satış detayı
+SaleService.getSaleById(saleId: string): Promise<SaleWithDetails>
+
+// Satış silme (admin only) - Gelişmiş bakiye yönetimi ile
+SaleService.deleteSale(saleId: string): Promise<void>
+// Özellikler:
+// - Veresiye satışlar için otomatik müşteri bakiyesi güncelleme
+// - Cascade delete ile ilişkili kayıtların temizlenmesi
+// - Veri bütünlüğü koruması
+
+// Satış güncelleme (vade tarihi, ödeme durumu, notlar)
+// Not: Doğrudan Supabase kullanılır, SaleEditModal bileşeninde
+supabase.from('sales').update({
+  due_date: string | null,
+  payment_status: 'paid' | 'pending' | 'overdue',
+  notes: string | null,
+  updated_at: string
+}).eq('id', saleId)
+
+// Ödeme alma (hızlı satış ve müşteri detay sayfasından)
+// Not: CustomerPaymentService kullanılarak ödeme kaydı oluşturulur
+await CustomerPaymentService.createPayment({
+  customer_id: customerId,
+  amount: amount,
+  payment_type: 'cash' | 'pos',
+  payment_date: new Date().toISOString(),
+  notes: 'Hızlı satış ekranından alınan ödeme'
+})
+// Ardından müşteri bakiyesi güncellenir
+await CustomerService.updateCustomer(customerId, {
+  current_balance: currentBalance - amount
+})
+
+// Satış veri yapısı
+interface Sale {
+  id: string
+  sale_number: string
+  sale_date: string
+  due_date?: string | null  // Vade tarihi - açık hesap satışlar için
+  total_amount: number
+  discount_amount: number
+  net_amount: number
+  payment_type: PaymentType
+  payment_status: PaymentStatus  // 'paid' | 'pending' | 'overdue'
+  notes?: string | null
+  // ... diğer alanlar
+}
 ```
 
 ### CashService
@@ -448,6 +802,37 @@ npm run lint
 
 Detaylı veritabanı kurulum talimatları için `supabase/README.md` dosyasına bakın.
 
+### RPC Fonksiyonları
+
+#### generate_payment_number
+```sql
+-- Otomatik ödeme numarası oluşturma
+SELECT generate_payment_number('branch-uuid');
+-- Returns: 'ODM-20241021-000001'
+```
+
+**Özellikler**:
+- Şube bazlı prefix oluşturma (branch name'in ilk 3 harfi)
+- Günlük sıralı numaralandırma (YYYYMMDD formatında)
+- 6 haneli sıra numarası (000001-999999)
+- Race condition koruması ile benzersizlik garantisi
+- Trigger ile otomatik atama (`trigger_set_payment_number`)
+
+#### generate_sale_number
+```sql
+-- Otomatik satış numarası oluşturma
+SELECT generate_sale_number('branch-uuid');
+-- Returns: 'SAT-20241021-0001'
+```
+
+### Migration Geçmişi
+- `006_customer_payments_table.sql` - Customer payments table oluşturma
+- `007_add_payment_number.sql` - Ödeme numarası sistemi ekleme ✅ (YENİ)
+  - `payment_number` sütunu ekleme (VARCHAR(50) UNIQUE)
+  - `generate_payment_number` RPC fonksiyonu
+  - `set_payment_number` trigger fonksiyonu
+  - Otomatik indeks oluşturma (`idx_customer_payments_payment_number`)
+
 ## Sorun Giderme
 
 ### TypeScript Hataları
@@ -482,6 +867,28 @@ Detaylı veritabanı kurulum talimatları için `supabase/README.md` dosyasına 
 - **Teknik Rehber**: `.kiro/steering/tech.md`
 - **Proje Yapısı**: `.kiro/steering/structure.md`
 - **MCP Yapılandırması**: `.kiro/settings/mcp.json`
+
+## Dokümantasyon
+
+### Özellik Dokümantasyonu
+- `docs/CUSTOMER_DELETE_FEATURE.md` - Müşteri silme özelliği ve güvenlik
+- `docs/CUSTOMER_PAYMENTS_UPDATE.md` - Ödeme sistemi güncellemesi
+- `docs/CUSTOMER_TRANSACTIONS_TABLE.md` - İşlem geçmişi tablosu
+- `docs/SALE_DELETE_ENHANCEMENT.md` - Satış silme özelliği geliştirmeleri (yeni)
+- `docs/SALE_DETAIL_MODAL.md` - Satış detay modal bileşeni
+- `docs/TIMEZONE_SUPPORT.md` - Saat dilimi desteği ve yerel saat dönüşümü (yeni)
+- `docs/FORM_STANDARTLARI.md` - Form standartları ve best practices
+
+### Teknik Dokümantasyon
+- `docs/SUPABASE_SETUP.md` - Supabase kurulum ve yapılandırma
+- `supabase/migrations/006_customer_payments_table_README.md` - Ödeme tablosu migration
+- `supabase/migrations/007_add_payment_number.sql` - Ödeme numarası sistemi (yeni)
+- `docs/KNOWN_ISSUES.md` - Bilinen sorunlar ve çözümleri
+
+### Geliştirme Notları
+- Tüm dokümantasyon Türkçe dilinde yazılmıştır
+- Kod örnekleri ve API kullanımları içerir
+- Düzenli olarak güncellenir
 
 ## Lisans
 

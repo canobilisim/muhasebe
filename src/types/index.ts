@@ -96,6 +96,7 @@ export type Sale = Database['public']['Tables']['sales']['Row']
 export type SaleItem = Database['public']['Tables']['sale_items']['Row']
 export type CashMovement = Database['public']['Tables']['cash_movements']['Row']
 export type FastSaleCategory = Database['public']['Tables']['fast_sale_categories']['Row']
+export type CustomerPayment = Database['public']['Tables']['customer_payments']['Row']
 
 export type BranchInsert = Database['public']['Tables']['branches']['Insert']
 export type UserInsert = Database['public']['Tables']['users']['Insert']
@@ -105,6 +106,7 @@ export type SaleInsert = Database['public']['Tables']['sales']['Insert']
 export type SaleItemInsert = Database['public']['Tables']['sale_items']['Insert']
 export type CashMovementInsert = Database['public']['Tables']['cash_movements']['Insert']
 export type FastSaleCategoryInsert = Database['public']['Tables']['fast_sale_categories']['Insert']
+export type CustomerPaymentInsert = Database['public']['Tables']['customer_payments']['Insert']
 
 export type BranchUpdate = Database['public']['Tables']['branches']['Update']
 export type UserUpdate = Database['public']['Tables']['users']['Update']
@@ -114,8 +116,26 @@ export type SaleUpdate = Database['public']['Tables']['sales']['Update']
 export type SaleItemUpdate = Database['public']['Tables']['sale_items']['Update']
 export type CashMovementUpdate = Database['public']['Tables']['cash_movements']['Update']
 export type FastSaleCategoryUpdate = Database['public']['Tables']['fast_sale_categories']['Update']
+export type CustomerPaymentUpdate = Database['public']['Tables']['customer_payments']['Update']
 
 // Extended types
+export type CustomerPaymentWithDetails = CustomerPayment & {
+  customer?: Customer
+  user?: User
+}
+
+// Birleşik müşteri işlem tipi (satış veya ödeme)
+export type CustomerTransaction = {
+  id: string
+  type: 'sale' | 'payment'
+  date: string
+  amount: number
+  paymentType: string
+  description: string
+  balance?: number
+  sale?: SaleWithDetails
+  payment?: CustomerPaymentWithDetails
+}
 export type ProductWithStock = Product & {
   isLowStock: boolean
   stockStatus: 'critical' | 'low' | 'normal'

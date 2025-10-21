@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FormattedInput } from '@/components/ui/formatted-input'
+import { Checkbox } from '@/components/ui/checkbox'
 import { CustomerService } from '@/services/customerService'
 import type { Customer, CustomerInsert, CustomerUpdate } from '@/types'
 
@@ -20,7 +21,8 @@ export const CustomerForm = ({ customer, onSave, onCancel }: CustomerFormProps) 
     email: '',
     address: '',
     tax_number: '',
-    credit_limit: 0
+    credit_limit: 0,
+    is_active: true
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -33,7 +35,8 @@ export const CustomerForm = ({ customer, onSave, onCancel }: CustomerFormProps) 
         email: customer.email || '',
         address: customer.address || '',
         tax_number: customer.tax_number || '',
-        credit_limit: customer.credit_limit || 0
+        credit_limit: customer.credit_limit || 0,
+        is_active: customer.is_active ?? true
       })
     }
   }, [customer])
@@ -67,7 +70,8 @@ export const CustomerForm = ({ customer, onSave, onCancel }: CustomerFormProps) 
           email: formData.email.trim() || null,
           address: formData.address.trim() || null,
           tax_number: formData.tax_number.trim() || null,
-          credit_limit: formData.credit_limit
+          credit_limit: formData.credit_limit,
+          is_active: formData.is_active
         }
         savedCustomer = await CustomerService.updateCustomer(customer.id, updateData)
       } else {
@@ -176,6 +180,24 @@ export const CustomerForm = ({ customer, onSave, onCancel }: CustomerFormProps) 
                 placeholder="0.00"
               />
             </div>
+
+            {customer && (
+              <div className="space-y-2 md:col-span-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="is_active"
+                    checked={formData.is_active}
+                    onCheckedChange={(checked) => handleInputChange('is_active', checked === true)}
+                  />
+                  <Label htmlFor="is_active" className="cursor-pointer">
+                    Müşteri Aktif
+                  </Label>
+                </div>
+                <p className="text-sm text-gray-500">
+                  Pasif müşteriler hızlı satış ekranında seçildiğinde uyarı verilir ve açık hesap satış yapılamaz.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">

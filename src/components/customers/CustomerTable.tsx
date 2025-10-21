@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -30,6 +31,7 @@ export const CustomerTable = ({
   onAddCustomer,
   isLoading = false 
 }: CustomerTableProps) => {
+  const navigate = useNavigate()
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const { handleError, showSuccess } = useErrorHandler()
 
@@ -92,18 +94,24 @@ export const CustomerTable = ({
         </TableHeader>
         <TableBody>
           {customers.map((customer) => (
-            <TableRow key={customer.id}>
-              <TableCell className="font-medium">
+            <TableRow 
+              key={customer.id}
+              className="cursor-pointer hover:bg-gray-50"
+              onClick={() => navigate(`/customers/${customer.id}`)}
+            >
+              <TableCell className="font-medium align-top">
                 <div>
-                  <div className="font-semibold">{customer.name}</div>
+                  <div className="font-semibold">
+                    {customer.name}
+                  </div>
                   {customer.address && (
-                    <div className="text-sm text-gray-500 truncate max-w-xs">
+                    <div className="text-sm text-gray-500 truncate max-w-xs mt-1">
                       {customer.address}
                     </div>
                   )}
                 </div>
               </TableCell>
-              <TableCell>
+              <TableCell className="align-top">
                 <div className="space-y-1">
                   {customer.phone && (
                     <div className="flex items-center gap-1 text-sm">
@@ -122,24 +130,24 @@ export const CustomerTable = ({
                   )}
                 </div>
               </TableCell>
-              <TableCell>
+              <TableCell className="align-top">
                 {customer.tax_number || '-'}
               </TableCell>
-              <TableCell className="text-right">
-                {formatCurrency(customer.credit_limit)}
+              <TableCell className="text-right align-top">
+                {formatCurrency(customer.credit_limit ?? 0)}
               </TableCell>
-              <TableCell className="text-right">
-                <span className={customer.current_balance > 0 ? 'text-red-600 font-semibold' : 'text-gray-600'}>
-                  {formatCurrency(customer.current_balance)}
+              <TableCell className="text-right align-top">
+                <span className={(customer.current_balance ?? 0) > 0 ? 'text-red-600 font-semibold' : 'text-gray-600'}>
+                  {formatCurrency(customer.current_balance ?? 0)}
                 </span>
               </TableCell>
-              <TableCell>
+              <TableCell className="align-top">
                 <Badge variant={customer.is_active ? 'default' : 'secondary'}>
                   {customer.is_active ? 'Aktif' : 'Pasif'}
                 </Badge>
               </TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
+              <TableCell className="text-right align-top">
+                <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                   <Button
                     variant="outline"
                     size="sm"

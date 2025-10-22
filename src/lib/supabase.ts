@@ -19,3 +19,8 @@ export const supabase = createClient<Database>(
     },
   }
 )
+
+// Make supabase available globally for debugging (development only)
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
+  (window as any).supabase = supabase
+}

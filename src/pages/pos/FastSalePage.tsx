@@ -29,6 +29,8 @@ import { showToast } from '@/lib/toast';
 import { useFastSaleStore } from '@/stores/fastSaleStore';
 import { QuickCustomerModal } from '@/components/pos/QuickCustomerModal';
 import { SplitPaymentModal } from '@/components/pos/SplitPaymentModal';
+import { ProductNotFoundModal } from '@/components/pos/ProductNotFoundModal';
+import { QuickProductAddModal } from '@/components/pos/QuickProductAddModal';
 import { formatNameToTitleCase } from '@/utils/inputFormatters';
 import { SaleService } from '@/services/saleService';
 
@@ -101,6 +103,11 @@ const FastSalePage: React.FC = () => {
   const [showPaymentReceiveModal, setShowPaymentReceiveModal] = useState(false);
   const [paymentReceiveAmount, setPaymentReceiveAmount] = useState('');
   const [paymentReceiveType, setPaymentReceiveType] = useState<'cash' | 'pos'>('cash');
+
+  // Ürün bulunamadı modalı state
+  const [showProductNotFoundModal, setShowProductNotFoundModal] = useState(false);
+  const [showQuickProductAddModal, setShowQuickProductAddModal] = useState(false);
+  const [notFoundBarcode, setNotFoundBarcode] = useState('');
 
   // Use fast sale store instead of local state
   const {
@@ -261,7 +268,9 @@ const FastSalePage: React.FC = () => {
         }
         setSearchQuery('');
       } else {
-        showToast.error('Ürün bulunamadı');
+        // Ürün bulunamadı - modal göster
+        setNotFoundBarcode(barcode.trim());
+        setShowProductNotFoundModal(true);
       }
     } catch (error) {
       console.error('Error searching product:', error);
@@ -480,6 +489,56 @@ const FastSalePage: React.FC = () => {
   const handleCustomerCreated = (customer: { id: string; name: string; phone: string | null; current_balance: number; credit_limit: number; is_active?: boolean }) => {
     // Automatically select the newly created customer
     selectCustomer({ ...customer, is_active: customer.is_active ?? true });
+  };
+
+  // Handle product not found modal actions
+  const handleProductNotFoundClose = () => {
+    setShowProductNotFoundModal(false);
+    setNotFoundBarcode('');
+    // Focus back to barcode input
+    if (barcodeInputRef.current) {
+      barcodeInputRef.current.focus();
+    }
+  };
+
+  const handleAddNewProduct = () => {
+    setShowProductNotFoundModal(false);
+    setShowQuickProductAddModal(true);
+  };
+
+  // Handle product added from quick add modal
+  const handleProductAdded = (product: any) => {
+    // Convert to POS product and add to cart
+    const posProduct: Product = {
+      id: product.id,
+      barcode: product.barcode,
+      name: product.name,
+      unitPrice: getPriceByList(product),
+      qty: 1,
+      discount: 0,
+      currency: 'TRY',
+      vatRate: 18,
+      category: product.category || 'GENEL',
+    };
+
+    addToCart(posProduct);
+    showToast.success(`${product.name} sepete eklendi`);
+
+    // Clear search and focus back to barcode input
+    setSearchQuery('');
+    if (barcodeInputRef.current) {
+      barcodeInputRef.current.value = '';
+      barcodeInputRef.current.focus();
+    }
+  };
+
+  const handleQuickProductAddClose = () => {
+    setShowQuickProductAddModal(false);
+    setNotFoundBarcode('');
+    // Focus back to barcode input
+    if (barcodeInputRef.current) {
+      barcodeInputRef.current.focus();
+    }
   };
 
   // Open price check modal
@@ -2031,6 +2090,22 @@ const FastSalePage: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Ürün Bulunamadı Modal */}
+      <ProductNotFoundModal
+        isOpen={showProductNotFoundModal}
+        onClose={handleProductNotFoundClose}
+        onAddNewProduct={handleAddNewProduct}
+        barcode={notFoundBarcode}
+      />
+
+      {/* Hızlı Ürün Ekleme Modal */}
+      <QuickProductAddModal
+        isOpen={showQuickProductAddModal}
+        onClose={handleQuickProductAddClose}
+        onProductAdded={handleProductAdded}
+        barcode={notFoundBarcode}
+      />
     </Layout>
   );
 };

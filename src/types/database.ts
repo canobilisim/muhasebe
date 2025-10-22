@@ -104,8 +104,8 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      customer_payments: {
+      }      c
+ustomer_payments: {
         Row: {
           amount: number
           branch_id: string | null
@@ -169,44 +169,80 @@ export type Database = {
       customers: {
         Row: {
           address: string | null
+          billing_address: string | null
+          birth_date: string | null
           branch_id: string | null
+          city: string | null
+          company_name: string | null
+          contact_person: string | null
           created_at: string | null
           credit_limit: number | null
           current_balance: number | null
+          customer_type: string | null
+          delivery_address: string | null
+          district: string | null
           email: string | null
           id: string
           is_active: boolean | null
           name: string
+          notes: string | null
           phone: string | null
           tax_number: string | null
+          tax_office: string | null
+          tc_kimlik: string | null
+          trade_registry_no: string | null
           updated_at: string | null
         }
         Insert: {
           address?: string | null
+          billing_address?: string | null
+          birth_date?: string | null
           branch_id?: string | null
+          city?: string | null
+          company_name?: string | null
+          contact_person?: string | null
           created_at?: string | null
           credit_limit?: number | null
           current_balance?: number | null
+          customer_type?: string | null
+          delivery_address?: string | null
+          district?: string | null
           email?: string | null
           id?: string
           is_active?: boolean | null
           name: string
+          notes?: string | null
           phone?: string | null
           tax_number?: string | null
+          tax_office?: string | null
+          tc_kimlik?: string | null
+          trade_registry_no?: string | null
           updated_at?: string | null
         }
         Update: {
           address?: string | null
+          billing_address?: string | null
+          birth_date?: string | null
           branch_id?: string | null
+          city?: string | null
+          company_name?: string | null
+          contact_person?: string | null
           created_at?: string | null
           credit_limit?: number | null
           current_balance?: number | null
+          customer_type?: string | null
+          delivery_address?: string | null
+          district?: string | null
           email?: string | null
           id?: string
           is_active?: boolean | null
           name?: string
+          notes?: string | null
           phone?: string | null
           tax_number?: string | null
+          tax_office?: string | null
+          tc_kimlik?: string | null
+          trade_registry_no?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -218,8 +254,8 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      fast_sale_categories: {
+      }  
+    fast_sale_categories: {
         Row: {
           branch_id: string | null
           created_at: string | null
@@ -257,11 +293,63 @@ export type Database = {
           },
         ]
       }
-      products: {
+      product_categories: {
+        Row: {
+          branch_id: string | null
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          parent_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          parent_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          parent_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_categories_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }   
+   products: {
         Row: {
           barcode: string
           branch_id: string | null
           category: string | null
+          category_id: string | null
           created_at: string | null
           critical_stock_level: number | null
           fast_sale_category_id: string | null
@@ -282,6 +370,7 @@ export type Database = {
           barcode: string
           branch_id?: string | null
           category?: string | null
+          category_id?: string | null
           created_at?: string | null
           critical_stock_level?: number | null
           fast_sale_category_id?: string | null
@@ -302,6 +391,7 @@ export type Database = {
           barcode?: string
           branch_id?: string | null
           category?: string | null
+          category_id?: string | null
           created_at?: string | null
           critical_stock_level?: number | null
           fast_sale_category_id?: string | null
@@ -327,6 +417,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "products_fast_sale_category_id_fkey"
             columns: ["fast_sale_category_id"]
             isOneToOne: false
@@ -334,8 +431,8 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      sale_items: {
+      } 
+     sale_items: {
         Row: {
           created_at: string | null
           discount_amount: number | null
@@ -401,7 +498,6 @@ export type Database = {
           net_amount: number
           notes: string | null
           paid_amount: number | null
-
           payment_type: Database["public"]["Enums"]["payment_type"]
           sale_date: string | null
           sale_number: string
@@ -471,8 +567,8 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      turkcell_targets: {
+      }      tu
+rkcell_targets: {
         Row: {
           branch_id: string | null
           created_at: string | null
@@ -620,19 +716,108 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_sample_turkcell_data: {
+        Args: never
+        Returns: {
+          action: string
+          details: string
+          status: string
+        }[]
+      }
+      decrement_product_stock: {
+        Args: { product_uuid: string; quantity: number }
+        Returns: undefined
+      }
       generate_payment_number: {
         Args: { branch_uuid: string }
         Returns: string
       }
-      generate_sale_number: {
+      generate_sale_number: { Args: { branch_uuid: string }; Returns: string }
+      get_daily_sales_summary: {
+        Args: { branch_uuid: string; target_date?: string }
+        Returns: {
+          cash_sales: number
+          credit_sales: number
+          pos_sales: number
+          total_amount: number
+          total_sales: number
+        }[]
+      }
+      get_daily_turkcell_count: {
+        Args: { branch_uuid: string; target_date?: string }
+        Returns: number
+      }
+      get_low_stock_products: {
         Args: { branch_uuid: string }
-        Returns: string
+        Returns: {
+          barcode: string
+          critical_stock_level: number
+          id: string
+          name: string
+          stock_quantity: number
+        }[]
+      }
+      get_monthly_turkcell_progress: {
+        Args: { branch_uuid: string; target_month_param?: string }
+        Returns: {
+          progress_percentage: number
+          target_count: number
+          total_count: number
+        }[]
+      }
+      get_monthly_turkcell_target: {
+        Args: { branch_uuid: string; target_month_param?: string }
+        Returns: number
+      }
+      get_supplier_debt: { Args: { supplier_uuid: string }; Returns: number }
+      get_supplier_unpaid_invoices: {
+        Args: { supplier_uuid: string }
+        Returns: number
+      }
+      get_turkcell_monthly_performance: {
+        Args: { target_month: string; target_user_id?: string }
+        Returns: {
+          achievement_rate: number
+          bonus_earned: number
+          bonus_rate: number
+          target_count: number
+          total_count: number
+          transaction_type: string
+        }[]
+      }
+      get_user_branch_id: { Args: never; Returns: string }
+      increment_customer_balance: {
+        Args: { amount: number; customer_uuid: string }
+        Returns: undefined
+      }
+      is_admin: { Args: never; Returns: boolean }
+      set_monthly_turkcell_target: {
+        Args: {
+          branch_uuid: string
+          target_count_param: number
+          target_month_param?: string
+          user_uuid?: string
+        }
+        Returns: boolean
+      }
+      update_account_balance: {
+        Args: { account_id: string; amount_change: number }
+        Returns: undefined
       }
     }
     Enums: {
       movement_type: "income" | "expense" | "sale" | "opening" | "closing"
-
       payment_type: "cash" | "pos" | "credit" | "partial"
+      turkcell_transaction_type:
+        | "postpaid_transfer"
+        | "prepaid_transfer"
+        | "new_line"
+        | "payment_type_change"
+        | "data_package"
+        | "device_with_line"
+        | "device_cash"
+        | "sim_change"
+        | "number_change"
       user_role: "admin" | "manager" | "cashier"
     }
     CompositeTypes: {
@@ -641,7 +826,140 @@ export type Database = {
   }
 }
 
-export type UserRole = Database['public']['Enums']['user_role']
-export type PaymentType = Database['public']['Enums']['payment_type']
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-export type MovementType = Database['public']['Enums']['movement_type']
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      movement_type: ["income", "expense", "sale", "opening", "closing"],
+      payment_type: ["cash", "pos", "credit", "partial"],
+      turkcell_transaction_type: [
+        "postpaid_transfer",
+        "prepaid_transfer",
+        "new_line",
+        "payment_type_change",
+        "data_package",
+        "device_with_line",
+        "device_cash",
+        "sim_change",
+        "number_change",
+      ],
+      user_role: ["admin", "manager", "cashier"],
+    },
+  },
+} as const

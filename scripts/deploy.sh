@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Deployment script for Cano Ön Muhasebe
+# Deployment script for HesapOnda
 set -e
 
 echo "🚀 Starting deployment process..."
@@ -48,7 +48,7 @@ case "${DEPLOY_TARGET:-}" in
         ;;
     "docker")
         echo "🐳 Building Docker image..."
-        docker build -t cano-muhasebe:latest .
+        docker build -t hesaponda:latest .
         echo "✅ Docker image built successfully!"
         ;;
     *)

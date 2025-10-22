@@ -18,9 +18,20 @@ interface ProductTableProps {
   isLoading: boolean
   onEdit: (product: Product) => void
   onDelete: (product: Product) => void
+  readOnly?: boolean
+  showDeleteOnly?: boolean
+  showStockInfo?: boolean
 }
 
-export const ProductTable = memo<ProductTableProps>(({ products, isLoading, onEdit, onDelete }) => {
+export const ProductTable = memo<ProductTableProps>(({ 
+  products, 
+  isLoading, 
+  onEdit, 
+  onDelete,
+  readOnly = false,
+  showDeleteOnly = false,
+  showStockInfo = false
+}) => {
   const [sortBy, setSortBy] = useState<keyof Product>('name')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
 
@@ -182,24 +193,31 @@ export const ProductTable = memo<ProductTableProps>(({ products, isLoading, onEd
                   {formatCurrency(product.sale_price)}
                 </TableCell>
                 <TableCell className="text-center">
-                  <div className="flex items-center justify-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onEdit(product)}
-                      className="h-8 w-8 p-0"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onDelete(product)}
-                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  {!readOnly && (
+                    <div className="flex items-center justify-center gap-2">
+                      {!showDeleteOnly && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onEdit(product)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      )}
+                      {!showStockInfo && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onDelete(product)}
+                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                  {readOnly && <span className="text-gray-400 text-sm">-</span>}
                 </TableCell>
               </TableRow>
             )

@@ -1,4 +1,4 @@
--- Cano Ön Muhasebe Database Schema
+-- HesapOnda Database Schema
 -- Initial migration for POS and accounting system
 
 -- Enable UUID extension

@@ -1,6 +1,6 @@
 # Supabase Yapılandırma Kılavuzu
 
-Bu doküman, Cano Ön Muhasebe uygulaması için Supabase kimlik doğrulama sisteminin nasıl yapılandırılacağını açıklamaktadır.
+Bu doküman, HesapOnda uygulaması için Supabase kimlik doğrulama sisteminin nasıl yapılandırılacağını açıklamaktadır.
 
 ## İçindekiler
 

@@ -681,7 +681,7 @@ const FastSalePage: React.FC = () => {
       </head>
       <body>
         <div class="center bold large">
-          CANO ÖN MUHASEBE
+          HESAPONDA
         </div>
         <div class="center">
           Adres Bilgisi

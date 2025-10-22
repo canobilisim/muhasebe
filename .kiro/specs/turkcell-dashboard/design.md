@@ -2,7 +2,7 @@
 
 ## Overview
 
-Turkcell Dashboard özelliği, mevcut Cano Ön Muhasebe uygulamasına entegre edilecek bir KPI dashboard sistemidir. Bu sistem, günlük Turkcell işlem sayısını ve aylık hedef durumunu görsel olarak sunan iki KPI kartı ile operatör işlemleri yönetimi için sidebar navigasyonu içerecektir.
+Turkcell Dashboard özelliği, mevcut HesapOnda uygulamasına entegre edilecek bir KPI dashboard sistemidir. Bu sistem, günlük Turkcell işlem sayısını ve aylık hedef durumunu görsel olarak sunan iki KPI kartı ile operatör işlemleri yönetimi için sidebar navigasyonu içerecektir.
 
 ## Architecture
 

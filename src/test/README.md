@@ -1,6 +1,6 @@
 # Test Documentation
 
-Bu dosya Cano Ön Muhasebe uygulaması için oluşturulan test altyapısını ve test dosyalarını açıklar.
+Bu dosya HesapOnda uygulaması için oluşturulan test altyapısını ve test dosyalarını açıklar.
 
 ## Test Altyapısı
 

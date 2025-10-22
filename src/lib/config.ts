@@ -52,7 +52,7 @@ export const config: AppConfig = {
     anonKey: getEnvVar('VITE_SUPABASE_ANON_KEY'),
   },
   app: {
-    name: getEnvVar('VITE_APP_NAME', 'Cano Ön Muhasebe'),
+    name: getEnvVar('VITE_APP_NAME', 'HesapOnda'),
     version: getEnvVar('VITE_APP_VERSION', '1.0.0'),
     environment: getEnvVar('VITE_APP_ENVIRONMENT', 'development') as AppConfig['app']['environment'],
   },

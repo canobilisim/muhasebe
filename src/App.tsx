@@ -16,7 +16,15 @@ const TestRolesPage = lazy(() => import('@/pages/TestRolesPage').then(module => 
 const FastSalePage = lazy(() => import('@/pages/pos/FastSalePage').then(module => ({ default: module.default })))
 const CustomersPage = lazy(() => import('@/pages/CustomersPage').then(module => ({ default: module.CustomersPage })))
 const CustomerDetailPage = lazy(() => import('@/pages/CustomerDetailPage').then(module => ({ default: module.CustomerDetailPage })))
+
+// Product pages
+const ProductsListPage = lazy(() => import('@/pages/products/ProductsListPage').then(module => ({ default: module.ProductsListPage })))
+const ProductManagePage = lazy(() => import('@/pages/products/ProductManagePage').then(module => ({ default: module.ProductManagePage })))
+const CategoriesPage = lazy(() => import('@/pages/products/CategoriesPage').then(module => ({ default: module.CategoriesPage })))
+
+// Keep original StockPage for backward compatibility
 const StockPage = lazy(() => import('@/pages/StockPage').then(module => ({ default: module.StockPage })))
+
 const CashPage = lazy(() => import('@/pages/CashPage').then(module => ({ default: module.CashPage })))
 const ReportsPage = lazy(() => import('@/pages/ReportsPage').then(module => ({ default: module.ReportsPage })))
 const OperatorOperationsPage = lazy(() => import('@/pages/OperatorOperationsPage').then(module => ({ default: module.OperatorOperationsPage })))
@@ -164,7 +172,33 @@ function App() {
                 } 
               />
               
-              {/* Stock - Manager and above */}
+              {/* Products - Manager and above */}
+              <Route 
+                path="/products" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <ProductsListPage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/products/manage" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <ProductManagePage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/products/categories" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <CategoriesPage />
+                  </PrivateRoute>
+                } 
+              />
+              
+              {/* Original Stock Page - Keep for backward compatibility */}
               <Route 
                 path="/stock" 
                 element={

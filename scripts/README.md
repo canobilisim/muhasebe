@@ -1,6 +1,6 @@
 # Authentication Scripts
 
-Bu klasör, Cano Ön Muhasebe uygulamasının kimlik doğrulama sistemini yönetmek için çeşitli scriptler içerir.
+Bu klasör, HesapOnda uygulamasının kimlik doğrulama sistemini yönetmek için çeşitli scriptler içerir.
 
 ## Mevcut Scriptler
 
@@ -200,7 +200,7 @@ npx tsx scripts/create-test-users.ts
 ### Örnek Çıktı
 
 ```
-🚀 Creating test users for Cano Ön Muhasebe
+🚀 Creating test users for HesapOnda
 
 ============================================================
 📦 Using existing branch: Ana Şube

@@ -14,18 +14,30 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  Smartphone
+  Smartphone,
+  ChevronDown,
+  List,
+  Edit,
+  PackageCheck,
+  FolderTree
 } from 'lucide-react'
 
 interface SidebarProps {
   className?: string
 }
 
-interface NavItem {
+interface SubNavItem {
   title: string
   href: string
   icon: React.ComponentType<{ className?: string }>
+}
+
+interface NavItem {
+  title: string
+  href?: string
+  icon: React.ComponentType<{ className?: string }>
   roles?: UserRole[]
+  subItems?: SubNavItem[]
 }
 
 const navItems: NavItem[] = [
@@ -34,7 +46,6 @@ const navItems: NavItem[] = [
     href: '/dashboard',
     icon: LayoutDashboard,
   },
-
   {
     title: 'POS Satış',
     href: '/pos2',
@@ -48,9 +59,31 @@ const navItems: NavItem[] = [
     roles: ['admin', 'manager']
   },
   {
+    title: 'Ürünler',
+    icon: Package,
+    roles: ['admin', 'manager'],
+    subItems: [
+      {
+        title: 'Ürün Listesi',
+        href: '/products',
+        icon: List
+      },
+      {
+        title: 'Ürün Yönetimi',
+        href: '/products/manage',
+        icon: Edit
+      },
+      {
+        title: 'Kategoriler',
+        href: '/products/categories',
+        icon: FolderTree
+      }
+    ]
+  },
+  {
     title: 'Stok Yönetimi',
     href: '/stock',
-    icon: Package,
+    icon: PackageCheck,
     roles: ['admin', 'manager']
   },
   {
@@ -81,12 +114,31 @@ const navItems: NavItem[] = [
 
 export const Sidebar = ({ className }: SidebarProps) => {
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [expandedItems, setExpandedItems] = useState<string[]>([])
   const location = useLocation()
   const { hasAnyRole, logout, getDisplayName, userRole } = useAuth()
 
-  const filteredNavItems = navItems.filter(item => 
+  const filteredNavItems = navItems.filter(item =>
     !item.roles || hasAnyRole(item.roles)
   )
+
+  const toggleExpanded = (title: string) => {
+    setExpandedItems(prev =>
+      prev.includes(title)
+        ? prev.filter(item => item !== title)
+        : [...prev, title]
+    )
+  }
+
+  const isItemActive = (item: NavItem): boolean => {
+    if (item.href) {
+      return location.pathname === item.href
+    }
+    if (item.subItems) {
+      return item.subItems.some(subItem => location.pathname === subItem.href)
+    }
+    return false
+  }
 
   const handleLogout = async () => {
     try {
@@ -107,9 +159,9 @@ export const Sidebar = ({ className }: SidebarProps) => {
         {!isCollapsed && (
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">C</span>
+              <span className="text-white font-bold text-sm">H</span>
             </div>
-            <span className="font-semibold text-gray-900">Cano Muhasebe</span>
+            <span className="font-semibold text-gray-900">HesapOnda</span>
           </div>
         )}
         <button
@@ -125,31 +177,93 @@ export const Sidebar = ({ className }: SidebarProps) => {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {filteredNavItems.map((item) => {
           const Icon = item.icon
-          const isActive = location.pathname === item.href
-          
+          const isActive = isItemActive(item)
+          const isExpanded = expandedItems.includes(item.title)
+          const hasSubItems = item.subItems && item.subItems.length > 0
+
           return (
-            <Link
-              key={item.href}
-              to={item.href}
-              className={cn(
-                "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-blue-50 text-blue-700 border border-blue-200"
-                  : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+            <div key={item.title}>
+              {/* Ana menü öğesi */}
+              {hasSubItems ? (
+                <button
+                  onClick={() => toggleExpanded(item.title)}
+                  className={cn(
+                    "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-blue-50 text-blue-700 border border-blue-200"
+                      : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                  )}
+                  title={isCollapsed ? item.title : undefined}
+                >
+                  <div className="flex items-center space-x-3">
+                    <Icon className={cn(
+                      "w-5 h-5 flex-shrink-0",
+                      isActive ? "text-blue-700" : "text-gray-500"
+                    )} />
+                    {!isCollapsed && (
+                      <span className="truncate">{item.title}</span>
+                    )}
+                  </div>
+                  {!isCollapsed && (
+                    <ChevronDown className={cn(
+                      "w-4 h-4 transition-transform",
+                      isExpanded ? "transform rotate-180" : ""
+                    )} />
+                  )}
+                </button>
+              ) : (
+                <Link
+                  to={item.href!}
+                  className={cn(
+                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-blue-50 text-blue-700 border border-blue-200"
+                      : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                  )}
+                  title={isCollapsed ? item.title : undefined}
+                >
+                  <Icon className={cn(
+                    "w-5 h-5 flex-shrink-0",
+                    isActive ? "text-blue-700" : "text-gray-500"
+                  )} />
+                  {!isCollapsed && (
+                    <span className="truncate">{item.title}</span>
+                  )}
+                </Link>
               )}
-              title={isCollapsed ? item.title : undefined}
-            >
-              <Icon className={cn(
-                "w-5 h-5 flex-shrink-0",
-                isActive ? "text-blue-700" : "text-gray-500"
-              )} />
-              {!isCollapsed && (
-                <span className="truncate">{item.title}</span>
+
+              {/* Alt menü öğeleri */}
+              {hasSubItems && isExpanded && !isCollapsed && (
+                <div className="mt-1 ml-8 space-y-1">
+                  {item.subItems!.map((subItem) => {
+                    const SubIcon = subItem.icon
+                    const isSubActive = location.pathname === subItem.href
+
+                    return (
+                      <Link
+                        key={subItem.href}
+                        to={subItem.href}
+                        className={cn(
+                          "flex items-center space-x-2 px-3 py-1.5 rounded-lg text-sm transition-colors",
+                          isSubActive
+                            ? "bg-blue-100 text-blue-700 font-medium"
+                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                        )}
+                      >
+                        <SubIcon className={cn(
+                          "w-4 h-4 flex-shrink-0",
+                          isSubActive ? "text-blue-700" : "text-gray-400"
+                        )} />
+                        <span className="truncate">{subItem.title}</span>
+                      </Link>
+                    )
+                  })}
+                </div>
               )}
-            </Link>
+            </div>
           )
         })}
       </nav>

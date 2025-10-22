@@ -2,7 +2,7 @@
 
 ## Overview
 
-Bu tasarım, Cano Ön Muhasebe uygulamasındaki giriş yapamama sorununu çözmek için kapsamlı bir yaklaşım sunmaktadır. Sorun analizi, mevcut sistemin incelenmesi ve adım adım düzeltme stratejisi içermektedir.
+Bu tasarım, HesapOnda uygulamasındaki giriş yapamama sorununu çözmek için kapsamlı bir yaklaşım sunmaktadır. Sorun analizi, mevcut sistemin incelenmesi ve adım adım düzeltme stratejisi içermektedir.
 
 ### Tespit Edilen Potansiyel Sorunlar
 

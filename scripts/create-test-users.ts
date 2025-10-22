@@ -198,7 +198,7 @@ async function createTestUser(user: TestUser, branchId: string) {
 }
 
 async function main() {
-  console.log('🚀 Creating test users for Cano Ön Muhasebe\n')
+  console.log('🚀 Creating test users for HesapOnda\n')
   console.log('=' .repeat(60))
 
   try {

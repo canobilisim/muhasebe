@@ -1,6 +1,6 @@
 # Product Overview
 
-**Cano Ön Muhasebe** is a comprehensive POS and accounting application built with modern web technologies.
+**HesapOnda** is a comprehensive POS and accounting application built with modern web technologies.
 
 ## Core Features
 

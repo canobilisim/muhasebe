@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "build:analyze": "tsc -b && vite build --mode analyze",
-    "build:docker": "docker build -t cano-muhasebe:latest .",
+    "build:docker": "docker build -t hesaponda:latest .",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",

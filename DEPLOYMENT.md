@@ -66,7 +66,7 @@ DEPLOY_TARGET=netlify ./scripts/deploy.sh
 DEPLOY_TARGET=docker ./scripts/deploy.sh
 
 # Run the container
-docker run -p 80:80 cano-muhasebe:latest
+docker run -p 80:80 hesaponda:latest
 ```
 
 ### 4. Manual Deployment
@@ -85,7 +85,7 @@ npm run build
 - `VITE_SUPABASE_ANON_KEY` - Your Supabase anonymous key
 
 ### Optional
-- `VITE_APP_NAME` - Application name (default: "Cano Ön Muhasebe")
+- `VITE_APP_NAME` - Application name (default: "HesapOnda")
 - `VITE_APP_VERSION` - Application version (default: "1.0.0")
 - `VITE_APP_ENVIRONMENT` - Environment (development/production)
 - `VITE_ENABLE_ANALYTICS` - Enable analytics (true/false)

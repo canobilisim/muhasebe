@@ -1,6 +1,6 @@
 # Supabase Database Setup
 
-Bu dosya Cano Ön Muhasebe uygulaması için Supabase veritabanı kurulum talimatlarını içerir.
+Bu dosya HesapOnda uygulaması için Supabase veritabanı kurulum talimatlarını içerir.
 
 ## Kurulum Adımları
 
@@ -8,7 +8,7 @@ Bu dosya Cano Ön Muhasebe uygulaması için Supabase veritabanı kurulum talima
 
 1. [Supabase Dashboard](https://supabase.com/dashboard)'a gidin
 2. "New Project" butonuna tıklayın
-3. Proje adını girin: "cano-on-muhasebe"
+3. Proje adını girin: "hesaponda"
 4. Güçlü bir veritabanı şifresi belirleyin
 5. Bölge seçin (Europe West için "eu-west-1" önerilir)
 6. "Create new project" butonuna tıklayın

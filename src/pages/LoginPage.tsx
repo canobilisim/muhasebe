@@ -85,7 +85,7 @@ export const LoginPage = () => {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900">
-            Cano Ön Muhasebe
+            HesapOnda
           </h1>
           <p className="mt-2 text-sm text-gray-600">
             Hesabınıza giriş yapın
@@ -216,7 +216,7 @@ export const LoginPage = () => {
         </Card>
 
         <div className="text-center text-sm text-gray-500">
-          <p>© 2024 Cano Ön Muhasebe. Tüm hakları saklıdır.</p>
+          <p>© 2024 HesapOnda. Tüm hakları saklıdır.</p>
         </div>
       </div>
     </div>

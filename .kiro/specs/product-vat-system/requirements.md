@@ -2,11 +2,11 @@
 
 ## Introduction
 
-Bu doküman, Cano Ön Muhasebe uygulamasının ürün yönetim sistemine KDV (Katma Değer Vergisi) özelliğinin eklenmesi için gereksinimleri tanımlar. Sistem, kullanıcıların ürün eklerken ve düzenlerken KDV oranı belirlemesine, KDV dahil/hariç fiyat girişi yapmasına ve satış işlemlerinde KDV hesaplamalarının otomatik yapılmasına olanak sağlayacaktır.
+Bu doküman, HesapOnda uygulamasının ürün yönetim sistemine KDV (Katma Değer Vergisi) özelliğinin eklenmesi için gereksinimleri tanımlar. Sistem, kullanıcıların ürün eklerken ve düzenlerken KDV oranı belirlemesine, KDV dahil/hariç fiyat girişi yapmasına ve satış işlemlerinde KDV hesaplamalarının otomatik yapılmasına olanak sağlayacaktır.
 
 ## Glossary
 
-- **System**: Cano Ön Muhasebe uygulaması
+- **System**: HesapOnda uygulaması
 - **Product**: Sistemde satışa sunulan ürün kaydı
 - **VAT (KDV)**: Katma Değer Vergisi - Türkiye'de geçerli vergi oranları (%0, %1, %10, %20)
 - **VAT Rate**: Ürüne uygulanan KDV oranı (yüzde değeri)

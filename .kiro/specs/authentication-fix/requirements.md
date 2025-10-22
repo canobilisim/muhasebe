@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Cano Ön Muhasebe uygulamasında kullanıcılar giriş yapamamaktadır. Uygulama ve veritabanı kurulumu tamamlanmış, kullanıcılar oluşturulmuş ancak giriş işlemi başarısız olmaktadır. Bu özellik, mevcut kimlik doğrulama sistemindeki sorunları tespit edip düzeltmeyi ve uygulamayı tam çalışır hale getirmeyi amaçlamaktadır.
+HesapOnda uygulamasında kullanıcılar giriş yapamamaktadır. Uygulama ve veritabanı kurulumu tamamlanmış, kullanıcılar oluşturulmuş ancak giriş işlemi başarısız olmaktadır. Bu özellik, mevcut kimlik doğrulama sistemindeki sorunları tespit edip düzeltmeyi ve uygulamayı tam çalışır hale getirmeyi amaçlamaktadır.
 
 ## Requirements
 

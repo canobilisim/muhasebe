@@ -1,4 +1,4 @@
-# Cano Ön Muhasebe
+# HesapOnda
 
 Modern web teknolojileri kullanılarak geliştirilmiş kapsamlı POS ve muhasebe uygulaması.
 
@@ -21,7 +21,7 @@ Modern web teknolojileri kullanılarak geliştirilmiş kapsamlı POS ve muhasebe
 1. Projeyi klonlayın:
 ```bash
 git clone <repository-url>
-cd cano-on-muhasebe
+cd hesaponda
 ```
 
 2. Bağımlılıkları yükleyin:
@@ -863,7 +863,7 @@ SELECT generate_sale_number('branch-uuid');
 
 ## Proje Yönetimi
 
-- **Görev Takibi**: `.kiro/specs/cano-on-muhasebe/tasks.md`
+- **Görev Takibi**: `.kiro/specs/hesaponda/tasks.md`
 - **Teknik Rehber**: `.kiro/steering/tech.md`
 - **Proje Yapısı**: `.kiro/steering/structure.md`
 - **MCP Yapılandırması**: `.kiro/settings/mcp.json`

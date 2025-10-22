@@ -20,7 +20,7 @@ const testFiles = [
   'src/test/integration/form-submissions.test.tsx'
 ]
 
-console.log('🧪 Cano Ön Muhasebe Test Suite')
+console.log('🧪 HesapOnda Test Suite')
 console.log('================================')
 
 // Check if all test files exist

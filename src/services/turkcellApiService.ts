@@ -19,33 +19,35 @@ import {
 
 /**
  * Turkcell API Invoice Payload
- * Based on OutboxUblBuilderModel schema
+ * Based on OutboxUblBuilderModel schema from Swagger documentation
  */
 export interface TurkcellInvoicePayload {
-  invoiceType: string
-  invoiceDate: string
-  currency: string
-  paymentType: string
-  customer: {
-    type: string
+  recordType: number // 1 for e-Fatura
+  status?: number // 0 = Draft, 20 = Save and Send
+  localReferenceId?: string
+  note?: string
+  addressBook: {
     name: string
-    identifier: string
-    taxOffice?: string
-    email: string
-    address: string
+    identificationNumber: string // VKN or TCKN
+    alias?: string // e-Fatura alias
+    receiverCity?: string
+    receiverCountry?: string
+    receiverTaxOffice?: string
+    address?: string
   }
-  lineItems: Array<{
-    productName: string
-    quantity: number
+  generalInfoModel: {
+    invoiceProfileType: number // 0 = Temel, 1 = Ticari
+    type: number // 1 = Satış, 2 = İade
+    issueDate: string
+    currencyCode: string
+  }
+  invoiceLines: Array<{
+    description: string
+    amount: number
+    unitCode: string
     unitPrice: number
     vatRate: number
-    totalAmount: number
   }>
-  totals: {
-    subtotal: number
-    totalVat: number
-    grandTotal: number
-  }
 }
 
 /**
@@ -86,56 +88,36 @@ const MAX_RETRIES = 3
 class TurkcellApiServiceImpl {
   
   /**
-   * Get API settings and validate configuration
+   * Get API settings and access token
    * @private
    */
-  private async getApiConfig(): Promise<{ apiKey: string; apiUrl: string }> {
+  private async getApiConfig(): Promise<{ accessToken: string; apiUrl: string }> {
     const settings = await apiSettingsService.getApiSettings()
     
     if (!settings) {
       throw new Error('e-Fatura API ayarları yapılmamış. Lütfen ayarlar sayfasından API yapılandırmasını tamamlayın.')
     }
 
-    if (!settings.apiKey) {
-      throw new Error('API Key bulunamadı')
+    if (!settings.username || !settings.password) {
+      throw new Error('Kullanıcı adı veya şifre bulunamadı')
     }
+
+    // Get access token using OAuth 2.0
+    const tokenResponse = await apiSettingsService.getAccessToken(
+      settings.username, 
+      settings.password, 
+      settings.environment
+    )
 
     const apiUrl = apiSettingsService.getApiUrl(settings.environment)
     
     return {
-      apiKey: settings.apiKey,
+      accessToken: tokenResponse.access_token,
       apiUrl
     }
   }
 
-  /**
-   * Format customer data for Turkcell API
-   * @private
-   */
-  private formatCustomer(customer: SaleCustomerInfo) {
-    return {
-      type: customer.customer_type === 'Bireysel' ? 'TCKN' : 'VKN',
-      name: customer.customer_name,
-      identifier: customer.vkn_tckn,
-      taxOffice: customer.tax_office,
-      email: customer.email,
-      address: customer.address
-    }
-  }
 
-  /**
-   * Format line items for Turkcell API
-   * @private
-   */
-  private formatLineItems(items: SaleItemInput[]) {
-    return items.map(item => ({
-      productName: item.product_name,
-      quantity: item.quantity,
-      unitPrice: item.unit_price,
-      vatRate: item.vat_rate,
-      totalAmount: item.total_amount
-    }))
-  }
 
   /**
    * Build invoice payload for Turkcell API
@@ -143,17 +125,32 @@ class TurkcellApiServiceImpl {
    */
   private buildInvoicePayload(input: CreateInvoiceInput): TurkcellInvoicePayload {
     return {
-      invoiceType: input.invoiceType,
-      invoiceDate: input.invoiceDate,
-      currency: input.currency,
-      paymentType: input.paymentType,
-      customer: this.formatCustomer(input.customer),
-      lineItems: this.formatLineItems(input.items),
-      totals: {
-        subtotal: input.subtotal,
-        totalVat: input.totalVatAmount,
-        grandTotal: input.totalAmount
-      }
+      recordType: 1, // e-Fatura
+      status: 20, // Save and Send
+      localReferenceId: `HESAPONDA_${Date.now()}`, // Unique reference
+      note: input.note,
+      addressBook: {
+        name: input.customer.customer_name,
+        identificationNumber: input.customer.vkn_tckn,
+        alias: 'urn:mail:defaultgb@efatura.gov.tr', // Default e-Fatura alias
+        receiverCity: 'İstanbul', // Default city
+        receiverCountry: 'Türkiye',
+        receiverTaxOffice: input.customer.tax_office,
+        address: input.customer.address
+      },
+      generalInfoModel: {
+        invoiceProfileType: 0, // 0 = Temel fatura
+        type: 1, // 1 = Satış faturası
+        issueDate: input.invoiceDate,
+        currencyCode: input.currency
+      },
+      invoiceLines: input.items.map(item => ({
+        description: item.product_name,
+        amount: item.quantity,
+        unitCode: 'C62', // Default unit code (piece)
+        unitPrice: item.unit_price,
+        vatRate: item.vat_rate
+      }))
     }
   }
 
@@ -163,46 +160,37 @@ class TurkcellApiServiceImpl {
    */
   private validatePayload(payload: TurkcellInvoicePayload): void {
     // Required fields validation
-    if (!payload.invoiceType) {
-      throw new Error('Fatura tipi gereklidir')
+    if (payload.recordType !== 1) {
+      throw new Error('Record type e-Fatura için 1 olmalıdır')
     }
 
-    if (!payload.invoiceDate) {
+    if (!payload.generalInfoModel?.issueDate) {
       throw new Error('Fatura tarihi gereklidir')
     }
 
-    if (!payload.customer.name) {
+    if (!payload.addressBook?.name) {
       throw new Error('Müşteri adı gereklidir')
     }
 
-    if (!payload.customer.identifier) {
+    if (!payload.addressBook?.identificationNumber) {
       throw new Error('Müşteri kimlik numarası gereklidir')
     }
 
-    if (!payload.customer.email) {
-      throw new Error('Müşteri e-posta adresi gereklidir')
-    }
-
-    if (!payload.lineItems || payload.lineItems.length === 0) {
+    if (!payload.invoiceLines || payload.invoiceLines.length === 0) {
       throw new Error('En az bir ürün gereklidir')
     }
 
     // Validate line items
-    for (const item of payload.lineItems) {
-      if (!item.productName) {
-        throw new Error('Ürün adı gereklidir')
+    for (const item of payload.invoiceLines) {
+      if (!item.description) {
+        throw new Error('Ürün açıklaması gereklidir')
       }
-      if (item.quantity <= 0) {
+      if (item.amount <= 0) {
         throw new Error('Ürün miktarı 0\'dan büyük olmalıdır')
       }
       if (item.unitPrice < 0) {
         throw new Error('Birim fiyat negatif olamaz')
       }
-    }
-
-    // Validate totals
-    if (payload.totals.grandTotal <= 0) {
-      throw new Error('Toplam tutar 0\'dan büyük olmalıdır')
     }
   }
 
@@ -213,7 +201,7 @@ class TurkcellApiServiceImpl {
   private async makeApiRequest<T>(
     url: string,
     method: string,
-    apiKey: string,
+    accessToken: string,
     body?: any
   ): Promise<T> {
     const requestFn = async (): Promise<T> => {
@@ -226,7 +214,7 @@ class TurkcellApiServiceImpl {
       const response = await fetch(url, {
         method,
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
+          'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         },
         body: body ? JSON.stringify(body) : undefined
@@ -274,8 +262,8 @@ class TurkcellApiServiceImpl {
    */
   async createInvoice(input: CreateInvoiceInput): Promise<TurkcellApiResponse> {
     try {
-      // Get API configuration
-      const { apiKey, apiUrl } = await this.getApiConfig()
+      // Get API configuration and access token
+      const { accessToken, apiUrl } = await this.getApiConfig()
 
       // Build payload
       const payload = this.buildInvoicePayload(input)
@@ -284,17 +272,17 @@ class TurkcellApiServiceImpl {
       this.validatePayload(payload)
 
       console.log('Creating invoice with payload:', {
-        invoiceType: payload.invoiceType,
-        customerName: payload.customer.name,
-        itemCount: payload.lineItems.length,
-        total: payload.totals.grandTotal
+        recordType: payload.recordType,
+        customerName: payload.addressBook.name,
+        itemCount: payload.invoiceLines.length,
+        issueDate: payload.generalInfoModel.issueDate
       })
 
       // Make API request
       const response = await this.makeApiRequest<any>(
         `${apiUrl}/outboxinvoice/create`,
         'POST',
-        apiKey,
+        accessToken,
         payload
       )
 
@@ -336,17 +324,20 @@ class TurkcellApiServiceImpl {
         throw new Error('Fatura UUID gereklidir')
       }
 
-      // Get API configuration
-      const { apiKey, apiUrl } = await this.getApiConfig()
+      // Get API configuration and access token
+      const { accessToken, apiUrl } = await this.getApiConfig()
 
       console.log('Cancelling invoice:', invoiceUuid)
 
-      // Make API request
+      // Make API request - Use status update for cancellation
       await this.makeApiRequest(
-        `${apiUrl}/invoice/cancel`,
-        'POST',
-        apiKey,
-        { invoiceUuid }
+        `${apiUrl}/outboxinvoice/updatestatuslist`,
+        'PUT',
+        accessToken,
+        { 
+          ids: [invoiceUuid],
+          status: 0 // Cancel status
+        }
       )
 
       return {
@@ -381,8 +372,8 @@ class TurkcellApiServiceImpl {
         throw new Error('Orijinal fatura UUID gereklidir')
       }
 
-      // Get API configuration
-      const { apiKey, apiUrl } = await this.getApiConfig()
+      // Get API configuration and access token
+      const { accessToken, apiUrl } = await this.getApiConfig()
 
       // Build payload
       const payload = {
@@ -395,11 +386,11 @@ class TurkcellApiServiceImpl {
 
       console.log('Creating return invoice for:', originalInvoiceUuid)
 
-      // Make API request
+      // Make API request - Use regular invoice creation for returns
       const response = await this.makeApiRequest<any>(
-        `${apiUrl}/invoice/return`,
+        `${apiUrl}/outboxinvoice/create`,
         'POST',
-        apiKey,
+        accessToken,
         payload
       )
 

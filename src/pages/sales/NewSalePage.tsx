@@ -1,18 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Receipt } from 'lucide-react';
+import { Receipt, Plus, FileText, User, Calendar, DollarSign } from 'lucide-react';
 import { 
   showErrorToast, 
   showSuccessToast
 } from '@/utils/errorHandling';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
-import { CustomerInfoForm } from '@/components/sales/CustomerInfoForm';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { ProductSearchInput } from '@/components/sales/ProductSearchInput';
-import { SalesItemsTable, type SaleItem } from '@/components/sales/SalesItemsTable';
-import { InvoiceInfoForm } from '@/components/sales/InvoiceInfoForm';
-import type { CustomerInfoFormData, InvoiceInfoFormData } from '@/utils/validationSchemas';
-import { SalesSummary } from '@/components/sales/SalesSummary';
+import { type SaleItem } from '@/components/sales/SalesItemsTable';
+import { CustomerSelectionModal } from '@/components/sales/CustomerSelectionModal';
+
+import type { CustomerInfoFormData } from '@/utils/validationSchemas';
 import { SerialNumberSelectionModal } from '@/components/sales/SerialNumberSelectionModal';
 import { ProductNotFoundModal } from '@/components/sales/ProductNotFoundModal';
 import { createSale } from '@/services/salesService';
@@ -40,9 +44,20 @@ export default function NewSalePage() {
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Customer and invoice form data (captured via onChange callbacks)
+  // Customer form data (captured via onChange callback)
   const [customerData, setCustomerData] = useState<CustomerInfoFormData | null>(null);
-  const [invoiceData, setInvoiceData] = useState<InvoiceInfoFormData | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [customerModalOpen, setCustomerModalOpen] = useState(false);
+
+  // Invoice details state
+  const [invoiceType, setInvoiceType] = useState('Satış Faturası');
+  const [currency, setCurrency] = useState('₺ Türk Lirası');
+  const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
+  const [dueDate, setDueDate] = useState('');
+  const [invoiceNote, setInvoiceNote] = useState('');
+  
+  // Delivery references state
+  const [deliveryReferences, setDeliveryReferences] = useState<string[]>([]);
 
   // Handle product selection from search
   const handleProductSelect = async (product: Product) => {
@@ -238,13 +253,7 @@ export default function NewSalePage() {
           phone: customerData!.phone,
           address: customerData!.address,
         },
-        invoice: invoiceData ? {
-          invoice_type: invoiceData.invoiceType,
-          invoice_date: invoiceData.invoiceDate,
-          currency: invoiceData.currency,
-          payment_type: invoiceData.paymentType,
-          note: invoiceData.note,
-        } : {
+        invoice: {
           invoice_type: 'E_ARSIV',
           invoice_date: new Date().toISOString().split('T')[0],
           currency: 'TRY',
@@ -288,87 +297,330 @@ export default function NewSalePage() {
 
   return (
     <Layout
-      title="Yeni Satış"
-      subtitle="Yeni satış oluştur ve fatura kes"
+      title="Yeni Satış Faturası"
+      subtitle="Müşterilerinize satış yapımında düzenlenen standart fatura"
     >
       <div className="space-y-6">
-        {/* Customer Information */}
-        <CustomerInfoForm
-          onChange={setCustomerData}
-          defaultValues={customerData || undefined}
-        />
-
-        {/* Product Search */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h3 className="text-lg font-semibold mb-4">Ürün Ekle</h3>
-          <ProductSearchInput
-            onProductSelect={handleProductSelect}
-            onProductNotFound={handleProductNotFound}
-          />
-        </div>
-
-        {/* Sales Items Table */}
-        <SalesItemsTable
-          items={saleItems}
-          onQuantityChange={handleQuantityChange}
-          onRemoveItem={handleRemoveItem}
-        />
-
-        {/* Sales Summary */}
-        <SalesSummary items={saleItems} />
-
-        {/* Invoice Information (Optional) */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 mt-0.5">
-              <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-              </svg>
+        {/* Header Summary */}
+        <div className="grid grid-cols-4 gap-4">
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 flex items-center gap-3">
+            <div className="bg-orange-100 p-2 rounded-lg">
+              <Receipt className="h-5 w-5 text-orange-600" />
             </div>
-            <div className="flex-1">
-              <h4 className="text-sm font-medium text-blue-900 mb-1">E-Fatura Bilgisi</h4>
-              <p className="text-sm text-blue-700">
-                Satış tamamlandıktan sonra satış listesinden e-fatura kesebilirsiniz. 
-                Fatura bilgileri opsiyoneldir ve satış işlemini etkilemez.
-              </p>
+            <div>
+              <p className="text-sm text-orange-600 font-medium">Kalem</p>
+              <p className="text-lg font-bold text-orange-900">{saleItems.length} Adet</p>
+            </div>
+          </div>
+          
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center gap-3">
+            <div className="bg-blue-100 p-2 rounded-lg">
+              <DollarSign className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-sm text-blue-600 font-medium">Ara Toplam</p>
+              <p className="text-lg font-bold text-blue-900">₺{calculateTotals().subtotal.toFixed(2)}</p>
+            </div>
+          </div>
+          
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 flex items-center gap-3">
+            <div className="bg-purple-100 p-2 rounded-lg">
+              <FileText className="h-5 w-5 text-purple-600" />
+            </div>
+            <div>
+              <p className="text-sm text-purple-600 font-medium">KDV</p>
+              <p className="text-lg font-bold text-purple-900">₺{calculateTotals().totalVat.toFixed(2)}</p>
+            </div>
+          </div>
+          
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
+            <div className="bg-green-100 p-2 rounded-lg">
+              <DollarSign className="h-5 w-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-sm text-green-600 font-medium">Toplam</p>
+              <p className="text-lg font-bold text-green-900">₺{calculateTotals().grandTotal.toFixed(2)}</p>
             </div>
           </div>
         </div>
 
-        {/* Optional Invoice Information */}
-        <details className="bg-white rounded-lg border border-gray-200">
-          <summary className="px-6 py-4 cursor-pointer font-medium text-gray-700 hover:text-gray-900">
-            Fatura Bilgileri (Opsiyonel)
-          </summary>
-          <div className="px-6 pb-6">
-            <InvoiceInfoForm
-              onChange={setInvoiceData}
-              defaultValues={invoiceData || undefined}
-            />
-          </div>
-        </details>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Customer Selection */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Müşteri / Tedarikçi
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {selectedCustomer ? (
+                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-green-100 p-2 rounded-lg">
+                        <User className="h-4 w-4 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-green-900">{selectedCustomer.name}</p>
+                        <p className="text-sm text-green-700">
+                          {selectedCustomer.email || selectedCustomer.phone || selectedCustomer.vkn_tckn}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setCustomerModalOpen(true)}
+                      className="text-green-600 hover:text-green-700"
+                    >
+                      Değiştir
+                    </Button>
+                  </div>
+                ) : (
+                  <div 
+                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => setCustomerModalOpen(true)}
+                  >
+                    <User className="h-5 w-5 text-gray-400" />
+                    <span className="text-gray-500">Müşteri Seç</span>
+                    <span className="text-gray-400">Aramak için tıklayın</span>
+                    <Button variant="ghost" size="sm" className="ml-auto">
+                      <User className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-        {/* Submit Button */}
-        <div className="flex justify-end gap-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => navigate('/sales/list')}
-            disabled={isSubmitting}
-          >
-            İptal
-          </Button>
-          <Button
-            type="button"
-            onClick={handleSubmit}
-            disabled={isSubmitting || saleItems.length === 0}
-            className="gap-2"
-          >
-            <Receipt className="h-4 w-4" />
-            {isSubmitting ? 'İşleniyor...' : 'Satışı Tamamla'}
-          </Button>
+            {/* Products and Services */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Ürün ve Hizmetler</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Product Search */}
+                <ProductSearchInput
+                  onProductSelect={handleProductSelect}
+                  onProductNotFound={handleProductNotFound}
+                />
+                
+                {/* Products Table */}
+                <div className="border rounded-lg">
+                  <div className="grid grid-cols-12 gap-2 p-3 bg-gray-50 border-b text-sm font-medium text-gray-700">
+                    <div className="col-span-3">Ürün/Hizmet</div>
+                    <div className="col-span-1 text-center">Miktar</div>
+                    <div className="col-span-1 text-center">Birim</div>
+                    <div className="col-span-2 text-center">Birim Fiyat</div>
+                    <div className="col-span-1 text-center">İndirim</div>
+                    <div className="col-span-1 text-center">KDV (%)</div>
+                    <div className="col-span-2 text-center">Tutar</div>
+                    <div className="col-span-1 text-center"></div>
+                  </div>
+                  
+                  {saleItems.length === 0 ? (
+                    <div className="p-8 text-center text-gray-500">
+                      <Receipt className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                      <p>Ürün seç</p>
+                      <p className="text-sm">Ürün/hizmet alanına yazmaya başlayarak arama yapabilir, miktar ve fiyat değiştirerek anlık hesaplama görebilirsiniz</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y">
+                      {saleItems.map((item) => (
+                        <div key={item.id} className="grid grid-cols-12 gap-2 p-3 items-center">
+                          <div className="col-span-3">
+                            <p className="font-medium">{item.productName}</p>
+                            {item.serialNumber && (
+                              <p className="text-xs text-gray-500">SN: {item.serialNumber}</p>
+                            )}
+                          </div>
+                          <div className="col-span-1">
+                            <Input
+                              type="number"
+                              value={item.quantity}
+                              onChange={(e) => handleQuantityChange(item.id, Number(e.target.value))}
+                              className="text-center"
+                              min="1"
+                              disabled={!!item.serialNumberId}
+                            />
+                          </div>
+                          <div className="col-span-1 text-center text-sm">Adet</div>
+                          <div className="col-span-2 text-center">₺{item.unitPrice.toFixed(2)}</div>
+                          <div className="col-span-1 text-center">-</div>
+                          <div className="col-span-1 text-center">%{item.vatRate}</div>
+                          <div className="col-span-2 text-center font-medium">
+                            ₺{(item.quantity * item.unitPrice * (1 + item.vatRate / 100)).toFixed(2)}
+                          </div>
+                          <div className="col-span-1 text-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveItem(item.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              ×
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                <Button variant="outline" className="w-full">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Yeni Satır Ekle
+                </Button>
+                
+                <p className="text-sm text-blue-600">
+                  <strong>İpucu:</strong> Ürün/hizmet alanına yazmaya başlayarak arama yapabilir, miktar ve fiyat değiştirerek anlık hesaplama görebilirsiniz
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Delivery References */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">İrsaliye Referansları</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {deliveryReferences.length === 0 ? (
+                  <p className="text-gray-500 text-sm mb-4">İrsaliye referansı eklenmedi.</p>
+                ) : (
+                  <div className="space-y-2 mb-4">
+                    {deliveryReferences.map((ref, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <span>{ref}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeliveryReferences(prev => prev.filter((_, i) => i !== index))}
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <Button variant="outline" className="w-full">
+                  <Plus className="h-4 w-4 mr-2" />
+                  İrsaliye Ekle
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Document Description */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Belge Açıklaması</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Textarea
+                  placeholder="Fatura açıklaması girin... (Opsiyonel)"
+                  value={invoiceNote}
+                  onChange={(e) => setInvoiceNote(e.target.value)}
+                  rows={3}
+                />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column - Invoice Details & Actions */}
+          <div className="space-y-6">
+            {/* Invoice Details */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Fatura Detayları
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="invoiceType">Fatura Tipi</Label>
+                  <Select value={invoiceType} onValueChange={setInvoiceType}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Satış Faturası">Satış Faturası</SelectItem>
+                      <SelectItem value="E-Arşiv">E-Arşiv</SelectItem>
+                      <SelectItem value="E-Fatura">E-Fatura</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="currency">Para Birimi</Label>
+                  <Select value={currency} onValueChange={setCurrency}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="₺ Türk Lirası">₺ Türk Lirası</SelectItem>
+                      <SelectItem value="$ USD">$ USD</SelectItem>
+                      <SelectItem value="€ EUR">€ EUR</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="invoiceDate">Fatura Tarihi ve Saati</Label>
+                  <Input
+                    type="date"
+                    value={invoiceDate}
+                    onChange={(e) => setInvoiceDate(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="dueDate">Vade Tarihi</Label>
+                  <Input
+                    type="date"
+                    value={dueDate}
+                    onChange={(e) => setDueDate(e.target.value)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Action Buttons */}
+            <div className="space-y-3">
+              <Button
+                onClick={handleSubmit}
+                disabled={isSubmitting || saleItems.length === 0}
+                className="w-full h-12 text-lg gap-2 bg-green-600 hover:bg-green-700"
+                size="lg"
+              >
+                <Receipt className="h-5 w-5" />
+                {isSubmitting ? 'İşleniyor...' : 'Faturayı Kaydet'}
+              </Button>
+              
+              <Button
+                variant="outline"
+                onClick={() => navigate('/sales/list')}
+                disabled={isSubmitting}
+                className="w-full"
+              >
+                İptal
+              </Button>
+            </div>
+
+            {/* Additional Actions */}
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="flex-1">
+                İndirim/Vergi
+              </Button>
+              <Button variant="outline" size="sm" className="flex-1">
+                Sık Kullanılanlar
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
+
+
 
       {/* Serial Number Selection Modal */}
       {selectedProduct && (
@@ -391,6 +643,29 @@ export default function NewSalePage() {
         barcode={notFoundBarcode}
         onClose={() => setProductNotFoundModalOpen(false)}
         onProductCreated={handleProductCreated}
+      />
+
+      {/* Customer Selection Modal */}
+      <CustomerSelectionModal
+        isOpen={customerModalOpen}
+        onClose={() => setCustomerModalOpen(false)}
+        onSelect={(customer) => {
+          setSelectedCustomer(customer);
+          // Convert to CustomerInfoFormData format
+          setCustomerData({
+            customerType: customer.customer_type === 'INDIVIDUAL' ? 'Bireysel' : 'Kurumsal',
+            customerName: customer.name,
+            vknTckn: customer.vkn_tckn || '',
+            taxOffice: customer.tax_office || '',
+            email: customer.email || '',
+            phone: customer.phone || '',
+            address: customer.address || '',
+          });
+        }}
+        onCreateNew={() => {
+          setCustomerModalOpen(false);
+          // TODO: Open new customer creation modal
+        }}
       />
     </Layout>
   );

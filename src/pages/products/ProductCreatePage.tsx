@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Layout } from '@/components/layout/Layout'
-import { ProductForm } from '@/components/products/ProductForm'
+import { ProductFormCompact } from '@/components/products/ProductFormCompact'
 import { ProductService } from '@/services/productService'
 import { SerialNumberService } from '@/services/serialNumberService'
-import { ChevronRight } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
 import type { ProductFormData } from '@/types/product'
 
@@ -76,37 +77,26 @@ function ProductCreatePage() {
   }
 
   return (
-    <Layout>
-      <div className="space-y-6">
-        {/* Breadcrumb Navigation */}
-        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm text-gray-600">
-          <button
-            onClick={() => navigate('/products/manage')}
-            className="hover:text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded px-1"
-            aria-label="Ürün yönetimine geri dön"
-          >
-            Ürün Yönetimi
-          </button>
-          <ChevronRight className="w-4 h-4" aria-hidden="true" />
-          <span className="text-gray-900 font-medium" aria-current="page">Yeni Ürün Ekle</span>
-        </nav>
-
-        {/* Page Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Yeni Ürün Ekle</h1>
-          <p className="text-gray-600 mt-1">
-            Ürün bilgilerini, teknik özellikleri ve seri numaralarını girin
-          </p>
-        </div>
-
-        {/* Product Form */}
-        <ProductForm
-          mode="create"
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-          isSubmitting={isSubmitting}
-        />
-      </div>
+    <Layout
+      title="Yeni Ürün Ekle"
+      subtitle="Hızlı ve kolay ürün ekleme"
+      actions={
+        <Button
+          variant="outline"
+          onClick={() => navigate('/products/manage')}
+          className="gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Geri Dön
+        </Button>
+      }
+    >
+      <ProductFormCompact
+        mode="create"
+        onSubmit={handleSubmit}
+        onCancel={handleCancel}
+        isSubmitting={isSubmitting}
+      />
     </Layout>
   )
 }

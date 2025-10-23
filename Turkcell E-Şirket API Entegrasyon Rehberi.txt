@@ -1,0 +1,146 @@
+Turkcell E-Þirket API Entegrasyon Rehberi
+Giriþ ve Gereksinimler
+Turkcell E-Þirket platformu, e-Fatura ve e-Arþiv gibi dijital belge hizmetlerine API üzerinden eriþim imkâný sunar. Kendi uygulamanýzý bu platformla entegre ederek fatura oluþturma, gönderme ve gelen faturalarý çekme iþlemlerini otomatikleþtirebilirsiniz. Entegrasyona baþlamadan önce Turkcell E-Þirket tarafýnda ilgili e-Fatura/e-Arþiv hizmetine kayýtlý olmanýz ve entegrasyon izni almanýz gerekmektedir (gerekirse satýþ ekibiyle iletiþime geçilmelidir)[1]. Bu rehberde, test ortamýndan canlý ortama geçiþe kadar gereken adýmlar, kimlik doðrulama süreçleri ve örnek API çaðrýlarý açýklanmaktadýr.
+Test ve Canlý Ortamlar
+Turkcell E-Þirket API’si için test ortamý ve canlý (production) ortam olmak üzere iki ayrý ortam bulunur. Geliþtirme ve deneme amaçlý olarak test ortamýný kullanmalý, iþlemlerinizi doðruladýktan sonra canlý ortama geçmelisiniz.
+* Test Ortamý: API isteklerinizi test sunucularýna yönlendirirsiniz ve gerçek iþlem yapmaz. Örneðin, test için fatura servis alan adý efaturaservicetest.isim360.com þeklindedir. Test ortamýnda yapýlan iþlemleri gözlemlemek için Turkcell E-Þirket’in test portalýný kullanabilirsiniz[2]. Test portaline portaltest.isim360.com adresinden giriþ yaparak gönderdiðiniz test faturalarýn durumlarýný inceleyebilirsiniz.
+* Canlý Ortam: Gerçek faturalar için canlý servisleri kullanmalýsýnýz. Canlý ortamda fatura servis alan adý efaturaservice.turkcellesirket.com þeklindedir. Canlý ortamda iþlemlere baþlamadan önce test ortamýnda her þeyi doðruladýðýnýzdan emin olun.
+Ortamlar Arasý Geçiþ: Test ortamýnda entegrasyonunuzu tamamladýktan sonra canlý ortama geçmek için API istek URL’lerinizi test alan adlarýndan canlý alan adlarýna çevirmeniz ve test için aldýðýnýz kimlik bilgileri yerine canlý ortam için alacaðýnýz kimlik bilgilerini kullanmanýz yeterlidir. Örneðin, testte kullandýðýnýz https://efaturaservicetest.isim360.com/v1/... ile baþlayan bir uç noktayý canlýda https://efaturaservice.turkcellesirket.com/v1/... olarak deðiþtirmelisiniz[3]. Benzer þekilde, testte aldýðýnýz API anahtarý/entegrasyon kullanýcýsý bilgileri yerine canlý ortam portalýndan aldýðýnýz bilgileri ve token URL’lerini kullanmalýsýnýz (aþaðýdaki bölümlere bakýnýz).
+API Eriþim Bilgilerinin Alýnmasý (API Anahtarý ve Entegrasyon Kullanýcýsý)
+Turkcell E-Þirket API’lerini kullanmaya baþlamak için öncelikle portal üzerinden bir API anahtarý (entegrasyon hesabý) oluþturmanýz gerekir[4]. Bu iþlem, Turkcell E-Þirket hesabýnýza giriþ yaptýktan sonra gerçekleþtirilir:
+1. Test Ortamý Ýçin: portaltest.isim360.com/home/api-management adresine girin ve “Yeni API Anahtarý” oluþturun[5]. Bir isim vererek anahtarý oluþturduktan sonra size bir anahtar deðeri verilecektir. Bu anahtar genellikle entegrasyon kullanýcý adýnýz veya þifreniz yerine geçecek bir kimlik bilgisidir.
+2. Canlý Ortam Ýçin: Benzer þekilde, portal.turkcellesirket.com/home/api-management adresinden canlý ortam için bir API anahtarý oluþturun[6]. Canlý ortam API anahtarýnýzý da kaydedin.
+Not: API anahtarý oluþturma adýmlarýnýn detaylarý için Turkcell e-Þirket entegrasyon ekibinden destek alýnabilir[7]. API anahtarý oluþturulduðunda genellikle sistemde bir entegrasyon kullanýcýsý tanýmlanmýþ olur. Bu kullanýcýya ait kimlik bilgileri (kullanýcý adý ve þifre veya API anahtarý) API çaðrýlarýnda kimlik doðrulama için kullanýlacaktýr.
+Kimlik Doðrulama ve Yetkilendirme (OAuth 2.0)
+Turkcell E-Þirket servis uç noktalarý, kimlik doðrulama için OAuth 2.0 mekanizmasýný kullanýr[8]. Yani API’ye istek yapmadan önce geçerli bir eriþim token’ý almanýz gerekir. Bu token, entegrasyon hesabýnýzýn kullanýcý adý ve þifresi (veya API anahtarý) kullanýlarak token servisi üzerinden alýnýr ve sonrasýnda diðer API çaðrýlarýnda Bearer Token þeklinde gönderilir.
+* Token Uç Noktalarý: OAuth 2.0 token’ý almak için iki ayrý URL vardýr. Canlý ortam token URL’si https://core.turkcellesirket.com/v1/token olup, test ortamý için karþýlýðý https://coretest.isim360.com/v1/token þeklindedir[9]. Bu uç noktalara HTTP POST isteði yaparak kullanýcý bilgilerinizle token talep edebilirsiniz.
+* Token Alma Ýsteði: Token almak için, entegrasyon kullanýcý adýnýzý, þifrenizi ve client_id deðerini göndermeniz gerekir. Turkcell E-Þirket API, client_id olarak genellikle sabit bir deðer olan serviceApi kullanýlmasýný istemektedir[10]. Ýstek gövdesi form-url-encoded formatýnda olmalýdýr. Aþaðýda bir örnek verilmiþtir:
+curl -X POST https://coretest.isim360.com/v1/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=<ENTEGRASYON_KULLANICI_ADI>&password=<ENTEGRASYON_SIFRESI>&client_id=serviceApi"
+Yukarýda test ortamý için örnek bir isteði görüyorsunuz. Canlýda core.turkcellesirket.com alan adýný kullanmalýsýnýz. Ýsteðiniz doðruysa, yanýt olarak JSON formatýnda bir eriþim tokený (access_token) alacaksýnýz. Bu token genellikle belirli bir süre için geçerlidir. HTTP 401 Unauthorized hatasý alýrsanýz muhtemelen token süresi dolmuþtur; bu durumda yeni bir token alýp devam etmelisiniz[11][12].
+* Token Kullanýmý: Eriþim token’ýný aldýktan sonra, API’daki diðer tüm isteklere bu token’ý ekleyerek yetkili eriþim saðlayabilirsiniz. Bunun için HTTP isteðinin baþlýklarýna Authorization: Bearer <TOKEN> þeklinde ekleme yapmalýsýnýz. Örneðin, bir fatura oluþturma isteði yaparken aldýðýnýz token’ý þu þekilde gönderirsiniz:
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6...
+(Token burada örnek olarak kýsaltýlmýþtýr.)
+API Üzerinden Fatura Oluþturma (Giden e-Fatura)
+Kendi uygulamanýzdan Turkcell E-Þirket sistemine e-Fatura oluþturup göndermek için Giden e-Fatura API uç noktalarýný kullanýrsýnýz[13]. Giden e-Fatura servisi, ERP veya muhasebe sisteminizden yeni bir e-Fatura kaydý yapmanýza imkân tanýr.
+Endpoint ve Metot: Yeni bir fatura oluþturmak için HTTP POST çaðrýsýný aþaðýdaki uç noktaya yapmalýsýnýz:
+* Test ortamý için: POST https://efaturaservicetest.isim360.com/v1/outboxinvoice/create
+* Canlý ortam için: POST https://efaturaservice.turkcellesirket.com/v1/outboxinvoice/create
+[14]
+Bu uç noktaya yapacaðýnýz isteðin gövdesinde faturaya ait verileri JSON formatýnda iletirsiniz. Turkcell E-Þirket, kendi portal arayüzünde kullanýlan JSON modelini API üzerinden de sunmaktadýr[15]. Bu model, Gelir Ýdaresi Baþkanlýðý (GÝB) standart UBL formatýndan farklýdýr ve E-Þirket portalýndaki form alanlarýnýn karþýlýklarýna sahiptir[16]. (Eðer GÝB’in UBL formatýný kullanmayý tercih ederseniz, API’de UBL gönderimi için ayrý uç noktalar da bulunmaktadýr; önceki GÝB UBL tecrübeniz varsa bu UBL uç noktalarýný kullanmanýz tavsiye edilir[16].)
+Gönderim Tipi – Taslak veya Gönder: Fatura oluþturma isteðinde, faturayý taslak olarak mý yoksa doðrudan gönderilmiþ olarak mý kaydedeceðinizi belirleyebilirsiniz. JSON gövdesinde bulunan status alaný bu amaçla kullanýlýr. status deðeri 0 olursa fatura sisteme taslak olarak kaydedilir, 20 olursa fatura oluþturulur oluþturulmaz GÝB’e gönderilir[17]. Hiç bir deðer verilmezse varsayýlan olarak 0 (taslak) kabul edilir[18]. Örneðin, ERP sisteminiz faturayý onaylamadan önce taslak göndermek isteyebilir; bu durumda 0 kullanýn. Doðrudan onaylý gönderim için 20 kullanýlmalýdýr.
+Ýstek Gövdesindeki Temel Alanlar: Fatura oluþturma isteðinde doldurulmasý gereken birçok alan vardýr. Baþlýca alanlar þunlardýr:
+* recordType: Fatura türünü belirtir. E-Fatura için 1 kullanýlmalýdýr (e-Arþiv için 2 kullanýlabilir)[19].
+* localReferenceId: (Opsiyonel) Kendi sisteminizdeki fatura kaydýný bu fatura ile iliþkilendirmek için kullanabileceðiniz bir alandýr[20]. Bu deðeri siz belirleyebilirsiniz; E-Þirket portal arayüzünden kesilen faturalarda bu alan boþ olur, ancak API ile gönderimde doldurmanýz tavsiye edilir.
+* useManualInvoiceId: (Opsiyonel) Fatura numarasýný kendiniz vermek istiyorsanýz true gönderin; aksi halde false býrakýn ve sistemin otomatik numara atamasýný kullanýn[21]. E-Fatura/E-Arþiv numaralarý 16 haneli olmalýdýr (örn: EPA2019000001220)[22].
+* addressBook: Alýcý (müþteri) bilgilerini içeren nesne. Bu alan, faturanýn kime kesileceðine dair unvan, VKN/TCKN, adres vb. bilgileri barýndýrýr[23][24]. (Örn. name, identificationNumber gibi alt alanlarý vardýr.)
+* generalInfoModel: Faturanýn genel bilgileri (fatura tarihleri, senaryo tipi, para birimi vb.) bu alanda yer alýr[25]. Örneðin, invoiceProfileType ile fatura senaryosu (Temel/Ticari), type ile faturanýn tip kodu (satýþ, iade vb.) belirtilir.
+* invoiceLines: Faturadaki kalemleri (ürün/hizmet) liste olarak içerir[26]. Her kalem için açýklama, miktar, birim fiyat, KDV oraný gibi bilgiler girilir[27][28].
+* Diðer isteðe baðlý alanlar: Ýrsaliye bilgileri için relatedDespatchList, ödeme bilgileri için paymentMeansModel ve paymentTermsModel, sipariþ bilgileri için orderInfoModel gibi pek çok alan mevcuttur. Ýhtiyacýnýza göre bu alanlarý da doldurabilirsiniz. API dokümantasyonu bu alanlarýn tamamýný ve alabileceði deðerleri detaylý açýklamaktadýr.
+Örnek Fatura Oluþturma Ýsteði: Aþaðýda basit bir fatura oluþturma isteði örneði bulunmaktadýr (anlaþýlýr olmasý için sadece zorunlu ve temel alanlar gösterilmektedir):
+curl -X POST https://efaturaservicetest.isim360.com/v1/outboxinvoice/create \
+  -H "Authorization: Bearer <ERIÞIM_TOKENI>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "recordType": 1,
+    "status": 20,
+    "addressBook": {
+      "name": "ALI MÜÞTERÝ A.Þ.",
+      "identificationNumber": "1234567890",
+      "alias": "urn:mail:defaultgb@efatura.gov.tr", 
+      "receiverCity": "Ýstanbul",
+      "receiverCountry": "Türkiye",
+      "receiverTaxOffice": "Kozyataðý"
+    },
+    "generalInfoModel": {
+      "invoiceProfileType": 0,
+      "type": 1,
+      "issueDate": "2025-10-23",
+      "currencyCode": "TRY"
+    },
+    "invoiceLines": [
+      {
+        "description": "Ürün Açýklamasý",
+        "amount": 2,
+        "unitCode": "C62", 
+        "unitPrice": 100.0,
+        "vatRate": 18
+      }
+    ]
+  }'
+Yukarýdaki örnekte, Authorization baþlýðýna daha önce aldýðýmýz Bearer token’ý eklediðimize dikkat edin. status: 20 deðeri faturanýn oluþturulur oluþturulmaz gönderilmesini saðlayacaktýr. Alýcý bilgileri (addressBook) ve en az bir fatura satýrý (invoiceLines) doldurulmuþtur. Gerçek bir senaryoda bu alanlarý kendi verilerinize göre uyarlamalýsýnýz. Ýstek baþarýlý olduðunda sunucu genelde 200 OK ve fatura kaydýyla ilgili bir yanýt döner. Yanýt içerisinde yeni oluþturulan faturaya ait ID (ETTN) ve durum mesajý yer alabilir (örneðin, status: "Taslak : 0", message: "Ýþlem baþarýlý" gibi)[29][30]. Bu ID deðerini daha sonra faturayý sorgulamak veya PDF/UBL indirmek için kullanabilirsiniz.
+Fatura Listeleme ve Sorgulama (Gelen ve Giden Faturalar)
+Gelen e-Faturalar: Þirketinize diðer firmalardan gelen e-Faturalarý API üzerinden çekebilir ve listeleyebilirsiniz. Bunun için Gelen e-Fatura servisine ait /inboxinvoice/list uç noktasý kullanýlýr[3]. Bu uç nokta, belirtilen kriterlere uyan gelen faturalarý sayfalý olarak döndürür[31]. Hem test hem de canlý ortam için uç nokta aynýdýr, sadece alan adý ortama göre deðiþir:
+* Test: GET https://efaturaservicetest.isim360.com/v1/inboxinvoice/list
+* Canlý: GET https://efaturaservice.turkcellesirket.com/v1/inboxinvoice/list
+Bu isteði yaparken, sorgu parametreleri ile filtreler uygulayabilirsiniz[31]. Önemli parametreler þunlardýr:
+* startDate ve endDate: Belirli bir tarih aralýðýnda gelen faturalarý almak için baþlangýç ve bitiþ tarihlerini (yyyy-MM-dd veya yyyy-MM-dd HH:mm:ss formatýnda) belirtebilirsiniz[32].
+* isNew: Yalnýzca yeni (henüz çekilmemiþ) faturalarý çekmek istiyorsanýz true deðeri ile filtreleyebilirsiniz. Sistem, gelen faturalarý ilk oluþtuðunda isNew: true olarak iþaretler[33]. Entegrasyon uygulamanýz bu faturalarý aldýktan sonra her bir faturayý okundu olarak iþaretlemek için ayrý bir çaðrý yapabilir (aþaðýya bakýnýz).
+* invoiceNumber, targetVknTckn: Belirli bir fatura numarasýna veya belirli bir gönderici VKN/TCKN’sine göre filtreleme yapabilirsiniz[34].
+* type (senaryo) ve tipType: Faturanýn senaryosuna (Temel, Ticari, Ýhracat vb.) veya tipine (Satýþ, Ýade, Tevkifat vb.) göre filtre uygulamak için kullanýlabilir[35][36].
+* status: Gelen faturanýn durumuna göre (Onaylandý, Reddedildi, Bekliyor vb.) filtreleme yapabilirsiniz[37].
+* pageIndex ve pageSize: Sonuçlarýn sayfalanmasý için sayfa numarasý ve sayfa baþýna kayýt sayýsý belirtebilirsiniz (maksimum 500 kayýt)[38]. Eðer çok sayýda fatura varsa birden fazla sayfayý iteratif olarak çekebilirsiniz.
+Örnek bir listeleme isteði (test ortamý için), son 1 haftada gelen yeni faturalarý çekmek üzere þöyle olabilir:
+curl -X GET "https://efaturaservicetest.isim360.com/v1/inboxinvoice/list?startDate=2025-10-16&endDate=2025-10-23&isNew=true&pageSize=50" \
+  -H "Authorization: Bearer <ERIÞIM_TOKENI>"
+Bu istek, belirtilen tarih aralýðýnda isNew=true olan ilk 50 faturayý döndürecektir. Yanýt olarak, faturalarýn listesi JSON formatýnda gelir. Yanýt içinde tipik olarak sayfalama bilgileri (pageIndex, totalCount vb.) ve items dizisi altýnda fatura özet bilgileri bulunur[39][40]. Her bir fatura için ID (ETTN), fatura numarasý, gönderici bilgileri, tutar, durum, isNew gibi alanlar yer alýr[40][41].
+Gelen Faturayý Okundu Ýþaretleme: Uygulamanýz, isNew=true olarak çektiði faturalarý baþarýlý bir þekilde iþledikten sonra, bu faturalarýn tekrar listelenmemesi için onlarý okundu (isNew=false) olarak iþaretlemelidir. Bunun için Inbox Invoice UpdateIsNew uç noktasýný kullanabilirsiniz. API dokümanýna göre PUT /v1/inboxinvoice/updateisnew metodu ile ilgili faturanýn isNew flag’ini false yapabilirsiniz[33]. Bu sayede ayný faturalar mükerrer þekilde listeden gelmez.
+Giden Faturalar: Sizin tarafýnýzdan API ile gönderilmiþ (veya portal üzerinden kesilmiþ) faturalarýn durumunu sorgulamak veya içeriklerini almak için de API uç noktalarý mevcuttur. Giden bir faturayý oluþtururken aldýðýnýz yanýt içindeki fatura ID (ETTN) deðerini kullanarak þu iþlemleri yapabilirsiniz:
+* Durum Sorgulama: GET /v2/outboxinvoice/{id}/status uç noktasý ile gönderdiðiniz faturanýn GÝB durumunu öðrenebilirsiniz (örneðin, gönderildi, onaylandý, reddedildi vb.)[42][43].
+* PDF/HTML/UBL Ýndirme: Faturanýn insan tarafýndan okunabilir formatlarýný veya orijinal UBL dosyasýný indirebilirsiniz. Örneðin, GET /v2/outboxinvoice/{id}/pdf/{isStandartXslt} uç noktasý faturayý PDF olarak döndürür[44][45]. Benzer þekilde /html/{isStandartXslt} uç noktasý HTML çýktýsýný verir[46][47]. {isStandartXslt} parametresi, eðer özel tasarým bir þablon (XSLT) kullanýyorsanýz hangi þablonla çýktýnýn alýnacaðýný belirtmek içindir; genelde false deðeri standart þablonu iþaret eder[48].
+* Gönderilmeyen Portal Faturalarýný Alma: Entegrasyon yapan firmalar, portal arayüzünden kestikleri (API dýþýnda manuel oluþturulan) faturalarý da sistemlerine almak isteyebilir. Bu durumda GET /v2/outboxinvoice/withnulllocalreferences uç noktasý kullanýlabilir[49][50]. Bu uç nokta, localReferenceId alaný boþ olan (muhtemelen portalden kesilmiþ) faturalarýn ETTN ve temel bilgilerini, verilen tarih aralýðýna göre listeler. Böylece portal üzerinden oluþturduðunuz faturalarýn bilgilerini de entegrasyon yoluyla çekebilirsiniz. Ancak bu uç noktayý kullanabilmek için API üzerinden gönderdiðiniz faturalarýn localReferenceId alanýný doldurmuþ olmanýz önerilir (boþ olmayan localReferenceId’ler portal faturalarýndan ayýrt etmeyi saðlar)[51][52].
+Örnek Yanýt Formatlarý
+API çaðrýlarýnýn baþarýlý yanýtlarý genellikle JSON formatýndadýr ve HTTP durum kodu 200 döner. Hatalý durumlarda ise 4xx veya 5xx serisi kodlar dönebilir. Turkcell E-Þirket API’lerinde sýk karþýlaþabileceðiniz yanýtlar ve kodlar þunlardýr:
+* 200 OK: Ýstek baþarýyla iþlenmiþtir. Örneðin fatura oluþturma isteði sonrasý 200 döner ve yanýt gövdesinde oluþturulan faturaya dair bilgiler olabilir.
+* 400 Bad Request: Ýstek gövdesindeki verilerde eksikler veya geçersiz deðerler varsa döner. Bu durumda yanýt içinde hangi alanlarda hata olduðu bildirilebilir.
+* 401 Unauthorized: Geçersiz veya süresi dolmuþ token ile istek yapýlýrsa döner[11]. Bu durumda yeni bir token alýp isteði yinelemek gerekir.
+* 403 Forbidden: Ýsteði yapan kullanýcý hesabýnýn ilgili iþlemi yapma yetkisi yoksa döner[53]. Örneðin, yalnýzca e-Fatura hizmeti aktifse e-Ýrsaliye uç noktalarýna eriþimde 403 alýnabilir.
+* 404 Not Found: Uç nokta adresi yanlýþsa veya URL’de verilen ID ile bir kayýt bulunamazsa alýnýr[54].
+* 422 Unprocessable Entity: Gönderdiðiniz veriler valide edilememiþse (örneðin format hatalarý, iþ kurallarýna aykýrýlýklar) bu kodla hata alýrsýnýz[55]. Bu durumda yanýt içeriðinde hangi validation hatalarýnýn oluþtuðu belirtilir; düzeltmeden ayný veriyi tekrar göndermemek gerekir[56].
+Örnek bir baþarýlý yanýt (200 OK) içeriði þöyle olabilir:
+{
+  "id": "0975854C-3EAE-43D3-8A83-D95767F43FEA",
+  "status": "Taslak : 0",
+  "message": "Fatura baþarýyla taslak olarak kaydedildi"
+}
+Bu örnekte, yeni oluþturulan faturanýn benzersiz ID’si (id) ve sistemde taslak olarak kaydedildiðine dair durum mesajý görülmektedir. Gelen faturalarý listeleme yanýtý ise sayfalama bilgileri ile birlikte birden fazla kayýt içerebilir, örneðin:
+{
+  "pageIndex": 0,
+  "pageSize": 50,
+  "totalCount": 12,
+  "totalPages": 1,
+  "items": [
+    {
+      "id": "C62...AE1", 
+      "invoiceNumber": "EPA2025000001234",
+      "executionDate": "2025-10-20T14:32:00",
+      "status": "Onaylandý : 60",
+      "type": "Temel : 0",
+      "tipType": "Satýþ : 1",
+      "targetTitle": "ABC Ltd. Þti.",
+      "targetVknTckn": "11111111111",
+      "totalAmount": 1180.00,
+      "currency": "TRY",
+      "isNew": false
+    },
+    { ... diðer faturalar ... }
+  ]
+}
+Yukarýdaki listede items altýnda gelen faturalardan birinin örnek verileri gösterilmiþtir. Her fatura için durumunun Onaylandý (60) olduðu, bir satýþ faturasý olduðu, gönderici VKN’si ve tutar bilgileri gibi alanlar yer alýyor.
+Sonuç ve Ýleri Adýmlar
+Bu rehberde, Turkcell E-Þirket platformuyla kendi uygulamanýz arasýnda API entegrasyonu kurmak için gereken temel adýmlarý inceledik. Özetle, önce test portalýndan API anahtarýnýzý/entegrasyon hesabýnýzý oluþturup OAuth 2.0 ile token alarak, test servislerine baðlanmalýsýnýz. Ardýndan fatura oluþturma (/outboxinvoice/create) ve gelen faturalarý listeleme (/inboxinvoice/list) gibi iþlemleri örneklerle gördük. Test ortamýnda baþarýlý sonuçlar aldýktan sonra canlý ortama geçerek gerçek faturalarla çalýþabilirsiniz.
+Entegrasyon sürecinde takýldýðýnýz noktalar olursa Turkcell E-Þirket’in Geliþtirici Dokümantasyonunu (developer.turkcellesirket.com) detaylýca incelemeniz faydalý olacaktýr. Özellikle fatura modelindeki alanlarýn açýklamalarý, farklý senaryolar (iade, temel/ticari fatura ayrýmý, e-Arþiv özel durumlarý vb.) dokümanda yer almaktadýr. Ayrýca Turkcell e-Þirket’in GitHub üzerindeki örnek projelerine göz atmak da (varsa) entegrasyonunuza yardýmcý olabilir[57].
+Artýk elinizde gerekli bilgiler olduðuna göre kendi uygulamanýzda API çaðrýlarýný kodlamaya baþlayabilirsiniz. Güvenlik açýsýndan token ve anahtar bilgilerinizi güvende tutmayý unutmayýn. Entegrasyonunuzun sorunsuz çalýþmasý dileðiyle, iyi çalýþmalar!
+Kaynaklar:
+* Turkcell e-Þirket Geliþtirici Dokümantasyonu – e-Fatura/e-Arþiv API Kýlavuzu[4][58][3][31]
+* Turkcell e-Þirket Geliþtirici Dokümantasyonu – e-Ýrsaliye API Kýlavuzu[9][59]
+* Turkcell e-Þirket Portalý (Test ve Canlý) – API Anahtarý Oluþturma Ekranlarý[5]
+* Diðer ilgili Turkcell e-Þirket doküman sayfalarý ve hata kodu açýklamalarý[11][53].
+
+[1] [2] [3] [4] [5] [6] [7] [11] [12] [13] [14] [15] [16] [17] [18] [19] [20] [21] [22] [23] [24] [25] [26] [27] [28] [29] [30] [31] [32] [33] [34] [35] [36] [37] [38] [39] [40] [41] [42] [43] [44] [45] [46] [47] [48] [49] [50] [51] [52] [53] [54] [55] [56] [58] e-Fatura/e-Arþiv Rest Api Geliþtirici Kýlavuzu
+https://developer.turkcellesirket.com/fatura
+[8] [9] [10] [59] e-Ýrsaliye Rest Api Geliþtirici Kýlavuzu
+https://developer.turkcellesirket.com/irsaliye
+[57] Turkcell e-Þirket - Geliþtirici Rehberi
+https://developer.turkcellesirket.com/pages/overview.html

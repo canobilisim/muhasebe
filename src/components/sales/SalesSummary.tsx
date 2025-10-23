@@ -25,44 +25,39 @@ export function SalesSummary({ items }: SalesSummaryProps) {
   }, [items]);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Satış Özeti</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3" role="region" aria-label="Satış özeti ve toplam tutarlar">
-          {/* Ara Toplam */}
-          <div className="flex items-center justify-between py-2 border-b">
-            <span className="text-gray-600" id="subtotal-label">Ara Toplam</span>
-            <span className="font-medium text-lg" aria-labelledby="subtotal-label">
-              {subtotal.toFixed(2)} ₺
-            </span>
-          </div>
+    <div className="space-y-2" role="region" aria-label="Satış özeti ve toplam tutarlar">
+      {/* Ara Toplam */}
+      <div className="flex items-center justify-between py-1">
+        <span className="text-sm text-gray-600" id="subtotal-label">Ara Toplam</span>
+        <span className="font-medium" aria-labelledby="subtotal-label">
+          {subtotal.toFixed(2)} ₺
+        </span>
+      </div>
 
-          {/* Toplam KDV */}
-          <div className="flex items-center justify-between py-2 border-b">
-            <span className="text-gray-600" id="vat-label">Toplam KDV</span>
-            <span className="font-medium text-lg" aria-labelledby="vat-label">
-              {totalVat.toFixed(2)} ₺
-            </span>
-          </div>
+      {/* Toplam KDV */}
+      <div className="flex items-center justify-between py-1">
+        <span className="text-sm text-gray-600" id="vat-label">Toplam KDV</span>
+        <span className="font-medium" aria-labelledby="vat-label">
+          {totalVat.toFixed(2)} ₺
+        </span>
+      </div>
 
-          {/* Genel Toplam */}
-          <div className="flex items-center justify-between py-3 bg-blue-50 px-4 rounded-lg" role="status" aria-live="polite">
-            <span className="font-semibold text-gray-900 text-lg" id="total-label">
-              Genel Toplam
-            </span>
-            <span className="font-bold text-2xl text-blue-600" aria-labelledby="total-label">
-              {grandTotal.toFixed(2)} ₺
-            </span>
-          </div>
+      <hr className="my-2" />
 
-          {/* Item Count */}
-          <div className="text-center text-sm text-gray-500 pt-2" aria-live="polite">
-            Toplam {items.length} ürün
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+      {/* Genel Toplam */}
+      <div className="flex items-center justify-between py-2 bg-blue-50 px-3 rounded-lg" role="status" aria-live="polite">
+        <span className="font-semibold text-gray-900" id="total-label">
+          Genel Toplam
+        </span>
+        <span className="font-bold text-xl text-blue-600" aria-labelledby="total-label">
+          {grandTotal.toFixed(2)} ₺
+        </span>
+      </div>
+
+      {/* Item Count */}
+      <div className="text-center text-xs text-gray-500 pt-1" aria-live="polite">
+        {items.length} ürün
+      </div>
+    </div>
   );
 }

@@ -73,7 +73,7 @@ export function ProductSearchInput({
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [searchQuery]);
+  }, [searchQuery, onProductNotFound]);
 
   // Handle barcode scanner input (typically ends with Enter)
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

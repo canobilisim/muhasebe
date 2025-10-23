@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Layout } from '@/components/layout/Layout'
-import { ProductForm } from '@/components/products/ProductForm'
+import { ProductFormCompact } from '@/components/products/ProductFormCompact'
 import { ProductService } from '@/services/productService'
 import { SerialNumberService } from '@/services/serialNumberService'
-import { ChevronRight, Loader2 } from 'lucide-react'
+import { ArrowLeft, Loader2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
 import type { ProductFormData, SerialNumber } from '@/types/product'
 
@@ -154,7 +155,10 @@ function ProductEditPage() {
 
   if (isLoading) {
     return (
-      <Layout>
+      <Layout
+        title="Ürün Düzenle"
+        subtitle="Yükleniyor..."
+      >
         <div className="flex items-center justify-center h-64" role="status" aria-live="polite">
           <div className="text-center">
             <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" aria-hidden="true" />
@@ -171,41 +175,28 @@ function ProductEditPage() {
   }
 
   return (
-    <Layout>
-      <div className="space-y-6">
-        {/* Breadcrumb Navigation */}
-        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm text-gray-600">
-          <button
-            onClick={() => navigate('/products/manage')}
-            className="hover:text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded px-1"
-            aria-label="Ürün yönetimine geri dön"
-          >
-            Ürün Yönetimi
-          </button>
-          <ChevronRight className="w-4 h-4" aria-hidden="true" />
-          <span className="text-gray-900 font-medium">Ürün Düzenle</span>
-          <ChevronRight className="w-4 h-4" aria-hidden="true" />
-          <span className="text-gray-900 font-medium" aria-current="page">{productName}</span>
-        </nav>
-
-        {/* Page Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Ürün Düzenle</h1>
-          <p className="text-gray-600 mt-1">
-            {productName} ürününün bilgilerini güncelleyin
-          </p>
-        </div>
-
-        {/* Product Form */}
-        <ProductForm
-          mode="edit"
-          initialData={productData}
-          initialSerialNumbers={serialNumbers}
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-          isSubmitting={isSubmitting}
-        />
-      </div>
+    <Layout
+      title={`${productName} - Düzenle`}
+      subtitle="Ürün bilgilerini güncelleyin"
+      actions={
+        <Button
+          variant="outline"
+          onClick={() => navigate('/products/manage')}
+          className="gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Geri Dön
+        </Button>
+      }
+    >
+      <ProductFormCompact
+        mode="edit"
+        initialData={productData}
+        initialSerialNumbers={serialNumbers}
+        onSubmit={handleSubmit}
+        onCancel={handleCancel}
+        isSubmitting={isSubmitting}
+      />
     </Layout>
   )
 }

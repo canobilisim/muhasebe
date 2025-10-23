@@ -6,7 +6,8 @@ import { encryptApiKey, decryptApiKey } from '@/utils/encryption'
  */
 export interface ApiSettings {
   id: string
-  api_key_encrypted: string
+  username_encrypted: string
+  password_encrypted: string
   environment: 'test' | 'production'
   is_active: boolean
   last_test_date?: string
@@ -16,13 +17,21 @@ export interface ApiSettings {
 }
 
 export interface ApiSettingsInput {
-  apiKey: string
+  username: string
+  password: string
   environment: 'test' | 'production'
+}
+
+export interface TokenResponse {
+  access_token: string
+  token_type: string
+  expires_in: number
 }
 
 export interface ApiSettingsDecrypted {
   id: string
-  apiKey: string
+  username: string
+  password: string
   environment: 'test' | 'production'
   is_active: boolean
   last_test_date?: string
@@ -30,6 +39,8 @@ export interface ApiSettingsDecrypted {
   created_at: string
   updated_at: string
 }
+
+
 
 export interface TestConnectionResult {
   success: boolean
@@ -40,9 +51,17 @@ export interface TestConnectionResult {
 /**
  * API Settings Service
  * Manages e-Fatura API configuration with encryption
+ * 
+ * Available test endpoints for connection testing:
+ * - /staticlist/unit (v1) - Unit codes list
+ * - /staticlist/country (v1) - Country list  
+ * - /staticlist/taxoffice (v1) - Tax office list
+ * - /gibuser/recipient/zip (v2) - e-Invoice users list
  */
 class ApiSettingsServiceImpl {
   
+
+
   /**
    * Get API base URL based on environment
    */
@@ -50,6 +69,15 @@ class ApiSettingsServiceImpl {
     return environment === 'production'
       ? 'https://efaturaservice.turkcellesirket.com/v1'
       : 'https://efaturaservicetest.isim360.com/v1'
+  }
+
+  /**
+   * Get API v2 base URL based on environment (for newer endpoints)
+   */
+  getApiV2Url(environment: 'test' | 'production'): string {
+    return environment === 'production'
+      ? 'https://efaturaservice.turkcellesirket.com/v2'
+      : 'https://efaturaservicetest.isim360.com/v2'
   }
 
   /**
@@ -75,12 +103,14 @@ class ApiSettingsServiceImpl {
         return null
       }
 
-      // Decrypt API key
-      const apiKey = await decryptApiKey(data.api_key_encrypted)
+      // Decrypt credentials
+      const username = await decryptString(data.username_encrypted)
+      const password = await decryptString(data.password_encrypted)
 
       return {
         id: data.id,
-        apiKey,
+        username,
+        password,
         environment: data.environment as 'test' | 'production',
         is_active: data.is_active ?? false,
         last_test_date: data.last_test_date ?? undefined,
@@ -105,16 +135,21 @@ class ApiSettingsServiceImpl {
   async saveApiSettings(settings: ApiSettingsInput): Promise<void> {
     try {
       // Validate input
-      if (!settings.apiKey || settings.apiKey.trim() === '') {
-        throw new Error('API Key gereklidir')
+      if (!settings.username || settings.username.trim() === '') {
+        throw new Error('Kullanıcı adı gereklidir')
+      }
+
+      if (!settings.password || settings.password.trim() === '') {
+        throw new Error('Şifre gereklidir')
       }
 
       if (!settings.environment) {
         throw new Error('Ortam seçimi gereklidir')
       }
 
-      // Encrypt API key
-      const encryptedApiKey = await encryptApiKey(settings.apiKey)
+      // Encrypt credentials
+      const encryptedUsername = await encryptString(settings.username)
+      const encryptedPassword = await encryptString(settings.password)
 
       // Check if there's an existing active setting
       const { data: existingSettings } = await supabase
@@ -135,7 +170,8 @@ class ApiSettingsServiceImpl {
       const { error: insertError } = await supabase
         .from('api_settings')
         .insert({
-          api_key_encrypted: encryptedApiKey,
+          username_encrypted: encryptedUsername,
+          password_encrypted: encryptedPassword,
           environment: settings.environment,
           is_active: true,
           created_at: new Date().toISOString(),
@@ -162,12 +198,14 @@ class ApiSettingsServiceImpl {
    */
   async testApiConnection(settings?: ApiSettingsInput): Promise<TestConnectionResult> {
     try {
-      let apiKey: string
+      let username: string
+      let password: string
       let environment: 'test' | 'production'
 
       if (settings) {
         // Use provided settings
-        apiKey = settings.apiKey
+        username = settings.username
+        password = settings.password
         environment = settings.environment
       } else {
         // Use stored settings
@@ -178,27 +216,41 @@ class ApiSettingsServiceImpl {
             message: 'API ayarları yapılmamış'
           }
         }
-        apiKey = storedSettings.apiKey
+        username = storedSettings.username
+        password = storedSettings.password
         environment = storedSettings.environment
       }
 
+      // First get access token
+      const tokenResponse = await this.getAccessToken(username, password, environment)
+      
       // Get API URL
       const apiUrl = this.getApiUrl(environment)
 
-      // Make a test request to the API
-      // Using a simple endpoint to verify authentication
-      const response = await fetch(`${apiUrl}/health`, {
+      // Test API connection using a simple endpoint
+      // Using /staticlist/unit endpoint as it's a simple GET request that requires authentication
+      const response = await fetch(`${apiUrl}/staticlist/unit`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
+          'Authorization': `Bearer ${tokenResponse.access_token}`,
           'Content-Type': 'application/json'
         }
       })
 
       const testSuccess = response.ok
-      const testMessage = testSuccess 
-        ? 'API bağlantısı başarılı' 
-        : `API bağlantısı başarısız: ${response.statusText}`
+      let testMessage: string
+
+      if (testSuccess) {
+        testMessage = 'API bağlantısı başarılı'
+      } else if (response.status === 401) {
+        testMessage = 'API anahtarı geçersiz veya yetkilendirme hatası'
+      } else if (response.status === 403) {
+        testMessage = 'API erişim yetkisi yok'
+      } else if (response.status === 404) {
+        testMessage = 'API endpoint bulunamadı'
+      } else {
+        testMessage = `API bağlantısı başarısız: ${response.status} ${response.statusText}`
+      }
 
       // Update test results in database if using stored settings
       if (!settings) {
@@ -222,7 +274,8 @@ class ApiSettingsServiceImpl {
           status: response.status,
           statusText: response.statusText,
           environment,
-          apiUrl
+          apiUrl,
+          endpoint: '/staticlist/unit'
         }
       }
     } catch (error) {
@@ -251,6 +304,51 @@ class ApiSettingsServiceImpl {
     } catch (error) {
       console.error('Error checking API configuration:', error)
       return false
+    }
+  }
+
+  /**
+   * Get authentication URL based on environment
+   */
+  getAuthUrl(environment: 'test' | 'production'): string {
+    return environment === 'production'
+      ? 'https://core.turkcellesirket.com/v1/token'
+      : 'https://coretest.isim360.com/v1/token'
+  }
+
+  /**
+   * Get access token using username and password
+   * @param username - Username for authentication
+   * @param password - Password for authentication
+   * @param environment - Environment (test or production)
+   * @returns Promise with token response
+   */
+  async getAccessToken(username: string, password: string, environment: 'test' | 'production'): Promise<TokenResponse> {
+    try {
+      const authUrl = this.getAuthUrl(environment)
+      
+      const response = await fetch(authUrl, {
+        method: 'POST',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({
+          username,
+          password,
+          client_id: 'serviceApi'
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`Token alınamadı: ${response.status} ${response.statusText}`)
+      }
+
+      const tokenData: TokenResponse = await response.json()
+      return tokenData
+    } catch (error) {
+      console.error('Error getting access token:', error)
+      throw error
     }
   }
 

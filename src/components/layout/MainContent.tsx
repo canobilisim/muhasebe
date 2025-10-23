@@ -17,7 +17,12 @@ export const MainContent = ({
   actions 
 }: MainContentProps) => {
   return (
-    <main className={cn("flex-1 flex flex-col h-[calc(100vh-4rem)] w-full overflow-hidden", className)}>
+    <main 
+      id="main-content" 
+      className={cn("flex-1 flex flex-col h-[calc(100vh-4rem)] w-full overflow-hidden", className)}
+      role="main"
+      aria-label="Ana içerik"
+    >
       {/* Page Header */}
       {(title || subtitle || actions) && (
         <div className="bg-white border-b border-gray-200 px-4 py-2 flex-shrink-0">
@@ -35,7 +40,7 @@ export const MainContent = ({
               )}
             </div>
             {actions && (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2" role="group" aria-label="Sayfa işlemleri">
                 {actions}
               </div>
             )}

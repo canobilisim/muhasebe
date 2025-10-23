@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Home, ArrowLeft } from 'lucide-react'
 
-export const NotFoundPage = () => {
+const NotFoundPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
@@ -38,3 +38,5 @@ export const NotFoundPage = () => {
     </div>
   )
 }
+
+export default NotFoundPage

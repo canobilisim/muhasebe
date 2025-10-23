@@ -6,7 +6,7 @@ import { ProductService } from '@/services/productService'
 import { ProductTable, StockFilters } from '@/components/stock'
 import { Package } from 'lucide-react'
 
-export const ProductsListPage = () => {
+const ProductsListPage = () => {
   const {
     products,
     isLoading,

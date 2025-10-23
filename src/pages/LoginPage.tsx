@@ -26,7 +26,7 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>
 
-export const LoginPage = () => {
+const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [showDevDetails, setShowDevDetails] = useState(false)
   const { signIn, isAuthenticated, isLoading, error, clearError, lastError } = useAuth()
@@ -222,3 +222,5 @@ export const LoginPage = () => {
     </div>
   )
 }
+export
+ default LoginPage

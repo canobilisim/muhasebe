@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 
-export const CategoriesPage = () => {
+const CategoriesPage = () => {
   const [categories, setCategories] = useState<ProductCategory[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')

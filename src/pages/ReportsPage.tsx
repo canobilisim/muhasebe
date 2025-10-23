@@ -13,7 +13,7 @@ import {
 
 type ReportType = 'overview' | 'sales' | 'customers' | 'stock'
 
-export const ReportsPage = () => {
+const ReportsPage = () => {
   const [activeReport, setActiveReport] = useState<ReportType>('overview')
 
   const reportTypes = [
@@ -136,3 +136,5 @@ export const ReportsPage = () => {
     </Layout>
   )
 }
+
+export default ReportsPage

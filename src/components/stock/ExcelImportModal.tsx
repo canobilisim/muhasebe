@@ -38,6 +38,11 @@ interface ImportRow {
   salePrice: number
   stockQuantity: number
   criticalStockLevel: number
+  brand?: string
+  model?: string
+  color?: string
+  serialNumber?: string
+  condition?: string
   isValid: boolean
   errors: string[]
 }
@@ -65,8 +70,8 @@ export const ExcelImportModal = ({ isOpen, onClose, onImport, isLoading }: Excel
       const lines = text.split('\n')
       const headers = lines[0].split(',').map(h => h.trim())
       
-      // Expected headers: Barkod, Ürün Adı, Kategori, Alış Fiyatı, Satış Fiyatı, Stok Miktarı, Kritik Seviye
-      const expectedHeaders = ['Barkod', 'Ürün Adı', 'Kategori', 'Alış Fiyatı', 'Satış Fiyatı', 'Stok Miktarı', 'Kritik Seviye']
+      // Expected headers: Barkod, Ürün Adı, Kategori, Alış Fiyatı, Satış Fiyatı, Stok Miktarı, Kritik Seviye, Marka, Model, Renk, Seri No, Durum
+      const expectedHeaders = ['Barkod', 'Ürün Adı', 'Kategori', 'Alış Fiyatı', 'Satış Fiyatı', 'Stok Miktarı', 'Kritik Seviye', 'Marka', 'Model', 'Renk', 'Seri No', 'Durum']
       
       if (!expectedHeaders.every(header => headers.includes(header))) {
         throw new Error('Excel dosyası gerekli kolonları içermiyor. Lütfen şablon dosyasını kullanın.')
@@ -87,6 +92,11 @@ export const ExcelImportModal = ({ isOpen, onClose, onImport, isLoading }: Excel
           salePrice: parseFloat(values[4]) || 0,
           stockQuantity: parseInt(values[5]) || 0,
           criticalStockLevel: parseInt(values[6]) || 0,
+          brand: values[7] || undefined,
+          model: values[8] || undefined,
+          color: values[9] || undefined,
+          serialNumber: values[10] || undefined,
+          condition: values[11] || undefined,
           isValid: true,
           errors: []
         }
@@ -114,6 +124,10 @@ export const ExcelImportModal = ({ isOpen, onClose, onImport, isLoading }: Excel
         }
         if (row.criticalStockLevel < 0) {
           row.errors.push('Kritik seviye negatif olamaz')
+          row.isValid = false
+        }
+        if (row.condition && !['Yeni', '2. El', 'Yenilenmiş', 'Demo'].includes(row.condition)) {
+          row.errors.push('Durum: Yeni, 2. El, Yenilenmiş veya Demo olmalı')
           row.isValid = false
         }
 
@@ -144,6 +158,11 @@ export const ExcelImportModal = ({ isOpen, onClose, onImport, isLoading }: Excel
       sale_price: row.salePrice,
       stock_quantity: row.stockQuantity,
       critical_stock_level: row.criticalStockLevel,
+      brand: row.brand || null,
+      model: row.model || null,
+      color: row.color || null,
+      serial_number: row.serialNumber || null,
+      condition: row.condition as 'Yeni' | '2. El' | 'Yenilenmiş' | 'Demo' | null,
       is_active: true
     }))
 
@@ -153,10 +172,10 @@ export const ExcelImportModal = ({ isOpen, onClose, onImport, isLoading }: Excel
   }
 
   const downloadTemplate = () => {
-    const headers = ['Barkod', 'Ürün Adı', 'Kategori', 'Alış Fiyatı', 'Satış Fiyatı', 'Stok Miktarı', 'Kritik Seviye']
+    const headers = ['Barkod', 'Ürün Adı', 'Kategori', 'Alış Fiyatı', 'Satış Fiyatı', 'Stok Miktarı', 'Kritik Seviye', 'Marka', 'Model', 'Renk', 'Seri No', 'Durum']
     const sampleData = [
-      ['1234567890123', 'Örnek Ürün 1', 'Kategori A', '10.50', '15.75', '100', '10'],
-      ['1234567890124', 'Örnek Ürün 2', 'Kategori B', '25.00', '35.00', '50', '5']
+      ['1234567890123', 'Örnek Ürün 1', 'Kategori A', '10.50', '15.75', '100', '10', 'Samsung', 'Galaxy S21', 'Siyah', 'IMEI123456', 'Yeni'],
+      ['1234567890124', 'Örnek Ürün 2', 'Kategori B', '25.00', '35.00', '50', '5', 'Apple', 'iPhone 13', 'Beyaz', '', '2. El']
     ]
     
     const csvContent = [headers, ...sampleData]
@@ -281,6 +300,9 @@ export const ExcelImportModal = ({ isOpen, onClose, onImport, isLoading }: Excel
                     <TableHead>Barkod</TableHead>
                     <TableHead>Ürün Adı</TableHead>
                     <TableHead>Kategori</TableHead>
+                    <TableHead>Marka</TableHead>
+                    <TableHead>Model</TableHead>
+                    <TableHead>Durum</TableHead>
                     <TableHead className="text-right">Alış</TableHead>
                     <TableHead className="text-right">Satış</TableHead>
                     <TableHead className="text-right">Stok</TableHead>
@@ -300,6 +322,9 @@ export const ExcelImportModal = ({ isOpen, onClose, onImport, isLoading }: Excel
                       <TableCell className="font-mono text-sm">{row.barcode}</TableCell>
                       <TableCell>{row.name}</TableCell>
                       <TableCell>{row.category}</TableCell>
+                      <TableCell>{row.brand || '-'}</TableCell>
+                      <TableCell>{row.model || '-'}</TableCell>
+                      <TableCell>{row.condition || '-'}</TableCell>
                       <TableCell className="text-right font-mono">
                         {formatCurrency(row.purchasePrice)}
                       </TableCell>

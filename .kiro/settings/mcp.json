@@ -16,7 +16,10 @@
         "execute_sql",
         "apply_migration",
         "generate_typescript_types",
-        "list_projects"
+        "list_projects",
+        "search_docs",
+        "list_organizations",
+        "get_project_url"
       ],
       "disabledTools": []
     }

@@ -2,6 +2,7 @@ import { useState, memo, useMemo, useCallback } from 'react'
 import { Product } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Table,
   TableBody,
@@ -21,6 +22,9 @@ interface ProductTableProps {
   readOnly?: boolean
   showDeleteOnly?: boolean
   showStockInfo?: boolean
+  selectedProducts?: string[]
+  onSelectionChange?: (selectedIds: string[]) => void
+  showBulkSelect?: boolean
 }
 
 export const ProductTable = memo<ProductTableProps>(({ 
@@ -30,7 +34,10 @@ export const ProductTable = memo<ProductTableProps>(({
   onDelete,
   readOnly = false,
   showDeleteOnly = false,
-  showStockInfo = false
+  showStockInfo = false,
+  selectedProducts = [],
+  onSelectionChange,
+  showBulkSelect = false
 }) => {
   const [sortBy, setSortBy] = useState<keyof Product>('name')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
@@ -73,6 +80,38 @@ export const ProductTable = memo<ProductTableProps>(({
     return { label: 'Normal', variant: 'default' as const, icon: null }
   }, [])
 
+  const handleSelectAll = useCallback(() => {
+    if (!onSelectionChange) return
+    
+    if (selectedProducts.length === products.length) {
+      // Deselect all
+      onSelectionChange([])
+    } else {
+      // Select all
+      onSelectionChange(products.map(p => p.id))
+    }
+  }, [selectedProducts, products, onSelectionChange])
+
+  const handleSelectProduct = useCallback((productId: string) => {
+    if (!onSelectionChange) return
+    
+    if (selectedProducts.includes(productId)) {
+      // Deselect
+      onSelectionChange(selectedProducts.filter(id => id !== productId))
+    } else {
+      // Select
+      onSelectionChange([...selectedProducts, productId])
+    }
+  }, [selectedProducts, onSelectionChange])
+
+  const isAllSelected = useMemo(() => {
+    return products.length > 0 && selectedProducts.length === products.length
+  }, [products, selectedProducts])
+
+  const isIndeterminate = useMemo(() => {
+    return selectedProducts.length > 0 && selectedProducts.length < products.length
+  }, [products, selectedProducts])
+
 
 
   if (isLoading) {
@@ -98,6 +137,16 @@ export const ProductTable = memo<ProductTableProps>(({
       <Table>
         <TableHeader>
           <TableRow>
+            {showBulkSelect && (
+              <TableHead className="w-12">
+                <Checkbox
+                  checked={isAllSelected}
+                  onCheckedChange={handleSelectAll}
+                  aria-label="Tümünü seç"
+                  className={isIndeterminate ? 'data-[state=checked]:bg-primary' : ''}
+                />
+              </TableHead>
+            )}
             <TableHead 
               className="cursor-pointer hover:bg-gray-50"
               onClick={() => handleSort('barcode')}
@@ -134,6 +183,7 @@ export const ProductTable = memo<ProductTableProps>(({
                 <span className="ml-1">{sortOrder === 'asc' ? '↑' : '↓'}</span>
               )}
             </TableHead>
+            <TableHead className="text-center">Seri No</TableHead>
             <TableHead className="text-center">Durum</TableHead>
             <TableHead 
               className="cursor-pointer hover:bg-gray-50 text-right"
@@ -163,6 +213,15 @@ export const ProductTable = memo<ProductTableProps>(({
             
             return (
               <TableRow key={product.id} className={!product.is_active ? 'opacity-50' : ''}>
+                {showBulkSelect && (
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedProducts.includes(product.id)}
+                      onCheckedChange={() => handleSelectProduct(product.id)}
+                      aria-label={`${product.name} seç`}
+                    />
+                  </TableCell>
+                )}
                 <TableCell className="font-mono text-sm">
                   {product.barcode}
                 </TableCell>
@@ -179,6 +238,15 @@ export const ProductTable = memo<ProductTableProps>(({
                 </TableCell>
                 <TableCell className="text-right font-mono">
                   {product.stock_quantity}
+                </TableCell>
+                <TableCell className="text-center">
+                  {product.serial_number_tracking_enabled ? (
+                    <Badge variant="outline" className="text-xs">
+                      Takipli
+                    </Badge>
+                  ) : (
+                    <span className="text-gray-400 text-sm">-</span>
+                  )}
                 </TableCell>
                 <TableCell className="text-center">
                   <Badge variant={stockStatus.variant} className="flex items-center gap-1 w-fit mx-auto">

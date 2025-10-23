@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { toast } from 'react-hot-toast'
 import { Layout } from '@/components/layout/Layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -17,7 +18,7 @@ import {
 import { Package, Plus, AlertTriangle, Upload, Calculator } from 'lucide-react'
 import { Alert } from '@/components/ui/alert'
 
-export const StockPage = () => {
+const StockPage = () => {
   const {
     products,
     isLoading,
@@ -105,6 +106,14 @@ export const StockPage = () => {
       if (result.success) {
         setIsDeleteDialogOpen(false)
         setSelectedProduct(null)
+        // Show appropriate message
+        if (result.message) {
+          toast.success(result.message)
+        } else {
+          toast.success('Ürün başarıyla silindi')
+        }
+      } else {
+        toast.error(result.error || 'Ürün silinirken hata oluştu')
       }
     } finally {
       setIsSubmitting(false)
@@ -290,3 +299,5 @@ export const StockPage = () => {
     </Layout>
   )
 }
+
+export default StockPage

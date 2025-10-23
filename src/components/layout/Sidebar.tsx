@@ -17,9 +17,11 @@ import {
   Smartphone,
   ChevronDown,
   List,
-  Edit,
   PackageCheck,
-  FolderTree
+  FolderTree,
+  Receipt,
+  Plus,
+  RotateCcw
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -65,18 +67,35 @@ const navItems: NavItem[] = [
     subItems: [
       {
         title: 'Ürün Listesi',
-        href: '/products',
-        icon: List
-      },
-      {
-        title: 'Ürün Yönetimi',
         href: '/products/manage',
-        icon: Edit
+        icon: List
       },
       {
         title: 'Kategoriler',
         href: '/products/categories',
         icon: FolderTree
+      }
+    ]
+  },
+  {
+    title: 'Satışlar',
+    icon: Receipt,
+    roles: ['admin', 'manager', 'cashier'],
+    subItems: [
+      {
+        title: 'Yeni Satış',
+        href: '/sales/new',
+        icon: Plus
+      },
+      {
+        title: 'Satış Listesi',
+        href: '/sales/list',
+        icon: List
+      },
+      {
+        title: 'İade/İptal',
+        href: '/sales/returns',
+        icon: RotateCcw
       }
     ]
   },

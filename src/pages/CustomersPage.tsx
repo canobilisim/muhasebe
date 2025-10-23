@@ -10,7 +10,7 @@ import { useCustomers } from '@/hooks/useCustomers'
 import { Users, Plus, Search, Filter, ChevronLeft, ChevronRight, BarChart3, AlertTriangle } from 'lucide-react'
 import type { Customer } from '@/types'
 
-export const CustomersPage = () => {
+const CustomersPage = () => {
   const [activeTab, setActiveTab] = useState<'list' | 'balance' | 'overdue'>('list')
   const [searchQuery, setSearchQuery] = useState('')
   const [showActiveOnly, setShowActiveOnly] = useState(false)
@@ -240,3 +240,5 @@ export const CustomersPage = () => {
     </Layout>
   )
 }
+
+export default CustomersPage

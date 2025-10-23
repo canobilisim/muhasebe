@@ -4,7 +4,7 @@ import { Smartphone, Settings } from 'lucide-react'
 import { TargetSettingsForm } from '@/components/settings'
 import { ErrorBoundary } from '@/components/ui/error-boundary'
 
-export const OperatorOperationsPage = () => {
+const OperatorOperationsPage = () => {
   return (
     <Layout 
       title="Operatör İşlemleri" 

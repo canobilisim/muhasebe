@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Layout } from '@/components/layout/Layout'
 import { AdminRoute, ManagerRoute, CashierRoute } from '@/components/layout/PrivateRoute'
 
-export const TestRolesPage = () => {
+const TestRolesPage = () => {
   const { getDisplayName, userRole, canAccessAdmin, canAccessManager, canAccessCashier } = useAuth()
 
   return (
@@ -153,3 +153,5 @@ export const TestRolesPage = () => {
     </Layout>
   )
 }
+
+export default TestRolesPage

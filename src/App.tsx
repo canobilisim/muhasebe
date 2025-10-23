@@ -4,32 +4,39 @@ import { Toaster } from 'react-hot-toast'
 import { ErrorBoundary } from '@/components/layout/ErrorBoundary'
 import { PrivateRoute } from '@/components/layout/PrivateRoute'
 import { PageLoading } from '@/components/ui/loading'
-import { LoginPage } from '@/pages/LoginPage'
-import DashboardPage from '@/pages/DashboardPage'
 import { useAuthStore } from '@/stores/authStore'
 import { useFastSaleStore } from '@/stores/fastSaleStore'
 import './App.css'
 
-// Lazy load other pages
-const TestRolesPage = lazy(() => import('@/pages/TestRolesPage').then(module => ({ default: module.TestRolesPage })))
-
-const FastSalePage = lazy(() => import('@/pages/pos/FastSalePage').then(module => ({ default: module.default })))
-const CustomersPage = lazy(() => import('@/pages/CustomersPage').then(module => ({ default: module.CustomersPage })))
-const CustomerDetailPage = lazy(() => import('@/pages/CustomerDetailPage').then(module => ({ default: module.CustomerDetailPage })))
+// Lazy load pages
+const LoginPage = lazy(() => import('@/pages/LoginPage'))
+const DashboardPage = lazy(() => import('@/pages/DashboardPage'))
+const TestRolesPage = lazy(() => import('@/pages/TestRolesPage'))
+const FastSalePage = lazy(() => import('@/pages/pos/FastSalePage'))
+const CustomersPage = lazy(() => import('@/pages/CustomersPage'))
+const CustomerDetailPage = lazy(() => import('@/pages/CustomerDetailPage'))
 
 // Product pages
-const ProductsListPage = lazy(() => import('@/pages/products/ProductsListPage').then(module => ({ default: module.ProductsListPage })))
-const ProductManagePage = lazy(() => import('@/pages/products/ProductManagePage').then(module => ({ default: module.ProductManagePage })))
-const CategoriesPage = lazy(() => import('@/pages/products/CategoriesPage').then(module => ({ default: module.CategoriesPage })))
+const ProductsListPage = lazy(() => import('@/pages/products/ProductsListPage'))
+const ProductManagePage = lazy(() => import('@/pages/products/ProductManagePage'))
+const ProductCreatePage = lazy(() => import('@/pages/products/ProductCreatePage'))
+const ProductEditPage = lazy(() => import('@/pages/products/ProductEditPage'))
+const CategoriesPage = lazy(() => import('@/pages/products/CategoriesPage'))
 
-// Keep original StockPage for backward compatibility
-const StockPage = lazy(() => import('@/pages/StockPage').then(module => ({ default: module.StockPage })))
+// Sales pages
+const NewSalePage = lazy(() => import('@/pages/sales/NewSalePage'))
+const SalesListPage = lazy(() => import('@/pages/sales/SalesListPage'))
+const ReturnsPage = lazy(() => import('@/pages/sales/ReturnsPage'))
 
-const CashPage = lazy(() => import('@/pages/CashPage').then(module => ({ default: module.CashPage })))
-const ReportsPage = lazy(() => import('@/pages/ReportsPage').then(module => ({ default: module.ReportsPage })))
-const OperatorOperationsPage = lazy(() => import('@/pages/OperatorOperationsPage').then(module => ({ default: module.OperatorOperationsPage })))
-const SettingsPage = lazy(() => import('@/pages/SettingsPage').then(module => ({ default: module.SettingsPage })))
-const NotFoundPage = lazy(() => import('@/pages/NotFoundPage').then(module => ({ default: module.NotFoundPage })))
+// Stock page
+const StockPage = lazy(() => import('@/pages/StockPage'))
+
+// Other pages
+const CashPage = lazy(() => import('@/pages/CashPage'))
+const ReportsPage = lazy(() => import('@/pages/ReportsPage'))
+const OperatorOperationsPage = lazy(() => import('@/pages/OperatorOperationsPage'))
+const SettingsPage = lazy(() => import('@/pages/SettingsPage'))
+const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
 // Sayfa yüklenirken scroll'u en üste taşı
 function ScrollToTop() {
@@ -124,9 +131,7 @@ function App() {
                 path="/dashboard" 
                 element={
                   <PrivateRoute>
-                    <div className="flex-1 flex flex-col overflow-hidden">
-                      <DashboardPage />
-                    </div>
+                    <DashboardPage />
                   </PrivateRoute>
                 } 
               />
@@ -190,6 +195,22 @@ function App() {
                 } 
               />
               <Route 
+                path="/products/create" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <ProductCreatePage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/products/edit/:id" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <ProductEditPage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
                 path="/products/categories" 
                 element={
                   <PrivateRoute requiredRoles={['admin', 'manager']}>
@@ -204,6 +225,32 @@ function App() {
                 element={
                   <PrivateRoute requiredRoles={['admin', 'manager']}>
                     <StockPage />
+                  </PrivateRoute>
+                } 
+              />
+              
+              {/* Sales - Cashier and above */}
+              <Route 
+                path="/sales/new" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager', 'cashier']}>
+                    <NewSalePage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/sales/list" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager', 'cashier']}>
+                    <SalesListPage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/sales/returns" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager', 'cashier']}>
+                    <ReturnsPage />
                   </PrivateRoute>
                 } 
               />

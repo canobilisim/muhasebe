@@ -96,11 +96,23 @@ export const useProducts = (initialFilter: ProductFilter = {}) => {
     try {
       const response = await ProductService.deleteProduct(id)
       if (response.success) {
+        // Product was actually deleted, remove from list
         setProducts(prev => prev.filter(product => product.id !== id))
         // Refresh fast sale cache in case deleted product was in fast sale
         refreshFastSaleData()
         return { success: true }
       } else {
+        // Product couldn't be deleted (probably used in sales), try to deactivate instead
+        if (response.error?.includes('satışlarda kullanıldığı')) {
+          const deactivateResponse = await ProductService.deactivateProduct(id)
+          if (deactivateResponse.success) {
+            // Update product in list to show as inactive
+            setProducts(prev => prev.map(product => 
+              product.id === id ? { ...product, is_active: false } : product
+            ))
+            return { success: true, message: 'Ürün satışlarda kullanıldığı için pasife çekildi.' }
+          }
+        }
         setError(response.error || 'Ürün silinirken hata oluştu')
         return { success: false, error: response.error }
       }

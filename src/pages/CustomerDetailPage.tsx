@@ -44,7 +44,7 @@ const getLocalDateTimeString = () => {
     return localDate.toISOString().slice(0, 16)
 }
 
-export const CustomerDetailPage = () => {
+const CustomerDetailPage = () => {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
     const [customer, setCustomer] = useState<Customer | null>(null)
@@ -946,3 +946,5 @@ export const CustomerDetailPage = () => {
         </Layout>
     )
 }
+
+export default CustomerDetailPage

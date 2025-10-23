@@ -144,6 +144,53 @@ export class ProductService {
   }
 
   /**
+   * Get product by ID with serial numbers
+   */
+  static async getProductWithSerialNumbers(id: string): Promise<ApiResponse<Product & { serialNumbers?: any[] }>> {
+    try {
+      const { data: product, error: productError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', id)
+        .single()
+
+      if (productError) throw productError
+
+      // If product has serial number tracking, fetch serial numbers
+      if (product.serial_number_tracking_enabled) {
+        const { data: serialNumbers, error: serialError } = await supabase
+          .from('product_serial_numbers')
+          .select('*')
+          .eq('product_id', id)
+          .order('added_date', { ascending: false })
+
+        if (serialError) {
+          console.error('Error fetching serial numbers:', serialError)
+        }
+
+        return {
+          data: { ...product, serialNumbers: serialNumbers || [] },
+          error: null,
+          success: true
+        }
+      }
+
+      return {
+        data: { ...product, serialNumbers: [] },
+        error: null,
+        success: true
+      }
+    } catch (error) {
+      console.error('Error getting product with serial numbers:', error)
+      return {
+        data: null,
+        error: 'Ürün getirilirken hata oluştu',
+        success: false
+      }
+    }
+  }
+
+  /**
    * Get product categories
    */
   static async getCategories(): Promise<ApiResponse<string[]>> {
@@ -197,6 +244,8 @@ export class ProductService {
 
   /**
    * Create a new product
+   * Supports technical specifications: brand, model, color, condition
+   * Supports serial number tracking flag
    */
   static async createProduct(productData: ProductInsert): Promise<ApiResponse<Product>> {
     try {
@@ -225,6 +274,8 @@ export class ProductService {
 
   /**
    * Update a product
+   * Supports technical specifications: brand, model, color, condition
+   * Supports serial number tracking flag
    */
   static async updateProduct(id: string, productData: ProductUpdate): Promise<ApiResponse<Product>> {
     try {
@@ -253,13 +304,50 @@ export class ProductService {
   }
 
   /**
-   * Delete a product (soft delete by setting is_active to false)
+   * Delete a product (hard delete with safety checks)
    */
   static async deleteProduct(id: string): Promise<ApiResponse<boolean>> {
     try {
+      // First check if product is used in any sales
+      const { data: salesCheck, error: salesError } = await supabase
+        .from('sale_items')
+        .select('id')
+        .eq('product_id', id)
+        .limit(1)
+
+      if (salesError) throw salesError
+
+      if (salesCheck && salesCheck.length > 0) {
+        return {
+          data: false,
+          error: 'Bu ürün satışlarda kullanıldığı için silinemez. Bunun yerine pasife çekildi.',
+          success: false
+        }
+      }
+
+      // Check if product has serial numbers
+      const { data: serialCheck, error: serialError } = await supabase
+        .from('product_serial_numbers')
+        .select('id')
+        .eq('product_id', id)
+        .limit(1)
+
+      if (serialError) throw serialError
+
+      if (serialCheck && serialCheck.length > 0) {
+        // Delete serial numbers first
+        const { error: deleteSerialError } = await supabase
+          .from('product_serial_numbers')
+          .delete()
+          .eq('product_id', id)
+
+        if (deleteSerialError) throw deleteSerialError
+      }
+
+      // Now delete the product
       const { error } = await supabase
         .from('products')
-        .update({ is_active: false })
+        .delete()
         .eq('id', id)
 
       if (error) throw error
@@ -274,6 +362,33 @@ export class ProductService {
       return {
         data: false,
         error: 'Ürün silinirken hata oluştu',
+        success: false
+      }
+    }
+  }
+
+  /**
+   * Soft delete a product (set is_active to false)
+   */
+  static async deactivateProduct(id: string): Promise<ApiResponse<boolean>> {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ is_active: false })
+        .eq('id', id)
+
+      if (error) throw error
+
+      return {
+        data: true,
+        error: null,
+        success: true
+      }
+    } catch (error) {
+      console.error('Error deactivating product:', error)
+      return {
+        data: false,
+        error: 'Ürün pasife çekilirken hata oluştu',
         success: false
       }
     }
@@ -355,7 +470,12 @@ export class ProductService {
             purchase_price: product.purchase_price,
             sale_price: product.sale_price,
             stock_quantity: product.stock_quantity,
-            critical_stock_level: product.critical_stock_level
+            critical_stock_level: product.critical_stock_level,
+            brand: product.brand,
+            model: product.model,
+            color: product.color,
+            serial_number: product.serial_number,
+            condition: product.condition
           })
           .eq('barcode', product.barcode)
           .select()

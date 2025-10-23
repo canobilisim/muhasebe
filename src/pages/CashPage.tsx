@@ -16,7 +16,7 @@ import {
 import { useCash } from '@/hooks/useCash'
 import { Wallet, Plus, Minus, Calendar, RefreshCw, FileText, BarChart3 } from 'lucide-react'
 
-export const CashPage = () => {
+const CashPage = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
   const [openModal, setOpenModal] = useState<'open' | 'close' | 'income' | 'expense' | null>(null)
   const [activeTab, setActiveTab] = useState<'operations' | 'daily-report' | 'reports'>('operations')
@@ -288,3 +288,5 @@ export const CashPage = () => {
     </Layout>
   )
 }
+
+export default CashPage

@@ -21,7 +21,23 @@ import {
   FolderTree,
   Receipt,
   Plus,
-  RotateCcw
+  RotateCcw,
+  TrendingUp,
+  Factory,
+  Truck,
+  Upload,
+  Download,
+  ShoppingBag,
+  FileText,
+  Archive,
+  Zap,
+  UserCheck,
+  CreditCard,
+  FileCheck,
+  DollarSign,
+  Tags,
+  Building2,
+  Landmark
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -49,67 +65,186 @@ const navItems: NavItem[] = [
     icon: LayoutDashboard,
   },
   {
-    title: 'POS Satış',
+    title: 'Hızlı Satış',
     href: '/pos2',
+    icon: Zap,
+    roles: ['admin', 'manager', 'cashier']
+  },
+  {
+    title: 'Perakende Satışlar',
+    href: '/retail-sales',
     icon: ShoppingCart,
     roles: ['admin', 'manager', 'cashier']
   },
   {
-    title: 'Müşteriler',
-    href: '/customers',
+    title: 'Müşteri & Tedarikçi',
     icon: Users,
-    roles: ['admin', 'manager']
-  },
-  {
-    title: 'Ürünler',
-    icon: Package,
     roles: ['admin', 'manager'],
     subItems: [
       {
-        title: 'Ürün Listesi',
-        href: '/products/manage',
+        title: 'Müşteriler & Tedarik',
+        href: '/customers',
+        icon: Users
+      },
+      {
+        title: 'Dışa Aktarım',
+        href: '/customers/export',
+        icon: Upload
+      },
+      {
+        title: 'İçe Aktarım',
+        href: '/customers/import',
+        icon: Download
+      }
+    ]
+  },
+
+  {
+    title: 'Alış Faturaları',
+    icon: ShoppingBag,
+    roles: ['admin', 'manager'],
+    subItems: [
+      {
+        title: 'Yeni Alış Faturası',
+        href: '/purchases/new',
+        icon: Plus
+      },
+      {
+        title: 'Alış Faturaları',
+        href: '/purchases/list',
+        icon: FileText
+      },
+      {
+        title: 'Gelen Kutusu',
+        href: '/purchases/inbox',
+        icon: Archive
+      }
+    ]
+  },
+  {
+    title: 'Satış Faturaları',
+    icon: Receipt,
+    roles: ['admin', 'manager', 'cashier'],
+    subItems: [
+      {
+        title: 'Yeni Satış Faturası',
+        href: '/sales/new',
+        icon: Plus
+      },
+      {
+        title: 'Satış Faturaları',
+        href: '/sales/list',
         icon: List
+      }
+    ]
+  },
+  {
+    title: 'Stok',
+    icon: PackageCheck,
+    roles: ['admin', 'manager'],
+    subItems: [
+      {
+        title: 'Ürünler',
+        href: '/products/manage',
+        icon: Package
       },
       {
         title: 'Kategoriler',
         href: '/products/categories',
         icon: FolderTree
+      },
+      {
+        title: 'Stok Hareketleri',
+        href: '/stock',
+        icon: TrendingUp
+      },
+      {
+        title: 'Üretim',
+        href: '/stock/production',
+        icon: Factory
+      },
+      {
+        title: 'Transfer',
+        href: '/stock/transfer',
+        icon: Truck
+      },
+      {
+        title: 'Dışa Aktarım',
+        href: '/stock/export',
+        icon: Upload
+      },
+      {
+        title: 'İçe Aktarım',
+        href: '/stock/import',
+        icon: Download
       }
     ]
   },
   {
-    title: 'Satışlar',
-    icon: Receipt,
+    title: 'Personel',
+    icon: UserCheck,
+    roles: ['admin', 'manager'],
+    subItems: [
+      {
+        title: 'Personel Listesi',
+        href: '/personnel/list',
+        icon: Users
+      },
+      {
+        title: 'Evrak Yönetimi',
+        href: '/personnel/documents',
+        icon: FileText
+      }
+    ]
+  },
+  {
+    title: 'Şube & Kasa',
+    icon: Building2,
     roles: ['admin', 'manager', 'cashier'],
     subItems: [
       {
-        title: 'Yeni Satış',
-        href: '/sales/new',
-        icon: Plus
+        title: 'Şubeler',
+        href: '/branches',
+        icon: Building2
       },
       {
-        title: 'Satış Listesi',
-        href: '/sales/list',
-        icon: List
+        title: 'Fiziki Kasa',
+        href: '/cash',
+        icon: Wallet
       },
       {
-        title: 'İade/İptal',
-        href: '/sales/returns',
-        icon: RotateCcw
+        title: 'Banka Hesapları',
+        href: '/bank-accounts',
+        icon: Landmark
       }
     ]
   },
   {
-    title: 'Stok Yönetimi',
-    href: '/stock',
-    icon: PackageCheck,
-    roles: ['admin', 'manager']
-  },
-  {
-    title: 'Kasa Yönetimi',
-    href: '/cash',
-    icon: Wallet,
-    roles: ['admin', 'manager', 'cashier']
+    title: 'Finansal İşlemler',
+    icon: CreditCard,
+    roles: ['admin', 'manager'],
+    subItems: [
+      {
+        title: 'Çek Portföyü',
+        href: '/financial/checks',
+        icon: FileCheck
+      },
+      {
+        title: 'Senet Portföyü',
+        href: '/financial/promissory-notes',
+        icon: FileText
+      },
+      {
+        title: 'Masraf Kategorileri',
+        href: '/financial/expense-categories',
+        icon: Tags
+      },
+      {
+        title: 'Masraflar',
+        href: '/financial/expenses',
+        icon: DollarSign
+      }
+    ]
   },
   {
     title: 'Raporlar',

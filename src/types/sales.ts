@@ -15,7 +15,7 @@ export type SaleItemUpdate = Database['public']['Tables']['sale_items']['Update'
 export type CustomerType = 'Bireysel' | 'Kurumsal'
 
 // Invoice type enum
-export type InvoiceType = 'E_FATURA' | 'E_ARSIV'
+export type InvoiceType = 'E_FATURA' | 'E_ARSIV' | 'ALIS_FATURASI'
 
 // Payment type enum (for e-invoice)
 export type InvoicePaymentType = 'NAKIT' | 'KREDI_KARTI' | 'HAVALE' | 'TAKSITLI'

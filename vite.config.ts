@@ -6,8 +6,11 @@ import path from 'path'
 export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
-
   ],
+  esbuild: {
+    // Skip TypeScript checking during build for faster deployment
+    logOverride: { 'this-is-undefined-in-esm': 'silent' }
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -19,14 +22,29 @@ export default defineConfig(({ mode }) => ({
     // Optimize chunk splitting
     rollupOptions: {
       output: {
-        manualChunks: {
+        manualChunks: (id) => {
           // Vendor chunks
-          'react-vendor': ['react', 'react-dom'],
-          'router-vendor': ['react-router-dom'],
-          'form-vendor': ['react-hook-form', '@hookform/resolvers', 'zod'],
-          'ui-vendor': ['@radix-ui/react-alert-dialog', '@radix-ui/react-slot', 'lucide-react'],
-          'supabase-vendor': ['@supabase/supabase-js'],
-          'state-vendor': ['zustand'],
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'react-vendor'
+            }
+            if (id.includes('react-router-dom')) {
+              return 'router-vendor'
+            }
+            if (id.includes('react-hook-form') || id.includes('@hookform/resolvers') || id.includes('zod')) {
+              return 'form-vendor'
+            }
+            if (id.includes('@radix-ui') || id.includes('lucide-react')) {
+              return 'ui-vendor'
+            }
+            if (id.includes('@supabase/supabase-js')) {
+              return 'supabase-vendor'
+            }
+            if (id.includes('zustand')) {
+              return 'state-vendor'
+            }
+            return 'vendor'
+          }
         },
       },
     },

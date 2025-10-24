@@ -27,6 +27,27 @@ const CategoriesPage = lazy(() => import('@/pages/products/CategoriesPage'))
 const NewSalePage = lazy(() => import('@/pages/sales/NewSalePage'))
 const SalesListPage = lazy(() => import('@/pages/sales/SalesListPage'))
 const ReturnsPage = lazy(() => import('@/pages/sales/ReturnsPage'))
+const RetailSalesPage = lazy(() => import('@/pages/sales/RetailSalesPage'))
+
+// Purchase pages
+const NewPurchasePage = lazy(() => import('@/pages/purchases/NewPurchasePage'))
+const PurchasesListPage = lazy(() => import('@/pages/purchases/PurchasesListPage'))
+const InboxPage = lazy(() => import('@/pages/purchases/InboxPage'))
+
+// Personnel pages
+const PersonnelListPage = lazy(() => import('@/pages/personnel/PersonnelListPage'))
+const DocumentManagementPage = lazy(() => import('@/pages/personnel/DocumentManagementPage'))
+const NewPersonnelPage = lazy(() => import('@/pages/personnel/NewPersonnelPage'))
+
+// Financial pages
+const CheckPortfolioPage = lazy(() => import('@/pages/financial/CheckPortfolioPage'))
+const PromissoryNotePortfolioPage = lazy(() => import('@/pages/financial/PromissoryNotePortfolioPage'))
+const ExpenseCategoriesPage = lazy(() => import('@/pages/financial/ExpenseCategoriesPage'))
+const FinancialMovementsPage = lazy(() => import('@/pages/financial/FinancialMovementsPage'))
+
+// Branch & Cash pages
+const BranchesPage = lazy(() => import('@/pages/branches/BranchesPage'))
+const BankAccountsPage = lazy(() => import('@/pages/bank-accounts/BankAccountsPage'))
 
 // Stock page
 const StockPage = lazy(() => import('@/pages/StockPage'))
@@ -177,6 +198,24 @@ function App() {
                 } 
               />
               
+              {/* Customer Export/Import - Manager and above */}
+              <Route 
+                path="/customers/export" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <CustomersPage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/customers/import" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <CustomersPage />
+                  </PrivateRoute>
+                } 
+              />
+              
               {/* Products - Manager and above */}
               <Route 
                 path="/products" 
@@ -219,7 +258,7 @@ function App() {
                 } 
               />
               
-              {/* Original Stock Page - Keep for backward compatibility */}
+              {/* Stock Management Routes */}
               <Route 
                 path="/stock" 
                 element={
@@ -228,7 +267,75 @@ function App() {
                   </PrivateRoute>
                 } 
               />
+              <Route 
+                path="/stock/production" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <StockPage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/stock/transfer" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <StockPage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/stock/export" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <StockPage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/stock/import" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <StockPage />
+                  </PrivateRoute>
+                } 
+              />
               
+              {/* Purchase Routes - Manager and above */}
+              <Route 
+                path="/purchases/new" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <NewPurchasePage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/purchases/list" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <PurchasesListPage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/purchases/inbox" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <InboxPage />
+                  </PrivateRoute>
+                } 
+              />
+
+              {/* Retail Sales - Cashier and above */}
+              <Route 
+                path="/retail-sales" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager', 'cashier']}>
+                    <RetailSalesPage />
+                  </PrivateRoute>
+                } 
+              />
+
               {/* Sales - Cashier and above */}
               <Route 
                 path="/sales/new" 
@@ -255,12 +362,88 @@ function App() {
                 } 
               />
               
-              {/* Cash - Cashier and above */}
+              {/* Personnel Routes - Manager and above */}
+              <Route 
+                path="/personnel/list" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <PersonnelListPage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/personnel/documents" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <DocumentManagementPage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/personnel/new" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <NewPersonnelPage />
+                  </PrivateRoute>
+                } 
+              />
+
+              {/* Branch & Cash Routes - Cashier and above */}
+              <Route 
+                path="/branches" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager', 'cashier']}>
+                    <BranchesPage />
+                  </PrivateRoute>
+                } 
+              />
               <Route 
                 path="/cash" 
                 element={
                   <PrivateRoute requiredRoles={['admin', 'manager', 'cashier']}>
                     <CashPage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/bank-accounts" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager', 'cashier']}>
+                    <BankAccountsPage />
+                  </PrivateRoute>
+                } 
+              />
+              
+              {/* Financial Routes - Manager and above */}
+              <Route 
+                path="/financial/checks" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <CheckPortfolioPage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/financial/promissory-notes" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <PromissoryNotePortfolioPage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/financial/expense-categories" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <ExpenseCategoriesPage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/financial/expenses" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <FinancialMovementsPage />
                   </PrivateRoute>
                 } 
               />

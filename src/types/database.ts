@@ -495,12 +495,193 @@ export type Database = {
         }
         Relationships: []
       }
+      irsaliyeler: {
+        Row: {
+          id: number
+          irsaliye_no: string
+          cari_id: number
+          cari_turu: string
+          irsaliye_turu: string
+          irsaliye_tarihi: string
+          sevk_tarihi: string
+          sevk_yeri: string | null
+          durum: string
+          toplam_miktar: number
+          toplam_tutar: number
+          pdf_url: string | null
+          aciklama: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: number
+          irsaliye_no: string
+          cari_id: number
+          cari_turu: string
+          irsaliye_turu: string
+          irsaliye_tarihi?: string
+          sevk_tarihi?: string
+          sevk_yeri?: string | null
+          durum?: string
+          toplam_miktar?: number
+          toplam_tutar?: number
+          pdf_url?: string | null
+          aciklama?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: number
+          irsaliye_no?: string
+          cari_id?: number
+          cari_turu?: string
+          irsaliye_turu?: string
+          irsaliye_tarihi?: string
+          sevk_tarihi?: string
+          sevk_yeri?: string | null
+          durum?: string
+          toplam_miktar?: number
+          toplam_tutar?: number
+          pdf_url?: string | null
+          aciklama?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      irsaliye_urunleri: {
+        Row: {
+          id: number
+          irsaliye_id: number
+          urun_id: number
+          urun_adi: string
+          barkod: string | null
+          miktar: number
+          birim: string
+          birim_fiyat: number | null
+          tutar: number | null
+          seri_no: string | null
+          aciklama: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: number
+          irsaliye_id: number
+          urun_id: number
+          urun_adi: string
+          barkod?: string | null
+          miktar?: number
+          birim?: string
+          birim_fiyat?: number | null
+          tutar?: number | null
+          seri_no?: string | null
+          aciklama?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: number
+          irsaliye_id?: number
+          urun_id?: number
+          urun_adi?: string
+          barkod?: string | null
+          miktar?: number
+          birim?: string
+          birim_fiyat?: number | null
+          tutar?: number | null
+          seri_no?: string | null
+          aciklama?: string | null
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      cariler: {
+        Row: {
+          id: number
+          ad: string
+          adres: string | null
+          telefon: string | null
+          vergi_no: string | null
+          tip: string
+          aktif: boolean | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: number
+          ad: string
+          adres?: string | null
+          telefon?: string | null
+          vergi_no?: string | null
+          tip: string
+          aktif?: boolean | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: number
+          ad?: string
+          adres?: string | null
+          telefon?: string | null
+          vergi_no?: string | null
+          tip?: string
+          aktif?: boolean | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      urunler: {
+        Row: {
+          id: number
+          ad: string
+          barkod: string | null
+          stok_miktari: number
+          birim: string | null
+          satis_fiyati: number | null
+          aktif: boolean | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: number
+          ad: string
+          barkod?: string | null
+          stok_miktari?: number
+          birim?: string | null
+          satis_fiyati?: number | null
+          aktif?: boolean | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: number
+          ad?: string
+          barkod?: string | null
+          stok_miktari?: number
+          birim?: string | null
+          satis_fiyati?: number | null
+          aktif?: boolean | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      update_product_stock: {
+        Args: {
+          product_id: number
+          quantity_change: number
+        }
+        Returns: undefined
+      }
+      generate_irsaliye_no: {
+        Args: {}
+        Returns: string
+      }
     }
     Enums: {
       movement_type: "income" | "expense" | "sale" | "opening" | "closing"

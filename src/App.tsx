@@ -1,6 +1,7 @@
 import React, { Suspense, lazy, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
+import { Toaster as SonnerToaster } from 'sonner'
 import { ErrorBoundary } from '@/components/layout/ErrorBoundary'
 import { PrivateRoute } from '@/components/layout/PrivateRoute'
 import { PageLoading } from '@/components/ui/loading'
@@ -33,6 +34,13 @@ const RetailSalesPage = lazy(() => import('@/pages/sales/RetailSalesPage'))
 const NewPurchasePage = lazy(() => import('@/pages/purchases/NewPurchasePage'))
 const PurchasesListPage = lazy(() => import('@/pages/purchases/PurchasesListPage'))
 const InboxPage = lazy(() => import('@/pages/purchases/InboxPage'))
+
+// Müstasil Fişi pages
+const NewMustasilFisPage = lazy(() => import('@/modules/mustasil-fis/index'))
+
+// İrsaliye pages
+const NewIrsaliyePage = lazy(() => import('@/modules/irsaliye/index'))
+const IrsaliyeListPage = lazy(() => import('@/modules/irsaliye/IrsaliyeList'))
 
 // Personnel pages
 const PersonnelListPage = lazy(() => import('@/pages/personnel/PersonnelListPage'))
@@ -139,6 +147,7 @@ function App() {
   return (
     <div className="fixed inset-0 bg-white">
       <Toaster />
+      <SonnerToaster position="top-right" />
       <ErrorBoundary>
         <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <ScrollToTop />
@@ -322,6 +331,50 @@ function App() {
                 element={
                   <PrivateRoute requiredRoles={['admin', 'manager']}>
                     <InboxPage />
+                  </PrivateRoute>
+                } 
+              />
+
+              {/* Müstasil Fişi Routes - Manager and above */}
+              <Route 
+                path="/mustasil-fis/new" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <NewMustasilFisPage />
+                  </PrivateRoute>
+                } 
+              />
+
+              {/* İrsaliye Routes - Manager and above */}
+              <Route 
+                path="/irsaliye/yeni" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <NewIrsaliyePage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/irsaliye/liste" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <IrsaliyeListPage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/irsaliye/:id" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <IrsaliyeListPage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/irsaliye/:id/edit" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <NewIrsaliyePage />
                   </PrivateRoute>
                 } 
               />

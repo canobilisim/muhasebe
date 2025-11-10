@@ -118,6 +118,28 @@ const navItems: NavItem[] = [
         title: 'Gelen Kutusu',
         href: '/purchases/inbox',
         icon: Archive
+      },
+      {
+        title: 'Yeni Müstasil Fişi',
+        href: '/mustasil-fis/new',
+        icon: FileText
+      }
+    ]
+  },
+  {
+    title: 'İrsaliye',
+    icon: Truck,
+    roles: ['admin', 'manager'],
+    subItems: [
+      {
+        title: 'Yeni İrsaliye',
+        href: '/irsaliye/yeni',
+        icon: Plus
+      },
+      {
+        title: 'İrsaliye Listesi',
+        href: '/irsaliye/liste',
+        icon: List
       }
     ]
   },

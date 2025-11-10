@@ -534,49 +534,55 @@ export default function NewPurchasePage() {
                                     Fatura Detayları
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div>
-                                    <Label htmlFor="invoiceType">Fatura Tipi</Label>
-                                    <Select value={invoiceType} disabled>
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Alış Faturası">Alış Faturası</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                            <CardContent className="space-y-3">
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <Label htmlFor="invoiceType" className="text-sm">Fatura Tipi</Label>
+                                        <Select value={invoiceType} disabled>
+                                            <SelectTrigger className="h-8">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Alış Faturası">Alış Faturası</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    <div>
+                                        <Label htmlFor="currency" className="text-sm">Para Birimi</Label>
+                                        <Select value={currency} onValueChange={setCurrency}>
+                                            <SelectTrigger className="h-8">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="₺ Türk Lirası">₺ Türk Lirası</SelectItem>
+                                                <SelectItem value="$ USD">$ USD</SelectItem>
+                                                <SelectItem value="€ EUR">€ EUR</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                 </div>
 
-                                <div>
-                                    <Label htmlFor="currency">Para Birimi</Label>
-                                    <Select value={currency} onValueChange={setCurrency}>
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="₺ Türk Lirası">₺ Türk Lirası</SelectItem>
-                                            <SelectItem value="$ USD">$ USD</SelectItem>
-                                            <SelectItem value="€ EUR">€ EUR</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <Label htmlFor="invoiceDate" className="text-sm">Fatura Tarihi</Label>
+                                        <Input
+                                            type="date"
+                                            className="h-8"
+                                            value={invoiceDate}
+                                            onChange={(e) => setInvoiceDate(e.target.value)}
+                                        />
+                                    </div>
 
-                                <div>
-                                    <Label htmlFor="invoiceDate">Fatura Tarihi ve Saati</Label>
-                                    <Input
-                                        type="date"
-                                        value={invoiceDate}
-                                        onChange={(e) => setInvoiceDate(e.target.value)}
-                                    />
-                                </div>
-
-                                <div>
-                                    <Label htmlFor="dueDate">Vade Tarihi</Label>
-                                    <Input
-                                        type="date"
-                                        value={dueDate}
-                                        onChange={(e) => setDueDate(e.target.value)}
-                                    />
+                                    <div>
+                                        <Label htmlFor="dueDate" className="text-sm">Vade Tarihi</Label>
+                                        <Input
+                                            type="date"
+                                            className="h-8"
+                                            value={dueDate}
+                                            onChange={(e) => setDueDate(e.target.value)}
+                                        />
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>

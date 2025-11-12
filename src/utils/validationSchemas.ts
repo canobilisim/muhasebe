@@ -91,10 +91,13 @@ export const productFormSchema = z.object({
   vat_rate: vatRateSchema,
   is_vat_included: z.boolean(),
   purchase_price: priceSchema,
-  sale_price: priceSchema,
+  sale_price_1: priceSchema,
+  sale_price_2: z.number().min(0, 'Fiyat negatif olamaz').optional().or(z.undefined()),
   description: z.string().optional(),
   stock_tracking_enabled: z.boolean(),
   serial_number_tracking_enabled: z.boolean(),
+  is_active: z.boolean().optional(),
+  stock_quantity: z.number().min(0, 'Stok miktarı negatif olamaz').optional(),
   
   // Technical Specs
   brand: z.string().optional(),
@@ -106,10 +109,16 @@ export const productFormSchema = z.object({
   // Serial Numbers
   serialNumbers: z.array(z.string()).optional()
 }).refine(
-  (data) => data.sale_price >= data.purchase_price || data.purchase_price === 0,
+  (data) => data.sale_price_1 >= data.purchase_price || data.purchase_price === 0,
   {
-    message: 'Satış fiyatı alış fiyatından düşük olamaz',
-    path: ['sale_price']
+    message: '1. Satış fiyatı alış fiyatından düşük olamaz',
+    path: ['sale_price_1']
+  }
+).refine(
+  (data) => !data.sale_price_2 || isNaN(data.sale_price_2) || data.sale_price_2 >= data.purchase_price || data.purchase_price === 0,
+  {
+    message: '2. Satış fiyatı alış fiyatından düşük olamaz',
+    path: ['sale_price_2']
   }
 )
 

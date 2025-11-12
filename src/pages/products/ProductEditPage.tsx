@@ -42,23 +42,25 @@ function ProductEditPage() {
 
         // Map product data to form data
         setProductData({
-          id: product.id,
           name: product.name,
           barcode: product.barcode,
           category: product.category || '',
-          unit: product.unit,
-          vat_rate: product.vat_rate,
-          is_vat_included: product.is_vat_included,
+          unit: product.unit || 'Adet',
+          vat_rate: product.vat_rate ?? 20,
+          is_vat_included: product.is_vat_included ?? false,
           purchase_price: product.purchase_price || 0,
-          sale_price: product.sale_price || 0,
+          sale_price_1: (product as any).sale_price_1 || 0,
+          sale_price_2: (product as any).sale_price_2 || undefined,
           description: product.description || '',
-          stock_tracking_enabled: product.stock_tracking_enabled,
-          serial_number_tracking_enabled: product.serial_number_tracking_enabled,
+          stock_tracking_enabled: product.stock_tracking_enabled ?? true,
+          serial_number_tracking_enabled: product.serial_number_tracking_enabled ?? false,
+          is_active: product.is_active ?? true,
+          stock_quantity: product.stock_quantity ?? 0,
           brand: product.brand || '',
           model: product.model || '',
           color: product.color || '',
           serial_number: product.serial_number || '',
-          condition: product.condition,
+          condition: (product.condition as any) || 'Yeni',
         })
 
         // Set serial numbers if available
@@ -77,7 +79,7 @@ function ProductEditPage() {
     loadProduct()
   }, [id, navigate])
 
-  const handleSubmit = async (data: ProductFormData, action: 'save' | 'saveAndNew') => {
+  const handleSubmit = async (data: ProductFormData) => {
     if (!id) return
 
     setIsSubmitting(true)
@@ -92,15 +94,19 @@ function ProductEditPage() {
         vat_rate: data.vat_rate,
         is_vat_included: data.is_vat_included,
         purchase_price: data.purchase_price,
-        sale_price: data.sale_price,
+        sale_price: data.sale_price_1, // Set main sale_price to sale_price_1
+        sale_price_1: data.sale_price_1,
+        sale_price_2: (data.sale_price_2 && !isNaN(data.sale_price_2)) ? data.sale_price_2 : data.sale_price_1, // Boşsa veya NaN ise 1. fiyat kullan
         description: data.description || null,
         stock_tracking_enabled: data.stock_tracking_enabled,
         serial_number_tracking_enabled: data.serial_number_tracking_enabled,
+        is_active: data.is_active ?? true,
+        stock_quantity: data.stock_quantity ?? 0,
         brand: data.brand || null,
         model: data.model || null,
         color: data.color || null,
         serial_number: data.serial_number || null,
-        condition: data.condition || null,
+        condition: data.condition || 'Yeni',
       }
 
       // Update product
@@ -125,7 +131,7 @@ function ProductEditPage() {
           )
 
           if (!serialNumberResult.success) {
-            toast.warning('Ürün güncellendi ancak seri numaraları eklenirken hata oluştu')
+            console.warn('Ürün güncellendi ancak seri numaraları eklenirken hata oluştu')
           }
         }
 

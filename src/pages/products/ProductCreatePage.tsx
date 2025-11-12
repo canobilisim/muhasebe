@@ -8,17 +8,25 @@ import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
 import type { ProductFormData } from '@/types/product'
+import { useAuthStore } from '@/stores/authStore'
 
 function ProductCreatePage() {
   const navigate = useNavigate()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const { branchId } = useAuthStore()
 
   const handleSubmit = async (data: ProductFormData, action: 'save' | 'saveAndNew') => {
     setIsSubmitting(true)
     
     try {
+      if (!branchId) {
+        toast.error('Branch ID bulunamadı. Lütfen tekrar giriş yapın.')
+        return
+      }
+
       // Prepare product data
       const productData = {
+        branch_id: branchId,
         name: data.name,
         barcode: data.barcode,
         category: data.category || null,
@@ -26,15 +34,19 @@ function ProductCreatePage() {
         vat_rate: data.vat_rate,
         is_vat_included: data.is_vat_included,
         purchase_price: data.purchase_price,
-        sale_price: data.sale_price,
+        sale_price: data.sale_price_1, // Set main sale_price to sale_price_1
+        sale_price_1: data.sale_price_1,
+        sale_price_2: (data.sale_price_2 && !isNaN(data.sale_price_2)) ? data.sale_price_2 : data.sale_price_1, // Boşsa veya NaN ise 1. fiyat kullan
         description: data.description || null,
         stock_tracking_enabled: data.stock_tracking_enabled,
         serial_number_tracking_enabled: data.serial_number_tracking_enabled,
+        is_active: data.is_active ?? true,
+        stock_quantity: data.stock_quantity ?? 0,
         brand: data.brand || null,
         model: data.model || null,
         color: data.color || null,
         serial_number: data.serial_number || null,
-        condition: data.condition || null,
+        condition: data.condition || 'Yeni',
       }
 
       // Create product
@@ -53,7 +65,7 @@ function ProductCreatePage() {
         )
 
         if (!serialNumberResult.success) {
-          toast.warning('Ürün oluşturuldu ancak seri numaraları eklenirken hata oluştu')
+          toast.error('Ürün oluşturuldu ancak seri numaraları eklenirken hata oluştu')
         }
       }
 

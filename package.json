@@ -52,6 +52,7 @@
     "axios": "^1.12.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
+    "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
     "jspdf": "^3.0.3",
     "jspdf-autotable": "^5.0.2",

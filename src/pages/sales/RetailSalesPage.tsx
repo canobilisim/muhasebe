@@ -1,49 +1,80 @@
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Zap, Receipt, Search, Filter, Eye, Edit, Trash2 } from 'lucide-react';
+import { Zap, Receipt, Search, Filter, Eye, Trash2, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
+import { useState } from 'react';
+import { useRetailSales } from '@/hooks/useRetailSales';
+import { RetailSaleDetailModal } from '@/components/sales/RetailSaleDetailModal';
+import type { SaleWithDetails } from '@/types/sales';
+import { format } from 'date-fns';
+import { tr } from 'date-fns/locale';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function RetailSalesPage() {
   const navigate = useNavigate();
+  const { sales, summary, loading, loadSales, getSaleDetail, deleteSale } = useRetailSales();
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedSale, setSelectedSale] = useState<SaleWithDetails | null>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [saleToDelete, setSaleToDelete] = useState<string | null>(null);
 
-  // Mock data for retail sales
-  const retailSales = [
-    {
-      id: '1',
-      saleNumber: 'POS-2024-001',
-      date: '2024-01-15',
-      time: '14:30',
-      customerName: 'Perakende Müşterisi',
-      totalAmount: 125.50,
-      paymentMethod: 'Nakit',
-      status: 'Tamamlandı',
-      itemCount: 3
-    },
-    {
-      id: '2',
-      saleNumber: 'POS-2024-002',
-      date: '2024-01-15',
-      time: '15:45',
-      customerName: 'Ahmet Yılmaz',
-      totalAmount: 89.75,
-      paymentMethod: 'Kredi Kartı',
-      status: 'Tamamlandı',
-      itemCount: 2
-    },
-    {
-      id: '3',
-      saleNumber: 'POS-2024-003',
-      date: '2024-01-15',
-      time: '16:20',
-      customerName: 'Perakende Müşterisi',
-      totalAmount: 45.00,
-      paymentMethod: 'Nakit',
-      status: 'Tamamlandı',
-      itemCount: 1
+  // Arama filtresi
+  const handleSearch = () => {
+    loadSales({ search: searchQuery });
+  };
+
+  // Satış detayını görüntüle
+  const handleViewSale = async (saleId: string) => {
+    const sale = await getSaleDetail(saleId);
+    if (sale) {
+      setSelectedSale(sale);
+      setDetailModalOpen(true);
     }
-  ];
+  };
+
+  // Satış silme onayı
+  const handleDeleteClick = (saleId: string) => {
+    setSaleToDelete(saleId);
+    setDeleteDialogOpen(true);
+  };
+
+  // Satışı sil
+  const handleConfirmDelete = async () => {
+    if (saleToDelete) {
+      await deleteSale(saleToDelete);
+      setDeleteDialogOpen(false);
+      setSaleToDelete(null);
+    }
+  };
+
+  // Ödeme yöntemi etiketleri
+  const paymentMethodLabels: Record<string, string> = {
+    cash: 'Nakit',
+    pos: 'Kredi Kartı',
+    credit: 'Açık Hesap',
+    partial: 'Kısmi Ödeme'
+  };
+
+  // Filtrelenmiş satışlar
+  const filteredSales = searchQuery
+    ? sales.filter(sale =>
+        sale.sale_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        sale.customer_name?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : sales;
 
   return (
     <Layout
@@ -59,11 +90,18 @@ export default function RetailSalesPage() {
               <Input
                 placeholder="Satış ara..."
                 className="pl-10 w-80"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
             </div>
-            <Button variant="outline" size="sm">
-              <Filter className="h-4 w-4 mr-2" />
-              Filtrele
+            <Button variant="outline" size="sm" onClick={handleSearch} disabled={loading}>
+              {loading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Filter className="h-4 w-4 mr-2" />
+              )}
+              Ara
             </Button>
           </div>
           
@@ -83,7 +121,7 @@ export default function RetailSalesPage() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Toplam Satış</p>
-                  <p className="text-xl font-bold">{retailSales.length}</p>
+                  <p className="text-xl font-bold">{summary.totalSales}</p>
                 </div>
               </div>
             </CardContent>
@@ -96,8 +134,8 @@ export default function RetailSalesPage() {
                   <Receipt className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Bugün</p>
-                  <p className="text-xl font-bold">₺{retailSales.reduce((sum, sale) => sum + sale.totalAmount, 0).toFixed(2)}</p>
+                  <p className="text-sm text-gray-600">Toplam Tutar</p>
+                  <p className="text-xl font-bold">₺{summary.totalAmount.toFixed(2)}</p>
                 </div>
               </div>
             </CardContent>
@@ -111,7 +149,7 @@ export default function RetailSalesPage() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Ortalama Satış</p>
-                  <p className="text-xl font-bold">₺{(retailSales.reduce((sum, sale) => sum + sale.totalAmount, 0) / retailSales.length).toFixed(2)}</p>
+                  <p className="text-xl font-bold">₺{summary.averageAmount.toFixed(2)}</p>
                 </div>
               </div>
             </CardContent>
@@ -125,7 +163,7 @@ export default function RetailSalesPage() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Toplam Ürün</p>
-                  <p className="text-xl font-bold">{retailSales.reduce((sum, sale) => sum + sale.itemCount, 0)}</p>
+                  <p className="text-xl font-bold">{summary.totalItems}</p>
                 </div>
               </div>
             </CardContent>
@@ -138,19 +176,29 @@ export default function RetailSalesPage() {
             <CardTitle>Perakende Satışlar</CardTitle>
           </CardHeader>
           <CardContent>
-            {retailSales.length === 0 ? (
+            {loading ? (
+              <div className="text-center py-12">
+                <Loader2 className="h-16 w-16 mx-auto text-gray-300 mb-4 animate-spin" />
+                <p className="text-gray-500">Satışlar yükleniyor...</p>
+              </div>
+            ) : filteredSales.length === 0 ? (
               <div className="text-center py-12">
                 <Receipt className="h-16 w-16 mx-auto text-gray-300 mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Henüz perakende satış bulunmuyor
+                  {searchQuery ? 'Satış bulunamadı' : 'Henüz perakende satış bulunmuyor'}
                 </h3>
                 <p className="text-gray-500 mb-6">
-                  İlk perakende satışınızı yapmak için POS sistemini kullanın.
+                  {searchQuery 
+                    ? 'Arama kriterlerinize uygun satış bulunamadı.'
+                    : 'İlk perakende satışınızı yapmak için POS sistemini kullanın.'
+                  }
                 </p>
-                <Button onClick={() => navigate('/pos2')}>
-                  <Zap className="h-4 w-4 mr-2" />
-                  POS Satış Yap
-                </Button>
+                {!searchQuery && (
+                  <Button onClick={() => navigate('/pos2')}>
+                    <Zap className="h-4 w-4 mr-2" />
+                    POS Satış Yap
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -168,58 +216,79 @@ export default function RetailSalesPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {retailSales.map((sale) => (
-                      <tr key={sale.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <Receipt className="h-4 w-4 text-gray-400" />
-                            <span className="font-medium text-blue-600">{sale.saleNumber}</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div>
-                            <p className="font-medium">{sale.date}</p>
-                            <p className="text-sm text-gray-500">{sale.time}</p>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="text-gray-900">{sale.customerName}</span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="text-gray-900">{sale.itemCount} adet</span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="font-medium text-green-600">₺{sale.totalAmount.toFixed(2)}</span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            sale.paymentMethod === 'Nakit' 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-blue-100 text-blue-800'
-                          }`}>
-                            {sale.paymentMethod}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            {sale.status}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="sm" title="Görüntüle">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" title="Düzenle">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" title="Sil" className="text-red-600 hover:text-red-700">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {filteredSales.map((sale) => {
+                      const items = sale.sale_items || sale.items || []
+                      const itemCount = items.reduce((sum: number, item: any) => sum + item.quantity, 0);
+                      
+                      return (
+                        <tr key={sale.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <Receipt className="h-4 w-4 text-gray-400" />
+                              <span className="font-medium text-blue-600">{sale.sale_number}</span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div>
+                              <p className="font-medium">
+                                {sale.sale_date && format(new Date(sale.sale_date), 'dd.MM.yyyy', { locale: tr })}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                {sale.sale_date && format(new Date(sale.sale_date), 'HH:mm', { locale: tr })}
+                              </p>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-gray-900">
+                              {sale.customer?.name || sale.customer_name || 'Perakende Müşterisi'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-gray-900">{itemCount} adet</span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="font-medium text-green-600">
+                              ₺{Number(sale.total_amount).toFixed(2)}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              sale.payment_type === 'cash' 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-blue-100 text-blue-800'
+                            }`}>
+                              {paymentMethodLabels[sale.payment_type] || sale.payment_type}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              Tamamlandı
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                title="Görüntüle"
+                                onClick={() => handleViewSale(sale.id)}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                title="Sil" 
+                                className="text-red-600 hover:text-red-700"
+                                onClick={() => handleDeleteClick(sale.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -227,6 +296,38 @@ export default function RetailSalesPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Satış Detay Modalı */}
+      <RetailSaleDetailModal
+        sale={selectedSale}
+        open={detailModalOpen}
+        onClose={() => {
+          setDetailModalOpen(false);
+          setSelectedSale(null);
+        }}
+      />
+
+      {/* Silme Onay Dialogu */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Satışı Sil</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bu satışı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+              Ürün stokları geri yüklenecek ve ilgili kasa hareketi silinecektir.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>İptal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Sil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 }

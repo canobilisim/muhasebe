@@ -10,6 +10,7 @@ export * from './textarea';
 export * from './dialog';
 export * from './alert';
 export * from './badge';
+export * from './command';
 
 // Loading and state components
 export * from './loading';

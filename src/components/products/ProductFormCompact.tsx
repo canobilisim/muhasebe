@@ -8,11 +8,14 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Switch } from '@/components/ui/switch'
 import { SerialNumberManager } from './SerialNumberManager'
-import { Loader2, Package, DollarSign, Settings } from 'lucide-react'
+import { CategoryCombobox } from './CategoryCombobox'
+import { Loader2, Package, DollarSign, Settings, Barcode } from 'lucide-react'
 import type { SerialNumber } from '@/types/product'
 import { productFormSchema, type ProductFormData } from '@/utils/validationSchemas'
 import { showFormErrorSummary, getFieldErrorClass } from '@/utils/errorHandling'
+import toast from 'react-hot-toast'
 
 interface ProductFormCompactProps {
   mode: 'create' | 'edit'
@@ -45,15 +48,18 @@ export function ProductFormCompact({
       vat_rate: initialData?.vat_rate ?? 20,
       is_vat_included: initialData?.is_vat_included ?? false,
       purchase_price: initialData?.purchase_price ?? 0,
-      sale_price: initialData?.sale_price ?? 0,
+      sale_price_1: initialData?.sale_price_1 ?? 0,
+      sale_price_2: initialData?.sale_price_2 ?? undefined,
       description: initialData?.description || '',
       stock_tracking_enabled: initialData?.stock_tracking_enabled ?? true,
       serial_number_tracking_enabled: initialData?.serial_number_tracking_enabled ?? false,
+      is_active: initialData?.is_active ?? true,
+      stock_quantity: initialData?.stock_quantity ?? 0,
       brand: initialData?.brand || '',
       model: initialData?.model || '',
       color: initialData?.color || '',
       serial_number: initialData?.serial_number || '',
-      condition: initialData?.condition,
+      condition: initialData?.condition || 'Yeni',
       serialNumbers: []
     }
   })
@@ -61,6 +67,28 @@ export function ProductFormCompact({
   const { register, watch, setValue, formState: { errors } } = form
   const serialNumberTrackingEnabled = watch('serial_number_tracking_enabled')
   const stockTrackingEnabled = watch('stock_tracking_enabled')
+  const isActive = watch('is_active') ?? true
+  const [showManualVat, setShowManualVat] = useState(false)
+
+  // Generate barcode - EAN-13 format (12 digits + check digit)
+  const generateBarcode = () => {
+    // Generate 12 random digits
+    const prefix = '200' // Common prefix for internal barcodes
+    const random = Math.floor(Math.random() * 100000000).toString().padStart(8, '0')
+    const barcode12 = prefix + random
+    
+    // Calculate EAN-13 check digit
+    let sum = 0
+    for (let i = 0; i < 12; i++) {
+      const digit = parseInt(barcode12[i])
+      sum += i % 2 === 0 ? digit : digit * 3
+    }
+    const checkDigit = (10 - (sum % 10)) % 10
+    
+    const barcode = barcode12 + checkDigit
+    setValue('barcode', barcode)
+    toast.success('Barkod oluşturuldu')
+  }
 
   // Handle serial number operations
   const handleSerialNumberAdd = useCallback((serialNumber: string) => {
@@ -159,13 +187,26 @@ export function ProductFormCompact({
           {/* Barcode */}
           <div className="space-y-1">
             <Label htmlFor="barcode" className="text-sm">Barkod *</Label>
-            <Input
-              id="barcode"
-              {...register('barcode')}
-              placeholder="Barkod numarası"
-              className={`h-9 ${getFieldErrorClass(!!errors.barcode)}`}
-              disabled={isSubmitting}
-            />
+            <div className="flex gap-2">
+              <Input
+                id="barcode"
+                {...register('barcode')}
+                placeholder="Barkod numarası"
+                className={`h-9 flex-1 ${getFieldErrorClass(!!errors.barcode)}`}
+                disabled={isSubmitting}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={generateBarcode}
+                disabled={isSubmitting}
+                className="h-9 px-3"
+                title="Barkod Oluştur"
+              >
+                <Barcode className="h-4 w-4" />
+              </Button>
+            </div>
             {errors.barcode && (
               <p className="text-xs text-red-500">{errors.barcode.message}</p>
             )}
@@ -174,11 +215,9 @@ export function ProductFormCompact({
           {/* Category */}
           <div className="space-y-1">
             <Label htmlFor="category" className="text-sm">Kategori</Label>
-            <Input
-              id="category"
-              {...register('category')}
-              placeholder="Ürün kategorisi"
-              className="h-9"
+            <CategoryCombobox
+              value={watch('category') || ''}
+              onChange={(value) => setValue('category', value)}
               disabled={isSubmitting}
             />
           </div>
@@ -249,42 +288,87 @@ export function ProductFormCompact({
             )}
           </div>
 
-          {/* Sale Price */}
+          {/* Sale Price 1 */}
           <div className="space-y-1">
-            <Label htmlFor="sale_price" className="text-sm">Satış Fiyatı *</Label>
+            <Label htmlFor="sale_price_1" className="text-sm">1. Satış Fiyatı *</Label>
             <Input
-              id="sale_price"
+              id="sale_price_1"
               type="number"
               step="0.01"
               min="0"
-              {...register('sale_price', { valueAsNumber: true })}
+              {...register('sale_price_1', { valueAsNumber: true })}
               placeholder="0.00"
-              className={`h-9 ${getFieldErrorClass(!!errors.sale_price)}`}
+              className={`h-9 ${getFieldErrorClass(!!errors.sale_price_1)}`}
               disabled={isSubmitting}
             />
-            {errors.sale_price && (
-              <p className="text-xs text-red-500">{errors.sale_price.message}</p>
+            {errors.sale_price_1 && (
+              <p className="text-xs text-red-500">{errors.sale_price_1.message}</p>
+            )}
+          </div>
+
+          {/* Sale Price 2 */}
+          <div className="space-y-1">
+            <Label htmlFor="sale_price_2" className="text-sm">2. Satış Fiyatı</Label>
+            <Input
+              id="sale_price_2"
+              type="number"
+              step="0.01"
+              min="0"
+              {...register('sale_price_2', { 
+                setValueAs: (v) => v === '' || v === null || v === undefined ? undefined : parseFloat(v)
+              })}
+              placeholder="Boş bırakılırsa 1. fiyat kullanılır"
+              className={`h-9 ${getFieldErrorClass(!!errors.sale_price_2)}`}
+              disabled={isSubmitting}
+            />
+            {errors.sale_price_2 && (
+              <p className="text-xs text-red-500">{errors.sale_price_2.message}</p>
             )}
           </div>
 
           {/* VAT Rate */}
           <div className="space-y-1">
             <Label htmlFor="vat_rate" className="text-sm">KDV Oranı (%) *</Label>
-            <Select
-              value={watch('vat_rate')?.toString()}
-              onValueChange={(value) => setValue('vat_rate', parseInt(value))}
-              disabled={isSubmitting}
-            >
-              <SelectTrigger className="h-9">
-                <SelectValue placeholder="KDV oranı seçin" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="0">%0</SelectItem>
-                <SelectItem value="1">%1</SelectItem>
-                <SelectItem value="10">%10</SelectItem>
-                <SelectItem value="20">%20</SelectItem>
-              </SelectContent>
-            </Select>
+            {!showManualVat ? (
+              <Select
+                value={watch('vat_rate')?.toString()}
+                onValueChange={(value) => {
+                  if (value === 'custom') {
+                    setShowManualVat(true)
+                    return
+                  }
+                  setValue('vat_rate', parseInt(value))
+                }}
+                disabled={isSubmitting}
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="KDV oranı seçin" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">%0</SelectItem>
+                  <SelectItem value="1">%1</SelectItem>
+                  <SelectItem value="10">%10</SelectItem>
+                  <SelectItem value="20">%20</SelectItem>
+                  <SelectItem value="custom">Manuel Giriş</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                value={watch('vat_rate') ?? ''}
+                onChange={(e) => {
+                  const val = e.target.value
+                  setValue('vat_rate', val === '' ? 0 : parseFloat(val))
+                }}
+                placeholder="KDV oranını girin (örn: 18)"
+                className="h-9"
+                disabled={isSubmitting}
+                autoFocus
+              />
+            )}
           </div>
 
           {/* VAT Included */}
@@ -397,6 +481,26 @@ export function ProductFormCompact({
             </Label>
           </div>
 
+          {/* Stock Quantity - Show when stock tracking is enabled */}
+          {stockTrackingEnabled && (
+            <div className="space-y-1 pl-6">
+              <Label htmlFor="stock_quantity" className="text-sm">Mevcut Stok</Label>
+              <Input
+                id="stock_quantity"
+                type="number"
+                min="0"
+                step="1"
+                {...register('stock_quantity', { valueAsNumber: true })}
+                placeholder="0"
+                className={`h-9 ${getFieldErrorClass(!!errors.stock_quantity)}`}
+                disabled={isSubmitting}
+              />
+              {errors.stock_quantity && (
+                <p className="text-xs text-red-500">{errors.stock_quantity.message}</p>
+              )}
+            </div>
+          )}
+
           {/* Serial Number Tracking */}
           <div className="flex items-center space-x-2">
             <Checkbox
@@ -412,9 +516,9 @@ export function ProductFormCompact({
 
           {/* Product Condition */}
           <div className="space-y-1">
-            <Label htmlFor="condition" className="text-sm">Ürün Durumu</Label>
+            <Label htmlFor="condition" className="text-sm">Ürün Durumu *</Label>
             <Select
-              value={watch('condition') || ''}
+              value={watch('condition') || 'Yeni'}
               onValueChange={(value) => setValue('condition', value as any)}
               disabled={isSubmitting}
             >
@@ -428,6 +532,24 @@ export function ProductFormCompact({
                 <SelectItem value="Demo">Demo</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Active/Inactive Status */}
+          <div className="flex items-center justify-between p-3 border rounded-lg">
+            <div className="space-y-0.5">
+              <Label htmlFor="is_active" className="text-sm font-medium cursor-pointer">
+                Ürün Durumu
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                {isActive ? 'Aktif' : 'Pasif'}
+              </p>
+            </div>
+            <Switch
+              id="is_active"
+              checked={isActive}
+              onCheckedChange={(checked) => setValue('is_active', checked)}
+              disabled={isSubmitting}
+            />
           </div>
 
           {/* Serial Numbers Section */}

@@ -164,17 +164,15 @@ const FastSalePage: React.FC = () => {
   }, []);
 
   // Helper function to get price based on selected price list
-  const getPriceByList = (product: { sale_price_1?: number | null; sale_price_2?: number | null; sale_price_3?: number | null; sale_price?: number | null }): number => {
+  const getPriceByList = (product: { sale_price_1?: number | null; sale_price_2?: number | null }): number => {
     const priceList = state.activePriceList;
 
     if (priceList === 'Fiyat 2') {
-      return product.sale_price_2 || product.sale_price_1 || product.sale_price || 0;
-    } else if (priceList === 'Fiyat 3') {
-      return product.sale_price_3 || product.sale_price_1 || product.sale_price || 0;
+      return product.sale_price_2 || product.sale_price_1 || 0;
     }
 
     // Default to Fiyat 1
-    return product.sale_price_1 || product.sale_price || 0;
+    return product.sale_price_1 || 0;
   };
 
   // Update time every second
@@ -1222,7 +1220,6 @@ const FastSalePage: React.FC = () => {
             >
               <option>Fiyat 1</option>
               <option>Fiyat 2</option>
-              <option>Fiyat 3</option>
             </select>
 
             <div className="relative flex-1 search-dropdown-container">

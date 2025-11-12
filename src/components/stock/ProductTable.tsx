@@ -74,7 +74,7 @@ export const ProductTable = memo<ProductTableProps>(({
     if (product.stock_quantity <= 0) {
       return { label: 'Tükendi', variant: 'destructive' as const, icon: AlertTriangle }
     }
-    if (product.stock_quantity <= product.critical_stock_level) {
+    if (product.critical_stock_level && product.stock_quantity <= product.critical_stock_level) {
       return { label: 'Kritik', variant: 'destructive' as const, icon: AlertTriangle }
     }
     return { label: 'Normal', variant: 'default' as const, icon: null }
@@ -258,7 +258,7 @@ export const ProductTable = memo<ProductTableProps>(({
                   {formatCurrency(product.purchase_price)}
                 </TableCell>
                 <TableCell className="text-right font-mono">
-                  {formatCurrency(product.sale_price)}
+                  {formatCurrency(product.sale_price || (product as any).sale_price_1 || 0)}
                 </TableCell>
                 <TableCell className="text-center">
                   {!readOnly && (

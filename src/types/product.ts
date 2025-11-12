@@ -52,10 +52,13 @@ export interface ProductFormData {
   vat_rate: number
   is_vat_included: boolean
   purchase_price: number
-  sale_price: number
+  sale_price_1: number
+  sale_price_2?: number
   description?: string
   stock_tracking_enabled: boolean
   serial_number_tracking_enabled: boolean
+  is_active?: boolean
+  stock_quantity?: number
   
   // Technical Specs
   brand?: string

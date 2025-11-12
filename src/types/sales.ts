@@ -47,7 +47,8 @@ export interface SaleItem extends SaleItemRow {
 
 // Sale with details
 export interface SaleWithDetails extends Sale {
-  items: SaleItemWithProduct[]
+  items?: SaleItemWithProduct[]
+  sale_items?: SaleItemWithProduct[]
   customer?: Customer
   user?: User
   created_by_user?: User

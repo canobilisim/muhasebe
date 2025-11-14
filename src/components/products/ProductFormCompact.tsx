@@ -72,15 +72,15 @@ export function ProductFormCompact({
 
   // Generate barcode - EAN-13 format (12 digits + check digit)
   const generateBarcode = () => {
-    // Generate 12 random digits
-    const prefix = '200' // Common prefix for internal barcodes
-    const random = Math.floor(Math.random() * 100000000).toString().padStart(8, '0')
+    // 12 haneli rastgele sayı oluştur (EAN-13 için 12 hane + kontrol hanesi)
+    const prefix = '200' // İç kullanım için önek
+    const random = Math.floor(Math.random() * 1000000000).toString().padStart(9, '0')
     const barcode12 = prefix + random
     
-    // Calculate EAN-13 check digit
+    // EAN-13 kontrol hanesi hesaplama
     let sum = 0
     for (let i = 0; i < 12; i++) {
-      const digit = parseInt(barcode12[i])
+      const digit = parseInt(barcode12[i], 10) // parseInt'e 10 tabanı eklendi
       sum += i % 2 === 0 ? digit : digit * 3
     }
     const checkDigit = (10 - (sum % 10)) % 10

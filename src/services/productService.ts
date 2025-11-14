@@ -612,7 +612,6 @@ export class ProductService {
       name: string;
       sale_price_1: number;
       sale_price_2: number;
-      sale_price_3: number;
       category_id: string;
       category_name: string;
       fast_sale_order: number;
@@ -653,7 +652,6 @@ export class ProductService {
           name,
           sale_price_1,
           sale_price_2,
-          sale_price_3,
           fast_sale_order,
           fast_sale_category_id,
           fast_sale_categories!inner (
@@ -676,7 +674,6 @@ export class ProductService {
         name: p.name,
         sale_price_1: p.sale_price_1 || 0,
         sale_price_2: p.sale_price_2 || p.sale_price_1 || 0,
-        sale_price_3: p.sale_price_3 || p.sale_price_1 || 0,
         category_id: p.fast_sale_category_id,
         category_name: p.fast_sale_categories.name,
         fast_sale_order: p.fast_sale_order || 0,

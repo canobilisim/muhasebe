@@ -13,7 +13,6 @@ interface FastSaleProduct {
   name: string;
   sale_price_1: number;
   sale_price_2: number;
-  sale_price_3: number;
   category_id: string;
   category_name: string;
   fast_sale_order: number;

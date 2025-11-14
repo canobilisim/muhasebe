@@ -71,8 +71,7 @@ export const useProducts = (initialFilter: ProductFilter = {}) => {
             productData.fast_sale_category_id !== undefined || 
             productData.fast_sale_order !== undefined ||
             productData.sale_price_1 !== undefined ||
-            productData.sale_price_2 !== undefined ||
-            productData.sale_price_3 !== undefined) {
+            productData.sale_price_2 !== undefined) {
           refreshFastSaleData()
         }
         return { success: true, data: response.data }

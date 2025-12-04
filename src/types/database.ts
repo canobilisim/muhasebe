@@ -1,6 +1,3 @@
-// This file contains the Supabase database types
-// Generated types are extended with custom interfaces in other type files
-
 export type Json =
   | string
   | number
@@ -10,6 +7,8 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "13.0.5"
   }
@@ -17,675 +16,912 @@ export type Database = {
     Tables: {
       api_settings: {
         Row: {
-          id: string
           api_key_encrypted: string
+          created_at: string | null
           environment: string
+          id: string
           is_active: boolean | null
           last_test_date: string | null
           last_test_status: string | null
-          created_at: string | null
           updated_at: string | null
         }
         Insert: {
-          id?: string
           api_key_encrypted: string
+          created_at?: string | null
           environment: string
+          id?: string
           is_active?: boolean | null
           last_test_date?: string | null
           last_test_status?: string | null
-          created_at?: string | null
           updated_at?: string | null
         }
         Update: {
-          id?: string
           api_key_encrypted?: string
+          created_at?: string | null
           environment?: string
+          id?: string
           is_active?: boolean | null
           last_test_date?: string | null
           last_test_status?: string | null
-          created_at?: string | null
           updated_at?: string | null
         }
         Relationships: []
       }
       branches: {
         Row: {
+          address: string | null
+          created_at: string | null
           id: string
           name: string
-          address: string | null
           phone: string | null
           tax_number: string | null
-          created_at: string | null
           updated_at: string | null
         }
         Insert: {
+          address?: string | null
+          created_at?: string | null
           id?: string
           name: string
-          address?: string | null
           phone?: string | null
           tax_number?: string | null
-          created_at?: string | null
           updated_at?: string | null
         }
         Update: {
+          address?: string | null
+          created_at?: string | null
           id?: string
           name?: string
-          address?: string | null
           phone?: string | null
           tax_number?: string | null
-          created_at?: string | null
           updated_at?: string | null
         }
         Relationships: []
       }
-      products: {
+      cash_movements: {
         Row: {
-          id: string
-          barcode: string
-          name: string
-          category: string | null
-          category_id: string | null
+          amount: number
           branch_id: string | null
-          purchase_price: number
-          sale_price: number
-          sale_price_1: number | null
-          sale_price_2: number | null
-          sale_price_3: number | null
-          stock_quantity: number
-          critical_stock_level: number | null
-          is_active: boolean | null
-          show_in_fast_sale: boolean | null
-          fast_sale_category_id: string | null
-          fast_sale_order: number | null
-          // New columns for advanced product management
-          brand: string | null
-          model: string | null
-          color: string | null
-          serial_number: string | null
-          condition: string | null
-          serial_number_tracking_enabled: boolean | null
-          vat_rate: number | null
-          is_vat_included: boolean | null
-          unit: string | null
+          created_at: string | null
           description: string | null
-          stock_tracking_enabled: boolean | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          barcode: string
-          name: string
-          category?: string | null
-          category_id?: string | null
-          branch_id?: string | null
-          purchase_price?: number
-          sale_price?: number
-          sale_price_1?: number | null
-          sale_price_2?: number | null
-          sale_price_3?: number | null
-          stock_quantity?: number
-          critical_stock_level?: number | null
-          is_active?: boolean | null
-          show_in_fast_sale?: boolean | null
-          fast_sale_category_id?: string | null
-          fast_sale_order?: number | null
-          brand?: string | null
-          model?: string | null
-          color?: string | null
-          serial_number?: string | null
-          condition?: string | null
-          serial_number_tracking_enabled?: boolean | null
-          vat_rate?: number | null
-          is_vat_included?: boolean | null
-          unit?: string | null
-          description?: string | null
-          stock_tracking_enabled?: boolean | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          barcode?: string
-          name?: string
-          category?: string | null
-          category_id?: string | null
-          branch_id?: string | null
-          purchase_price?: number
-          sale_price?: number
-          sale_price_1?: number | null
-          sale_price_2?: number | null
-          sale_price_3?: number | null
-          stock_quantity?: number
-          critical_stock_level?: number | null
-          is_active?: boolean | null
-          show_in_fast_sale?: boolean | null
-          fast_sale_category_id?: string | null
-          fast_sale_order?: number | null
-          brand?: string | null
-          model?: string | null
-          color?: string | null
-          serial_number?: string | null
-          condition?: string | null
-          serial_number_tracking_enabled?: boolean | null
-          vat_rate?: number | null
-          is_vat_included?: boolean | null
-          unit?: string | null
-          description?: string | null
-          stock_tracking_enabled?: boolean | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      product_serial_numbers: {
-        Row: {
           id: string
-          product_id: string
-          serial_number: string
-          status: string
-          added_date: string | null
-          sold_date: string | null
+          movement_date: string | null
+          movement_type: Database["public"]["Enums"]["movement_type"]
+          reference_number: string | null
           sale_id: string | null
-          created_at: string | null
-        }
-        Insert: {
-          id?: string
-          product_id: string
-          serial_number: string
-          status?: string
-          added_date?: string | null
-          sold_date?: string | null
-          sale_id?: string | null
-          created_at?: string | null
-        }
-        Update: {
-          id?: string
-          product_id?: string
-          serial_number?: string
-          status?: string
-          added_date?: string | null
-          sold_date?: string | null
-          sale_id?: string | null
-          created_at?: string | null
-        }
-        Relationships: []
-      }
-      sales: {
-        Row: {
-          id: string
-          branch_id: string | null
           user_id: string | null
-          customer_id: string | null
-          sale_number: string
-          total_amount: number
-          discount_amount: number | null
-          tax_amount: number | null
-          net_amount: number
-          payment_type: Database["public"]["Enums"]["payment_type"]
-          paid_amount: number | null
-          change_amount: number | null
-          notes: string | null
-          due_date: string | null
-          sale_date: string | null
-          created_at: string | null
-          updated_at: string | null
-          // New columns for e-invoice
-          customer_type: string | null
-          customer_name: string | null
-          vkn_tckn: string | null
-          tax_office: string | null
-          email: string | null
-          phone: string | null
-          address: string | null
-          invoice_type: string | null
-          invoice_date: string | null
-          currency: string | null
-          note: string | null
-          subtotal: number | null
-          total_vat_amount: number | null
-          status: string | null
-          invoice_uuid: string | null
-          invoice_number: string | null
-          error_message: string | null
-          created_by: string | null
         }
         Insert: {
-          id?: string
+          amount: number
           branch_id?: string | null
-          user_id?: string | null
-          customer_id?: string | null
-          sale_number: string
-          total_amount?: number
-          discount_amount?: number | null
-          tax_amount?: number | null
-          net_amount?: number
-          payment_type: Database["public"]["Enums"]["payment_type"]
-          paid_amount?: number | null
-          change_amount?: number | null
-          notes?: string | null
-          due_date?: string | null
-          sale_date?: string | null
           created_at?: string | null
-          updated_at?: string | null
-          customer_type?: string | null
-          customer_name?: string | null
-          vkn_tckn?: string | null
-          tax_office?: string | null
-          email?: string | null
-          phone?: string | null
-          address?: string | null
-          invoice_type?: string | null
-          invoice_date?: string | null
-          currency?: string | null
-          note?: string | null
-          subtotal?: number | null
-          total_vat_amount?: number | null
-          status?: string | null
-          invoice_uuid?: string | null
-          invoice_number?: string | null
-          error_message?: string | null
-          created_by?: string | null
+          description?: string | null
+          id?: string
+          movement_date?: string | null
+          movement_type: Database["public"]["Enums"]["movement_type"]
+          reference_number?: string | null
+          sale_id?: string | null
+          user_id?: string | null
         }
         Update: {
-          id?: string
+          amount?: number
           branch_id?: string | null
-          user_id?: string | null
-          customer_id?: string | null
-          sale_number?: string
-          total_amount?: number
-          discount_amount?: number | null
-          tax_amount?: number | null
-          net_amount?: number
-          payment_type?: Database["public"]["Enums"]["payment_type"]
-          paid_amount?: number | null
-          change_amount?: number | null
-          notes?: string | null
-          due_date?: string | null
-          sale_date?: string | null
           created_at?: string | null
-          updated_at?: string | null
-          customer_type?: string | null
-          customer_name?: string | null
-          vkn_tckn?: string | null
-          tax_office?: string | null
-          email?: string | null
-          phone?: string | null
-          address?: string | null
-          invoice_type?: string | null
-          invoice_date?: string | null
-          currency?: string | null
-          note?: string | null
-          subtotal?: number | null
-          total_vat_amount?: number | null
-          status?: string | null
-          invoice_uuid?: string | null
-          invoice_number?: string | null
-          error_message?: string | null
-          created_by?: string | null
+          description?: string | null
+          id?: string
+          movement_date?: string | null
+          movement_type?: Database["public"]["Enums"]["movement_type"]
+          reference_number?: string | null
+          sale_id?: string | null
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cash_movements_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_movements_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_movements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
-      sale_items: {
+      customer_payments: {
         Row: {
-          id: string
-          sale_id: string | null
-          product_id: string | null
-          quantity: number
-          unit_price: number
-          discount_amount: number | null
-          total_amount: number
-          note: string | null
-          is_miscellaneous: boolean | null
+          amount: number
+          branch_id: string | null
           created_at: string | null
-          // New columns
-          serial_number_id: string | null
-          product_name: string | null
-          barcode: string | null
-          vat_rate: number | null
-          vat_amount: number | null
+          customer_id: string | null
+          id: string
+          notes: string | null
+          payment_date: string
+          payment_number: string | null
+          payment_type: string
+          user_id: string | null
         }
         Insert: {
-          id?: string
-          sale_id?: string | null
-          product_id?: string | null
-          quantity?: number
-          unit_price: number
-          discount_amount?: number | null
-          total_amount: number
-          note?: string | null
-          is_miscellaneous?: boolean | null
+          amount: number
+          branch_id?: string | null
           created_at?: string | null
-          serial_number_id?: string | null
-          product_name?: string | null
-          barcode?: string | null
-          vat_rate?: number | null
-          vat_amount?: number | null
+          customer_id?: string | null
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_number?: string | null
+          payment_type: string
+          user_id?: string | null
         }
         Update: {
-          id?: string
-          sale_id?: string | null
-          product_id?: string | null
-          quantity?: number
-          unit_price?: number
-          discount_amount?: number | null
-          total_amount?: number
-          note?: string | null
-          is_miscellaneous?: boolean | null
+          amount?: number
+          branch_id?: string | null
           created_at?: string | null
-          serial_number_id?: string | null
-          product_name?: string | null
-          barcode?: string | null
-          vat_rate?: number | null
-          vat_amount?: number | null
+          customer_id?: string | null
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_number?: string | null
+          payment_type?: string
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "customer_payments_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       customers: {
         Row: {
-          id: string
-          branch_id: string | null
-          name: string
-          phone: string | null
-          email: string | null
           address: string | null
-          tax_number: string | null
-          credit_limit: number | null
-          current_balance: number | null
-          is_active: boolean | null
-          customer_type: string | null
-          tc_kimlik: string | null
+          billing_address: string | null
           birth_date: string | null
+          branch_id: string | null
           city: string | null
-          district: string | null
-          notes: string | null
           company_name: string | null
           contact_person: string | null
-          tax_office: string | null
-          trade_registry_no: string | null
-          billing_address: string | null
-          delivery_address: string | null
           created_at: string | null
+          credit_limit: number | null
+          current_balance: number | null
+          customer_type: string | null
+          delivery_address: string | null
+          district: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          notes: string | null
+          phone: string | null
+          tax_number: string | null
+          tax_office: string | null
+          tc_kimlik: string | null
+          trade_registry_no: string | null
           updated_at: string | null
         }
         Insert: {
-          id?: string
-          branch_id?: string | null
-          name: string
-          phone?: string | null
-          email?: string | null
           address?: string | null
-          tax_number?: string | null
-          credit_limit?: number | null
-          current_balance?: number | null
-          is_active?: boolean | null
-          customer_type?: string | null
-          tc_kimlik?: string | null
+          billing_address?: string | null
           birth_date?: string | null
+          branch_id?: string | null
           city?: string | null
-          district?: string | null
-          notes?: string | null
           company_name?: string | null
           contact_person?: string | null
-          tax_office?: string | null
-          trade_registry_no?: string | null
-          billing_address?: string | null
-          delivery_address?: string | null
           created_at?: string | null
+          credit_limit?: number | null
+          current_balance?: number | null
+          customer_type?: string | null
+          delivery_address?: string | null
+          district?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          tax_number?: string | null
+          tax_office?: string | null
+          tc_kimlik?: string | null
+          trade_registry_no?: string | null
           updated_at?: string | null
         }
         Update: {
-          id?: string
-          branch_id?: string | null
-          name?: string
-          phone?: string | null
-          email?: string | null
           address?: string | null
-          tax_number?: string | null
-          credit_limit?: number | null
-          current_balance?: number | null
-          is_active?: boolean | null
-          customer_type?: string | null
-          tc_kimlik?: string | null
+          billing_address?: string | null
           birth_date?: string | null
+          branch_id?: string | null
           city?: string | null
-          district?: string | null
-          notes?: string | null
           company_name?: string | null
           contact_person?: string | null
-          tax_office?: string | null
-          trade_registry_no?: string | null
-          billing_address?: string | null
-          delivery_address?: string | null
           created_at?: string | null
+          credit_limit?: number | null
+          current_balance?: number | null
+          customer_type?: string | null
+          delivery_address?: string | null
+          district?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          tax_number?: string | null
+          tax_office?: string | null
+          tc_kimlik?: string | null
+          trade_registry_no?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "customers_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fast_sale_categories: {
+        Row: {
+          branch_id: string | null
+          created_at: string | null
+          display_order: number
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fast_sale_categories_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_categories: {
+        Row: {
+          branch_id: string | null
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          parent_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          parent_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          parent_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_categories_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_serial_numbers: {
+        Row: {
+          added_date: string | null
+          created_at: string | null
+          id: string
+          product_id: string
+          sale_id: string | null
+          serial_number: string
+          sold_date: string | null
+          status: string
+        }
+        Insert: {
+          added_date?: string | null
+          created_at?: string | null
+          id?: string
+          product_id: string
+          sale_id?: string | null
+          serial_number: string
+          sold_date?: string | null
+          status?: string
+        }
+        Update: {
+          added_date?: string | null
+          created_at?: string | null
+          id?: string
+          product_id?: string
+          sale_id?: string | null
+          serial_number?: string
+          sold_date?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_serial_numbers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_serial_numbers_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          barcode: string
+          branch_id: string | null
+          brand: string | null
+          category: string | null
+          category_id: string | null
+          color: string | null
+          condition: string | null
+          created_at: string | null
+          critical_stock_level: number | null
+          description: string | null
+          fast_sale_category_id: string | null
+          fast_sale_order: number | null
+          id: string
+          is_active: boolean | null
+          is_vat_included: boolean | null
+          model: string | null
+          name: string
+          purchase_price: number
+          sale_price_1: number
+          sale_price_2: number | null
+          serial_number: string | null
+          serial_number_tracking_enabled: boolean | null
+          show_in_fast_sale: boolean | null
+          stock_quantity: number
+          stock_tracking_enabled: boolean | null
+          unit: string | null
+          updated_at: string | null
+          vat_rate: number | null
+        }
+        Insert: {
+          barcode: string
+          branch_id?: string | null
+          brand?: string | null
+          category?: string | null
+          category_id?: string | null
+          color?: string | null
+          condition?: string | null
+          created_at?: string | null
+          critical_stock_level?: number | null
+          description?: string | null
+          fast_sale_category_id?: string | null
+          fast_sale_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_vat_included?: boolean | null
+          model?: string | null
+          name: string
+          purchase_price?: number
+          sale_price_1?: number
+          sale_price_2?: number | null
+          serial_number?: string | null
+          serial_number_tracking_enabled?: boolean | null
+          show_in_fast_sale?: boolean | null
+          stock_quantity?: number
+          stock_tracking_enabled?: boolean | null
+          unit?: string | null
+          updated_at?: string | null
+          vat_rate?: number | null
+        }
+        Update: {
+          barcode?: string
+          branch_id?: string | null
+          brand?: string | null
+          category?: string | null
+          category_id?: string | null
+          color?: string | null
+          condition?: string | null
+          created_at?: string | null
+          critical_stock_level?: number | null
+          description?: string | null
+          fast_sale_category_id?: string | null
+          fast_sale_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_vat_included?: boolean | null
+          model?: string | null
+          name?: string
+          purchase_price?: number
+          sale_price_1?: number
+          sale_price_2?: number | null
+          serial_number?: string | null
+          serial_number_tracking_enabled?: boolean | null
+          show_in_fast_sale?: boolean | null
+          stock_quantity?: number
+          stock_tracking_enabled?: boolean | null
+          unit?: string | null
+          updated_at?: string | null
+          vat_rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_fast_sale_category_id_fkey"
+            columns: ["fast_sale_category_id"]
+            isOneToOne: false
+            referencedRelation: "fast_sale_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sale_items: {
+        Row: {
+          barcode: string | null
+          created_at: string | null
+          discount_amount: number | null
+          id: string
+          is_miscellaneous: boolean | null
+          note: string | null
+          product_id: string | null
+          product_name: string | null
+          quantity: number
+          sale_id: string | null
+          serial_number_id: string | null
+          total_amount: number
+          unit_price: number
+          vat_amount: number | null
+          vat_rate: number | null
+        }
+        Insert: {
+          barcode?: string | null
+          created_at?: string | null
+          discount_amount?: number | null
+          id?: string
+          is_miscellaneous?: boolean | null
+          note?: string | null
+          product_id?: string | null
+          product_name?: string | null
+          quantity?: number
+          sale_id?: string | null
+          serial_number_id?: string | null
+          total_amount: number
+          unit_price: number
+          vat_amount?: number | null
+          vat_rate?: number | null
+        }
+        Update: {
+          barcode?: string | null
+          created_at?: string | null
+          discount_amount?: number | null
+          id?: string
+          is_miscellaneous?: boolean | null
+          note?: string | null
+          product_id?: string | null
+          product_name?: string | null
+          quantity?: number
+          sale_id?: string | null
+          serial_number_id?: string | null
+          total_amount?: number
+          unit_price?: number
+          vat_amount?: number | null
+          vat_rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_items_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_items_serial_number_id_fkey"
+            columns: ["serial_number_id"]
+            isOneToOne: false
+            referencedRelation: "product_serial_numbers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales: {
+        Row: {
+          address: string | null
+          branch_id: string | null
+          change_amount: number | null
+          created_at: string | null
+          created_by: string | null
+          currency: string | null
+          customer_id: string | null
+          customer_name: string | null
+          customer_type: string | null
+          discount_amount: number | null
+          due_date: string | null
+          email: string | null
+          error_message: string | null
+          id: string
+          invoice_date: string | null
+          invoice_number: string | null
+          invoice_type: string | null
+          invoice_uuid: string | null
+          net_amount: number
+          note: string | null
+          notes: string | null
+          paid_amount: number | null
+          payment_type: Database["public"]["Enums"]["payment_type"]
+          phone: string | null
+          sale_date: string | null
+          sale_number: string
+          status: string | null
+          subtotal: number | null
+          tax_amount: number | null
+          tax_office: string | null
+          total_amount: number
+          total_vat_amount: number | null
+          updated_at: string | null
+          user_id: string | null
+          vkn_tckn: string | null
+        }
+        Insert: {
+          address?: string | null
+          branch_id?: string | null
+          change_amount?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          customer_type?: string | null
+          discount_amount?: number | null
+          due_date?: string | null
+          email?: string | null
+          error_message?: string | null
+          id?: string
+          invoice_date?: string | null
+          invoice_number?: string | null
+          invoice_type?: string | null
+          invoice_uuid?: string | null
+          net_amount?: number
+          note?: string | null
+          notes?: string | null
+          paid_amount?: number | null
+          payment_type: Database["public"]["Enums"]["payment_type"]
+          phone?: string | null
+          sale_date?: string | null
+          sale_number: string
+          status?: string | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          tax_office?: string | null
+          total_amount?: number
+          total_vat_amount?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          vkn_tckn?: string | null
+        }
+        Update: {
+          address?: string | null
+          branch_id?: string | null
+          change_amount?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          customer_id?: string | null
+          customer_name?: string | null
+          customer_type?: string | null
+          discount_amount?: number | null
+          due_date?: string | null
+          email?: string | null
+          error_message?: string | null
+          id?: string
+          invoice_date?: string | null
+          invoice_number?: string | null
+          invoice_type?: string | null
+          invoice_uuid?: string | null
+          net_amount?: number
+          note?: string | null
+          notes?: string | null
+          paid_amount?: number | null
+          payment_type?: Database["public"]["Enums"]["payment_type"]
+          phone?: string | null
+          sale_date?: string | null
+          sale_number?: string
+          status?: string | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          tax_office?: string | null
+          total_amount?: number
+          total_vat_amount?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          vkn_tckn?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      turkcell_targets: {
+        Row: {
+          branch_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          target_count: number
+          target_month: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          target_count: number
+          target_month: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          target_count?: number
+          target_month?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "turkcell_targets_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "turkcell_targets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      turkcell_transactions: {
+        Row: {
+          branch_id: string | null
+          count: number
+          created_at: string | null
+          description: string | null
+          id: string
+          reference_number: string | null
+          transaction_date: string
+          transaction_type: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          count?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          reference_number?: string | null
+          transaction_date?: string
+          transaction_type?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          count?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          reference_number?: string | null
+          transaction_date?: string
+          transaction_type?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "turkcell_transactions_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "turkcell_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       users: {
         Row: {
-          id: string
           branch_id: string | null
+          created_at: string | null
           email: string
           full_name: string
-          role: Database["public"]["Enums"]["user_role"]
+          id: string
           is_active: boolean | null
-          created_at: string | null
+          role: Database["public"]["Enums"]["user_role"]
           updated_at: string | null
         }
         Insert: {
-          id: string
           branch_id?: string | null
+          created_at?: string | null
           email: string
           full_name: string
-          role?: Database["public"]["Enums"]["user_role"]
+          id: string
           is_active?: boolean | null
-          created_at?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string | null
         }
         Update: {
-          id?: string
           branch_id?: string | null
+          created_at?: string | null
           email?: string
           full_name?: string
-          role?: Database["public"]["Enums"]["user_role"]
+          id?: string
           is_active?: boolean | null
-          created_at?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string | null
         }
-        Relationships: []
-      }
-      irsaliyeler: {
-        Row: {
-          id: number
-          irsaliye_no: string
-          cari_id: number
-          cari_turu: string
-          irsaliye_turu: string
-          irsaliye_tarihi: string
-          sevk_tarihi: string
-          sevk_yeri: string | null
-          durum: string
-          toplam_miktar: number
-          toplam_tutar: number
-          pdf_url: string | null
-          aciklama: string | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: number
-          irsaliye_no: string
-          cari_id: number
-          cari_turu: string
-          irsaliye_turu: string
-          irsaliye_tarihi?: string
-          sevk_tarihi?: string
-          sevk_yeri?: string | null
-          durum?: string
-          toplam_miktar?: number
-          toplam_tutar?: number
-          pdf_url?: string | null
-          aciklama?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: number
-          irsaliye_no?: string
-          cari_id?: number
-          cari_turu?: string
-          irsaliye_turu?: string
-          irsaliye_tarihi?: string
-          sevk_tarihi?: string
-          sevk_yeri?: string | null
-          durum?: string
-          toplam_miktar?: number
-          toplam_tutar?: number
-          pdf_url?: string | null
-          aciklama?: string | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      irsaliye_urunleri: {
-        Row: {
-          id: number
-          irsaliye_id: number
-          urun_id: number
-          urun_adi: string
-          barkod: string | null
-          miktar: number
-          birim: string
-          birim_fiyat: number | null
-          tutar: number | null
-          seri_no: string | null
-          aciklama: string | null
-          created_at: string | null
-        }
-        Insert: {
-          id?: number
-          irsaliye_id: number
-          urun_id: number
-          urun_adi: string
-          barkod?: string | null
-          miktar?: number
-          birim?: string
-          birim_fiyat?: number | null
-          tutar?: number | null
-          seri_no?: string | null
-          aciklama?: string | null
-          created_at?: string | null
-        }
-        Update: {
-          id?: number
-          irsaliye_id?: number
-          urun_id?: number
-          urun_adi?: string
-          barkod?: string | null
-          miktar?: number
-          birim?: string
-          birim_fiyat?: number | null
-          tutar?: number | null
-          seri_no?: string | null
-          aciklama?: string | null
-          created_at?: string | null
-        }
-        Relationships: []
-      }
-      cariler: {
-        Row: {
-          id: number
-          ad: string
-          adres: string | null
-          telefon: string | null
-          vergi_no: string | null
-          tip: string
-          aktif: boolean | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: number
-          ad: string
-          adres?: string | null
-          telefon?: string | null
-          vergi_no?: string | null
-          tip: string
-          aktif?: boolean | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: number
-          ad?: string
-          adres?: string | null
-          telefon?: string | null
-          vergi_no?: string | null
-          tip?: string
-          aktif?: boolean | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      urunler: {
-        Row: {
-          id: number
-          ad: string
-          barkod: string | null
-          stok_miktari: number
-          birim: string | null
-          satis_fiyati: number | null
-          aktif: boolean | null
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: number
-          ad: string
-          barkod?: string | null
-          stok_miktari?: number
-          birim?: string | null
-          satis_fiyati?: number | null
-          aktif?: boolean | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: number
-          ad?: string
-          barkod?: string | null
-          stok_miktari?: number
-          birim?: string | null
-          satis_fiyati?: number | null
-          aktif?: boolean | null
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "users_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      update_product_stock: {
-        Args: {
-          product_id: number
-          quantity_change: number
-        }
-        Returns: undefined
-      }
-      generate_irsaliye_no: {
-        Args: {}
-        Returns: string
-      }
+      [_ in never]: never
     }
     Enums: {
       movement_type: "income" | "expense" | "sale" | "opening" | "closing"
       payment_type: "cash" | "pos" | "credit" | "partial"
+      turkcell_transaction_type:
+        | "postpaid_transfer"
+        | "prepaid_transfer"
+        | "new_line"
+        | "payment_type_change"
+        | "data_package"
+        | "device_with_line"
+        | "device_cash"
+        | "sim_change"
+        | "number_change"
       user_role: "admin" | "manager" | "cashier"
     }
     CompositeTypes: {
@@ -693,11 +929,3 @@ export type Database = {
     }
   }
 }
-
-// Type aliases for convenience
-export type UserRole = Database["public"]["Enums"]["user_role"]
-export type PaymentType = Database["public"]["Enums"]["payment_type"]
-export type MovementType = Database["public"]["Enums"]["movement_type"]
-
-// Legacy type aliases for backward compatibility
-export type PaymentStatus = 'pending' | 'completed' | 'cancelled'

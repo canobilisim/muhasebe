@@ -27,48 +27,44 @@ export async function getRetailSales(
     filter?: RetailSalesFilter
 ): Promise<SaleWithDetails[]> {
     try {
+        // Önce tüm satışları çek (filtreleme için)
         let query = supabase
             .from('sales')
             .select(`
-        *,
-        customer:customers(*),
-        user:users!sales_user_id_fkey(*),
-        sale_items(
-          *,
-          product:products(*)
-        )
-      `)
-            .eq('branch_id', branchId)
-            .order('sale_date', { ascending: false })
-
-        // Filtreler
-        if (filter) {
-            if (filter.search) {
-                query = query.or(
-                    `sale_number.ilike.%${filter.search}%,customer_name.ilike.%${filter.search}%`
+                *,
+                customer:customers(*),
+                user:users!sales_user_id_fkey(*),
+                sale_items(
+                  *,
+                  product:products(*)
                 )
-            }
+            `)
+            .eq('branch_id', branchId)
 
-            if (filter.startDate) {
-                query = query.gte('sale_date', filter.startDate)
-            }
-
-            if (filter.endDate) {
-                query = query.lte('sale_date', filter.endDate)
-            }
-
-            if (filter.paymentMethod) {
-                query = query.eq('payment_type', filter.paymentMethod as any)
-            }
-
-            if (filter.minAmount) {
-                query = query.gte('total_amount', filter.minAmount)
-            }
-
-            if (filter.maxAmount) {
-                query = query.lte('total_amount', filter.maxAmount)
-            }
+        // Tarih filtreleri
+        if (filter?.startDate) {
+            query = query.gte('sale_date', filter.startDate)
         }
+
+        if (filter?.endDate) {
+            query = query.lte('sale_date', filter.endDate)
+        }
+
+        // Ödeme yöntemi filtresi
+        if (filter?.paymentMethod) {
+            query = query.eq('payment_type', filter.paymentMethod as any)
+        }
+
+        // Tutar filtreleri
+        if (filter?.minAmount) {
+            query = query.gte('total_amount', filter.minAmount)
+        }
+
+        if (filter?.maxAmount) {
+            query = query.lte('total_amount', filter.maxAmount)
+        }
+
+        query = query.order('sale_date', { ascending: false })
 
         const { data, error } = await query
 
@@ -76,7 +72,29 @@ export async function getRetailSales(
             throw new Error(`Perakende satışlar alınamadı: ${error.message}`)
         }
 
-        return (data || []) as any as SaleWithDetails[]
+        let results = (data || []) as any as SaleWithDetails[]
+
+        // Arama filtresi (satış no, müşteri adı, ürün adı)
+        if (filter?.search && filter.search.trim()) {
+            const searchTerm = filter.search.toLowerCase().trim()
+            results = results.filter((sale: any) => {
+                const saleNumber = (sale.sale_number || '').toLowerCase()
+                // Müşteri adını hem customer_name hem de customer.name'den kontrol et
+                const customerName = (sale.customer_name || sale.customer?.name || '').toLowerCase()
+                
+                // Ürün adlarında ara
+                const hasMatchingProduct = (sale.sale_items || []).some((item: any) => {
+                    const productName = (item.product?.name || item.product_name || '').toLowerCase()
+                    return productName.includes(searchTerm)
+                })
+                
+                return saleNumber.includes(searchTerm) || 
+                       customerName.includes(searchTerm) || 
+                       hasMatchingProduct
+            })
+        }
+
+        return results
     } catch (error) {
         console.error('Error fetching retail sales:', error)
         throw error

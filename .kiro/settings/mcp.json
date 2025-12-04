@@ -19,7 +19,9 @@
         "list_projects",
         "search_docs",
         "list_organizations",
-        "get_project_url"
+        "get_project_url",
+        "restore_project",
+        "get_project"
       ],
       "disabledTools": []
     }

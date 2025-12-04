@@ -44,7 +44,8 @@ export function ProductForm({
       vat_rate: initialData?.vat_rate ?? 20,
       is_vat_included: initialData?.is_vat_included ?? false,
       purchase_price: initialData?.purchase_price ?? 0,
-      sale_price: initialData?.sale_price ?? 0,
+      sale_price_1: initialData?.sale_price_1 ?? 0,
+      sale_price_2: initialData?.sale_price_2,
       description: initialData?.description || '',
       stock_tracking_enabled: initialData?.stock_tracking_enabled ?? true,
       serial_number_tracking_enabled: initialData?.serial_number_tracking_enabled ?? false,
@@ -53,6 +54,9 @@ export function ProductForm({
       color: initialData?.color || '',
       serial_number: initialData?.serial_number || '',
       condition: initialData?.condition,
+      show_in_fast_sale: initialData?.show_in_fast_sale ?? false,
+      fast_sale_category_id: initialData?.fast_sale_category_id || '',
+      fast_sale_order: initialData?.fast_sale_order ?? 1,
       serialNumbers: []
     }
   })

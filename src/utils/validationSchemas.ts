@@ -106,6 +106,11 @@ export const productFormSchema = z.object({
   serial_number: z.string().optional(),
   condition: z.enum(['Yeni', '2. El', 'Yenilenmiş', 'Demo']).optional(),
   
+  // Fast Sale Settings
+  show_in_fast_sale: z.boolean().optional(),
+  fast_sale_category_id: z.string().optional(),
+  fast_sale_order: z.number().min(1, 'Sıra numarası en az 1 olmalıdır').max(99, 'Sıra numarası en fazla 99 olabilir').optional(),
+  
   // Serial Numbers
   serialNumbers: z.array(z.string()).optional()
 }).refine(
@@ -119,6 +124,18 @@ export const productFormSchema = z.object({
   {
     message: '2. Satış fiyatı alış fiyatından düşük olamaz',
     path: ['sale_price_2']
+  }
+).refine(
+  (data) => !data.show_in_fast_sale || (data.fast_sale_category_id && data.fast_sale_category_id.trim().length > 0),
+  {
+    message: 'Hızlı satış kategorisi seçmelisiniz',
+    path: ['fast_sale_category_id']
+  }
+).refine(
+  (data) => !data.show_in_fast_sale || (data.fast_sale_order && data.fast_sale_order >= 1 && data.fast_sale_order <= 99),
+  {
+    message: 'Sıra numarası 1-99 arasında olmalıdır',
+    path: ['fast_sale_order']
   }
 )
 

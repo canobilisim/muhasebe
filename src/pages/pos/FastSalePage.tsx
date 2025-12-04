@@ -52,7 +52,8 @@ const FastSalePage: React.FC = () => {
     id: string;
     barcode: string;
     name: string;
-    sale_price: number;
+    sale_price_1?: number | null;
+    sale_price_2?: number | null;
     stock_quantity: number;
     category: string | null;
   }>>([]);
@@ -62,7 +63,8 @@ const FastSalePage: React.FC = () => {
   const [priceCheckBarcode, setPriceCheckBarcode] = useState('');
   const [priceCheckProduct, setPriceCheckProduct] = useState<{
     name: string;
-    sale_price: number;
+    sale_price_1?: number | null;
+    sale_price_2?: number | null;
     barcode: string;
   } | null>(null);
   const [isPriceChecking, setIsPriceChecking] = useState(false);
@@ -114,7 +116,8 @@ const FastSalePage: React.FC = () => {
     categories: fastSaleCategories,
     products: fastSaleProducts,
     isLoading: isLoadingFastSale,
-    loadData: loadFastSaleData
+    loadData: loadFastSaleData,
+    refreshData: refreshFastSaleData
   } = useFastSaleStore();
   const [state, setState] = useState<POSState>({
     activePriceList: 'Fiyat 1',
@@ -564,7 +567,8 @@ const FastSalePage: React.FC = () => {
       if (result.success && result.data) {
         setPriceCheckProduct({
           name: result.data.name,
-          sale_price: result.data.sale_price,
+          sale_price_1: result.data.sale_price_1,
+          sale_price_2: result.data.sale_price_2,
           barcode: result.data.barcode,
         });
       } else {
@@ -1289,7 +1293,7 @@ const FastSalePage: React.FC = () => {
                         </div>
                       </div>
                       <div className="text-sm font-bold text-green-600 ml-4">
-                        {product.sale_price.toFixed(2)} ₺
+                        {getPriceByList(product).toFixed(2)} ₺
                       </div>
                     </div>
                   ))}
@@ -1834,7 +1838,7 @@ const FastSalePage: React.FC = () => {
                   {priceCheckProduct.name}
                 </div>
                 <div className="text-blue-600 font-bold text-5xl">
-                  {priceCheckProduct.sale_price.toFixed(2)} ₺
+                  {getPriceByList(priceCheckProduct).toFixed(2)} ₺
                 </div>
                 <div className="text-gray-500 text-sm">
                   Barkod: {priceCheckProduct.barcode}

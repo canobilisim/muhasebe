@@ -8,6 +8,7 @@ import { ArrowLeft, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
 import type { ProductFormData, SerialNumber } from '@/types/product'
+import { useFastSaleStore } from '@/stores/fastSaleStore'
 
 function ProductEditPage() {
   const navigate = useNavigate()
@@ -17,6 +18,7 @@ function ProductEditPage() {
   const [productData, setProductData] = useState<Partial<ProductFormData> | null>(null)
   const [serialNumbers, setSerialNumbers] = useState<SerialNumber[]>([])
   const [productName, setProductName] = useState<string>('')
+  const { refreshData: refreshFastSaleData } = useFastSaleStore()
 
   // Load product data
   useEffect(() => {
@@ -61,6 +63,9 @@ function ProductEditPage() {
           color: product.color || '',
           serial_number: product.serial_number || '',
           condition: (product.condition as any) || 'Yeni',
+          show_in_fast_sale: (product as any).show_in_fast_sale ?? false,
+          fast_sale_category_id: (product as any).fast_sale_category_id || '',
+          fast_sale_order: (product as any).fast_sale_order ?? 1,
         })
 
         // Set serial numbers if available
@@ -94,9 +99,8 @@ function ProductEditPage() {
         vat_rate: data.vat_rate,
         is_vat_included: data.is_vat_included,
         purchase_price: data.purchase_price,
-        sale_price: data.sale_price_1, // Set main sale_price to sale_price_1
         sale_price_1: data.sale_price_1,
-        sale_price_2: (data.sale_price_2 && !isNaN(data.sale_price_2)) ? data.sale_price_2 : data.sale_price_1, // Boşsa veya NaN ise 1. fiyat kullan
+        sale_price_2: (data.sale_price_2 && !isNaN(data.sale_price_2)) ? data.sale_price_2 : null,
         description: data.description || null,
         stock_tracking_enabled: data.stock_tracking_enabled,
         serial_number_tracking_enabled: data.serial_number_tracking_enabled,
@@ -107,6 +111,9 @@ function ProductEditPage() {
         color: data.color || null,
         serial_number: data.serial_number || null,
         condition: data.condition || 'Yeni',
+        show_in_fast_sale: data.show_in_fast_sale ?? false,
+        fast_sale_category_id: data.fast_sale_category_id || null,
+        fast_sale_order: data.fast_sale_order || null,
       }
 
       // Update product
@@ -146,6 +153,12 @@ function ProductEditPage() {
       }
 
       toast.success('Ürün başarıyla güncellendi')
+      
+      // Refresh fast sale cache if product is shown in fast sale
+      if (data.show_in_fast_sale) {
+        await refreshFastSaleData()
+      }
+      
       navigate('/products/manage')
     } catch (error) {
       console.error('Error updating product:', error)

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
@@ -11,10 +11,13 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Switch } from '@/components/ui/switch'
 import { SerialNumberManager } from './SerialNumberManager'
 import { CategoryCombobox } from './CategoryCombobox'
-import { Loader2, Package, DollarSign, Settings, Barcode } from 'lucide-react'
+import { Loader2, Package, DollarSign, Settings, Barcode, Zap } from 'lucide-react'
 import type { SerialNumber } from '@/types/product'
+import type { FastSaleCategory } from '@/types'
 import { productFormSchema, type ProductFormData } from '@/utils/validationSchemas'
 import { showFormErrorSummary, getFieldErrorClass } from '@/utils/errorHandling'
+import { FastSaleCategoryService } from '@/services/fastSaleCategoryService'
+import { ProductService } from '@/services/productService'
 import toast from 'react-hot-toast'
 
 interface ProductFormCompactProps {
@@ -36,6 +39,8 @@ export function ProductFormCompact({
 }: ProductFormCompactProps) {
   const [serialNumbers, setSerialNumbers] = useState<SerialNumber[]>(initialSerialNumbers)
   const [serialNumberIdCounter, setSerialNumberIdCounter] = useState(initialSerialNumbers.length)
+  const [fastSaleCategories, setFastSaleCategories] = useState<FastSaleCategory[]>([])
+  const [loadingCategories, setLoadingCategories] = useState(false)
 
   // Initialize form with default values
   const form = useForm<ProductFormData>({
@@ -60,6 +65,9 @@ export function ProductFormCompact({
       color: initialData?.color || '',
       serial_number: initialData?.serial_number || '',
       condition: initialData?.condition || 'Yeni',
+      show_in_fast_sale: initialData?.show_in_fast_sale ?? false,
+      fast_sale_category_id: initialData?.fast_sale_category_id || '',
+      fast_sale_order: initialData?.fast_sale_order ?? 1,
       serialNumbers: []
     }
   })
@@ -68,7 +76,44 @@ export function ProductFormCompact({
   const serialNumberTrackingEnabled = watch('serial_number_tracking_enabled')
   const stockTrackingEnabled = watch('stock_tracking_enabled')
   const isActive = watch('is_active') ?? true
+  const showInFastSale = watch('show_in_fast_sale')
+  const fastSaleCategoryId = watch('fast_sale_category_id')
   const [showManualVat, setShowManualVat] = useState(false)
+
+  // Load fast sale categories
+  useEffect(() => {
+    loadFastSaleCategories()
+  }, [])
+
+  // Auto-load next order number when category changes
+  useEffect(() => {
+    if (showInFastSale && fastSaleCategoryId && mode === 'create') {
+      loadNextOrderNumber(fastSaleCategoryId)
+    }
+  }, [fastSaleCategoryId, showInFastSale, mode])
+
+  const loadFastSaleCategories = async () => {
+    setLoadingCategories(true)
+    try {
+      const result = await FastSaleCategoryService.getAll()
+      if (result.success && result.data) {
+        setFastSaleCategories(result.data.filter(cat => cat.is_active))
+      }
+    } catch (error) {
+      console.error('Error loading fast sale categories:', error)
+    } finally {
+      setLoadingCategories(false)
+    }
+  }
+
+  const loadNextOrderNumber = async (categoryId: string) => {
+    try {
+      const nextOrder = await ProductService.getNextOrderNumber(categoryId)
+      setValue('fast_sale_order', nextOrder)
+    } catch (error) {
+      console.error('Error loading next order number:', error)
+    }
+  }
 
   // Generate barcode - EAN-13 format (12 digits + check digit)
   const generateBarcode = () => {
@@ -550,6 +595,92 @@ export function ProductFormCompact({
               onCheckedChange={(checked) => setValue('is_active', checked)}
               disabled={isSubmitting}
             />
+          </div>
+
+          {/* Fast Sale Settings */}
+          <div className="pt-4 border-t space-y-4">
+            <div className="flex items-center gap-2">
+              <Zap className="h-4 w-4 text-orange-500" />
+              <h4 className="font-medium text-sm text-gray-700">Hızlı Satış</h4>
+            </div>
+
+            {/* Show in Fast Sale Toggle */}
+            <div className="flex items-center justify-between p-3 border rounded-lg">
+              <div className="space-y-0.5">
+                <Label htmlFor="show_in_fast_sale" className="text-sm font-medium cursor-pointer">
+                  Hızlı Satışta Göster
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {showInFastSale ? 'Gösteriliyor' : 'Gösterilmiyor'}
+                </p>
+              </div>
+              <Switch
+                id="show_in_fast_sale"
+                checked={showInFastSale || false}
+                onCheckedChange={(checked) => {
+                  setValue('show_in_fast_sale', checked)
+                  if (!checked) {
+                    setValue('fast_sale_category_id', '')
+                    setValue('fast_sale_order', 1)
+                  }
+                }}
+                disabled={isSubmitting}
+              />
+            </div>
+
+            {/* Fast Sale Category and Order */}
+            {showInFastSale && (
+              <div className="space-y-3 pl-3 border-l-2 border-orange-200">
+                {/* Category Selection */}
+                <div className="space-y-1">
+                  <Label htmlFor="fast_sale_category_id" className="text-sm">
+                    Kategori <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={fastSaleCategoryId || ''}
+                    onValueChange={(value) => setValue('fast_sale_category_id', value)}
+                    disabled={isSubmitting || loadingCategories}
+                  >
+                    <SelectTrigger className={`h-9 ${getFieldErrorClass(!!errors.fast_sale_category_id)}`}>
+                      <SelectValue placeholder={loadingCategories ? 'Yükleniyor...' : 'Kategori seçin'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {fastSaleCategories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.fast_sale_category_id && (
+                    <p className="text-xs text-red-500">{errors.fast_sale_category_id.message}</p>
+                  )}
+                </div>
+
+                {/* Order Number */}
+                <div className="space-y-1">
+                  <Label htmlFor="fast_sale_order" className="text-sm">
+                    Sıra (1-99) <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="fast_sale_order"
+                    type="number"
+                    min="1"
+                    max="99"
+                    {...register('fast_sale_order', { valueAsNumber: true })}
+                    placeholder="Sıra numarası"
+                    className={`h-9 ${getFieldErrorClass(!!errors.fast_sale_order)}`}
+                    disabled={isSubmitting}
+                  />
+                  {errors.fast_sale_order && (
+                    <p className="text-xs text-red-500">{errors.fast_sale_order.message}</p>
+                  )}
+                  <p className="text-xs text-gray-500">
+                    Aynı sıradaki ürünler otomatik kaydırılır
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Serial Numbers Section */}

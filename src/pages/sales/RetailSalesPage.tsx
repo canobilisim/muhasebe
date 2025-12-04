@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Zap, Receipt, Search, Filter, Eye, Trash2, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
-import { useState } from 'react';
+import { Label } from '@/components/ui/label';
+import { useState, useEffect } from 'react';
 import { useRetailSales } from '@/hooks/useRetailSales';
 import { RetailSaleDetailModal } from '@/components/sales/RetailSaleDetailModal';
 import type { SaleWithDetails } from '@/types/sales';
@@ -30,10 +31,31 @@ export default function RetailSalesPage() {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [saleToDelete, setSaleToDelete] = useState<string | null>(null);
+  
+  // Filtre state'leri
+  const [startDate, setStartDate] = useState(() => {
+    // Bugünün başlangıcı (00:00:00)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today.toISOString().split('T')[0];
+  });
+  const [endDate, setEndDate] = useState(() => {
+    // Bugünün sonu (23:59:59)
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    return today.toISOString().split('T')[0];
+  });
+  const [paymentFilter, setPaymentFilter] = useState<string>('all');
+  const [showFilters, setShowFilters] = useState(false);
 
-  // Arama filtresi
+  // Arama ve filtreleme
   const handleSearch = () => {
-    loadSales({ search: searchQuery });
+    loadSales({ 
+      search: searchQuery,
+      startDate: startDate ? `${startDate}T00:00:00` : undefined,
+      endDate: endDate ? `${endDate}T23:59:59` : undefined,
+      paymentMethod: paymentFilter !== 'all' ? paymentFilter : undefined,
+    });
   };
 
   // Satış detayını görüntüle
@@ -68,13 +90,32 @@ export default function RetailSalesPage() {
     partial: 'Kısmi Ödeme'
   };
 
-  // Filtrelenmiş satışlar
-  const filteredSales = searchQuery
-    ? sales.filter(sale =>
-        sale.sale_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        sale.customer_name?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : sales;
+  // İlk yükleme - bugünün satışlarını getir
+  useEffect(() => {
+    handleSearch();
+  }, []);
+
+  // Arama kutusu temizlendiğinde otomatik ara
+  useEffect(() => {
+    if (searchQuery === '') {
+      handleSearch();
+    }
+  }, [searchQuery]);
+
+  // Filtreleri temizle
+  const handleClearFilters = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    setStartDate(today.toISOString().split('T')[0]);
+    today.setHours(23, 59, 59, 999);
+    setEndDate(today.toISOString().split('T')[0]);
+    setPaymentFilter('all');
+    setSearchQuery('');
+    loadSales({
+      startDate: `${today.toISOString().split('T')[0]}T00:00:00`,
+      endDate: `${today.toISOString().split('T')[0]}T23:59:59`,
+    });
+  };
 
   return (
     <Layout
@@ -83,32 +124,93 @@ export default function RetailSalesPage() {
     >
       <div className="space-y-6">
         {/* Header Actions */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Satış ara..."
-                className="pl-10 w-80"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              />
-            </div>
-            <Button variant="outline" size="sm" onClick={handleSearch} disabled={loading}>
-              {loading ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Satış no, müşteri adı veya ürün ara..."
+                  className="pl-10 w-96"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                />
+              </div>
+              <Button variant="outline" size="sm" onClick={handleSearch} disabled={loading}>
+                {loading ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Search className="h-4 w-4 mr-2" />
+                )}
+                Ara
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowFilters(!showFilters)}
+              >
                 <Filter className="h-4 w-4 mr-2" />
-              )}
-              Ara
+                Filtreler
+              </Button>
+            </div>
+            
+            <Button onClick={() => navigate('/pos2')}>
+              <Zap className="h-4 w-4 mr-2" />
+              Yeni POS Satış
             </Button>
           </div>
-          
-          <Button onClick={() => navigate('/pos2')}>
-            <Zap className="h-4 w-4 mr-2" />
-            Yeni POS Satış
-          </Button>
+
+          {/* Filtre Paneli */}
+          {showFilters && (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div>
+                    <Label htmlFor="startDate">Başlangıç Tarihi</Label>
+                    <Input
+                      id="startDate"
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="endDate">Bitiş Tarihi</Label>
+                    <Input
+                      id="endDate"
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="paymentFilter">Ödeme Yöntemi</Label>
+                    <select
+                      id="paymentFilter"
+                      className="w-full h-10 px-3 rounded-md border border-gray-300 bg-white text-sm"
+                      value={paymentFilter}
+                      onChange={(e) => setPaymentFilter(e.target.value)}
+                    >
+                      <option value="all">Tümü</option>
+                      <option value="cash">Nakit</option>
+                      <option value="pos">Kredi Kartı</option>
+                      <option value="credit">Açık Hesap</option>
+                      <option value="partial">Kısmi Ödeme</option>
+                    </select>
+                  </div>
+                  <div className="flex items-end gap-2">
+                    <Button onClick={handleSearch} className="flex-1" disabled={loading}>
+                      Uygula
+                    </Button>
+                    <Button onClick={handleClearFilters} variant="outline" disabled={loading}>
+                      Temizle
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Summary Cards */}
@@ -181,7 +283,7 @@ export default function RetailSalesPage() {
                 <Loader2 className="h-16 w-16 mx-auto text-gray-300 mb-4 animate-spin" />
                 <p className="text-gray-500">Satışlar yükleniyor...</p>
               </div>
-            ) : filteredSales.length === 0 ? (
+            ) : sales.length === 0 ? (
               <div className="text-center py-12">
                 <Receipt className="h-16 w-16 mx-auto text-gray-300 mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -216,14 +318,18 @@ export default function RetailSalesPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredSales.map((sale) => {
+                    {sales.map((sale: any) => {
                       const items = sale.sale_items || sale.items || []
                       const itemCount = items.reduce((sum: number, item: any) => sum + item.quantity, 0);
                       
                       return (
                         <tr key={sale.id} className="border-b border-gray-100 hover:bg-gray-50">
                           <td className="py-3 px-4">
-                            <div className="flex items-center gap-2">
+                            <div 
+                              className="flex items-center gap-2 cursor-pointer hover:underline"
+                              onClick={() => handleViewSale(sale.id)}
+                              title="Detayları görüntüle"
+                            >
                               <Receipt className="h-4 w-4 text-gray-400" />
                               <span className="font-medium text-blue-600">{sale.sale_number}</span>
                             </div>
@@ -239,9 +345,19 @@ export default function RetailSalesPage() {
                             </div>
                           </td>
                           <td className="py-3 px-4">
-                            <span className="text-gray-900">
-                              {sale.customer?.name || sale.customer_name || 'Perakende Müşterisi'}
-                            </span>
+                            {sale.customer_id ? (
+                              <span 
+                                className="text-blue-600 hover:underline cursor-pointer"
+                                onClick={() => navigate(`/customers/${sale.customer_id}`)}
+                                title="Müşteri detayına git"
+                              >
+                                {sale.customer?.name || sale.customer_name}
+                              </span>
+                            ) : (
+                              <span className="text-gray-900">
+                                {sale.customer?.name || sale.customer_name || 'Perakende Müşterisi'}
+                              </span>
+                            )}
                           </td>
                           <td className="py-3 px-4">
                             <span className="text-gray-900">{itemCount} adet</span>

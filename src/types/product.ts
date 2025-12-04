@@ -19,7 +19,7 @@ export type SerialNumberStatus = 'available' | 'reserved' | 'sold'
 export interface Product extends ProductRow {
   // Inherited from ProductRow:
   // id, barcode, name, category, category_id, branch_id
-  // purchase_price, sale_price, sale_price_1, sale_price_2, sale_price_3
+  // purchase_price, sale_price_1, sale_price_2
   // stock_quantity, critical_stock_level, is_active
   // show_in_fast_sale, fast_sale_category_id, fast_sale_order
   // brand, model, color, serial_number, condition
@@ -66,6 +66,11 @@ export interface ProductFormData {
   color?: string
   serial_number?: string
   condition?: ProductCondition
+  
+  // Fast Sale Settings
+  show_in_fast_sale?: boolean
+  fast_sale_category_id?: string
+  fast_sale_order?: number
   
   // Serial Numbers (for products with serial number tracking)
   serialNumbers?: string[]

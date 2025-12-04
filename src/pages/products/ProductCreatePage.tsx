@@ -9,11 +9,13 @@ import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
 import type { ProductFormData } from '@/types/product'
 import { useAuthStore } from '@/stores/authStore'
+import { useFastSaleStore } from '@/stores/fastSaleStore'
 
 function ProductCreatePage() {
   const navigate = useNavigate()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { branchId } = useAuthStore()
+  const { refreshData: refreshFastSaleData } = useFastSaleStore()
 
   const handleSubmit = async (data: ProductFormData, action: 'save' | 'saveAndNew') => {
     setIsSubmitting(true)
@@ -34,9 +36,8 @@ function ProductCreatePage() {
         vat_rate: data.vat_rate,
         is_vat_included: data.is_vat_included,
         purchase_price: data.purchase_price,
-        sale_price: data.sale_price_1, // Set main sale_price to sale_price_1
         sale_price_1: data.sale_price_1,
-        sale_price_2: (data.sale_price_2 && !isNaN(data.sale_price_2)) ? data.sale_price_2 : data.sale_price_1, // Boşsa veya NaN ise 1. fiyat kullan
+        sale_price_2: (data.sale_price_2 && !isNaN(data.sale_price_2)) ? data.sale_price_2 : null,
         description: data.description || null,
         stock_tracking_enabled: data.stock_tracking_enabled,
         serial_number_tracking_enabled: data.serial_number_tracking_enabled,
@@ -47,6 +48,9 @@ function ProductCreatePage() {
         color: data.color || null,
         serial_number: data.serial_number || null,
         condition: data.condition || 'Yeni',
+        show_in_fast_sale: data.show_in_fast_sale ?? false,
+        fast_sale_category_id: data.fast_sale_category_id || null,
+        fast_sale_order: data.fast_sale_order || null,
       }
 
       // Create product
@@ -70,6 +74,11 @@ function ProductCreatePage() {
       }
 
       toast.success('Ürün başarıyla oluşturuldu')
+
+      // Refresh fast sale cache if product is shown in fast sale
+      if (data.show_in_fast_sale) {
+        await refreshFastSaleData()
+      }
 
       // Navigate based on action
       if (action === 'save') {

@@ -462,13 +462,13 @@ export class ProductService {
 
       // Update existing products
       for (const product of updateProducts) {
-        const { data: updatedData, error: updateError } = await supabase
+        const { data: updatedData, error: updateError} = await supabase
           .from('products')
           .update({
             name: product.name,
             category: product.category,
             purchase_price: product.purchase_price,
-            sale_price: product.sale_price,
+            sale_price_1: (product as any).sale_price || (product as any).sale_price_1,
             stock_quantity: product.stock_quantity,
             critical_stock_level: product.critical_stock_level,
             brand: product.brand,

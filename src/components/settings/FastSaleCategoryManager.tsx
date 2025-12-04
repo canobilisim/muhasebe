@@ -49,6 +49,12 @@ export const FastSaleCategoryManager = ({ isOpen, onClose }: FastSaleCategoryMan
   };
 
   const handleOpenModal = (category?: FastSaleCategory) => {
+    // Yeni kategori ekleme kontrolü - maksimum 5 kategori
+    if (!category && categories.length >= 5) {
+      showToast.error('Maksimum 5 hızlı satış kategorisi ekleyebilirsiniz');
+      return;
+    }
+
     if (category) {
       setEditingCategory(category);
       setFormData({
@@ -137,13 +143,18 @@ export const FastSaleCategoryManager = ({ isOpen, onClose }: FastSaleCategoryMan
           <DialogHeader>
             <div className="flex items-center justify-between">
               <DialogTitle className="text-xl">Hızlı Satış Kategorileri</DialogTitle>
-              <Button onClick={() => handleOpenModal()} size="sm">
+              <Button 
+                onClick={() => handleOpenModal()} 
+                size="sm"
+                disabled={categories.length >= 5}
+                title={categories.length >= 5 ? 'Maksimum 5 kategori ekleyebilirsiniz' : ''}
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Yeni Kategori
               </Button>
             </div>
             <DialogDescription>
-              Hızlı satış ekranında gösterilecek kategorileri yönetin.
+              Hızlı satış ekranında gösterilecek kategorileri yönetin. (Maksimum 5 kategori)
             </DialogDescription>
           </DialogHeader>
 

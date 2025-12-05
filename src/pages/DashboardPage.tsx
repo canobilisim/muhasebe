@@ -57,13 +57,13 @@ const DashboardPage = () => {
       title="Dashboard" 
       subtitle={`Hoş geldiniz, ${getDisplayName()}`}
       actions={
-        <Button onClick={refreshData} variant="outline" size="sm">
+        <Button onClick={refreshData} variant="outline" size="default" className="shadow-sm">
           <RefreshCw className="w-4 h-4 mr-2" />
           Yenile
         </Button>
       }
     >
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="space-y-6">
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <KPICard

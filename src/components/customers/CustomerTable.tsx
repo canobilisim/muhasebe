@@ -10,6 +10,16 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { SkeletonTable, EmptyCustomers, ButtonLoading } from '@/components/ui'
 import { Edit, Trash2, Phone, Mail } from 'lucide-react'
 import { CustomerService } from '@/services/customerService'
@@ -33,17 +43,24 @@ export const CustomerTable = ({
 }: CustomerTableProps) => {
   const navigate = useNavigate()
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null)
   const { handleError, showSuccess } = useErrorHandler()
 
-  const handleDelete = async (customer: Customer) => {
-    if (!confirm(`"${customer.name}" müşterisini silmek istediğinizden emin misiniz?`)) {
-      return
-    }
+  const handleDeleteClick = (customer: Customer) => {
+    setCustomerToDelete(customer)
+    setDeleteDialogOpen(true)
+  }
 
-    setDeletingId(customer.id)
+  const handleConfirmDelete = async () => {
+    if (!customerToDelete) return
+
+    setDeletingId(customerToDelete.id)
     try {
-      await CustomerService.deleteCustomer(customer.id)
-      showSuccess('Müşteri başarıyla silindi')
+      await CustomerService.deleteCustomer(customerToDelete.id)
+      showSuccess('Müşteri ve tüm kayıtları başarıyla silindi')
+      setDeleteDialogOpen(false)
+      setCustomerToDelete(null)
       onRefresh()
     } catch (error) {
       handleError(error, 'Müşteri silinirken bir hata oluştu')
@@ -158,7 +175,7 @@ export const CustomerTable = ({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleDelete(customer)}
+                    onClick={() => handleDeleteClick(customer)}
                     disabled={deletingId === customer.id}
                   >
                     {deletingId === customer.id ? (
@@ -173,6 +190,37 @@ export const CustomerTable = ({
           ))}
         </TableBody>
       </Table>
+
+      {/* Silme Onay Dialogu */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Müşteri Silme Onayı</AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="font-semibold">{customerToDelete?.name}</span> müşterisini kalıcı olarak silmek istediğinizden emin misiniz?
+              <br /><br />
+              <span className="text-red-600 font-semibold">⚠️ Bu işlem geri alınamaz!</span>
+              <br /><br />
+              Müşteriye ait tüm kayıtlar silinecek:
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>Satış kayıtları</li>
+                <li>Ödeme kayıtları</li>
+                <li>İşlem geçmişi</li>
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>İptal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={deletingId === customerToDelete?.id}
+            >
+              {deletingId === customerToDelete?.id ? 'Siliniyor...' : 'Evet, Sil'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

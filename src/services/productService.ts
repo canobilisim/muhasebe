@@ -7,26 +7,34 @@ export class ProductService {
    */
   static async searchByBarcode(barcode: string): Promise<ApiResponse<Product>> {
     try {
+      // Use limit(1) instead of single() to avoid 406 errors
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .eq('barcode', barcode)
         .eq('is_active', true)
-        .single()
+        .limit(1)
 
       if (error) {
-        if (error.code === 'PGRST116') {
-          return {
-            data: null,
-            error: 'Ürün bulunamadı',
-            success: false
-          }
+        console.error('Error searching product by barcode:', error)
+        return {
+          data: null,
+          error: 'Ürün arama sırasında hata oluştu',
+          success: false
         }
-        throw error
+      }
+
+      // Check if any product found
+      if (!data || data.length === 0) {
+        return {
+          data: null,
+          error: 'Ürün bulunamadı',
+          success: false
+        }
       }
 
       return {
-        data,
+        data: data[0], // Return first product
         error: null,
         success: true
       }

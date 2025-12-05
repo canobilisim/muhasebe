@@ -1,208 +1,254 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Search, UserPlus } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Edit, Trash2, Eye, UserCheck } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-
-interface Personnel {
-  id: string;
-  name: string;
-  surname: string;
-  tcNo: string;
-  branch: string;
-  position: string;
-  status: string;
-  salary: number;
-  startDate: string;
-  phone: string;
-}
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PersonnelTable } from '@/components/personnel/PersonnelTable';
+import { getPersonnel, deletePersonnel, type PersonnelWithStats } from '@/services/personnelService';
+import { useAuthStore } from '@/stores/authStore';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function PersonnelListPage() {
   const navigate = useNavigate();
+  const { profile, branchId } = useAuthStore();
+  const [personnel, setPersonnel] = useState<PersonnelWithStats[]>([]);
+  const [filteredPersonnel, setFilteredPersonnel] = useState<PersonnelWithStats[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [personnelToDelete, setPersonnelToDelete] = useState<PersonnelWithStats | null>(null);
 
-  // Mock data
-  const personnelList: Personnel[] = [
-    {
-      id: '1',
-      name: 'Ahmet',
-      surname: 'Yılmaz',
-      tcNo: '12345678901',
-      branch: 'Merkez Şube',
-      position: 'Satış Temsilcisi',
-      status: 'Aktif Çalışan',
-      salary: 15000,
-      startDate: '2024-01-15',
-      phone: '0532 123 45 67'
-    },
-    {
-      id: '2',
-      name: 'Fatma',
-      surname: 'Demir',
-      tcNo: '98765432109',
-      branch: 'Merkez Şube',
-      position: 'Muhasebe Uzmanı',
-      status: 'Aday',
-      salary: 18000,
-      startDate: '2023-06-10',
-      phone: '0533 987 65 43'
+  useEffect(() => {
+    loadPersonnel();
+  }, [branchId]);
+
+  useEffect(() => {
+    filterPersonnel();
+  }, [searchTerm, personnel]);
+
+  const loadPersonnel = async () => {
+    const effectiveBranchId = branchId || profile?.branch_id;
+    
+    if (!effectiveBranchId) {
+      setLoading(false);
+      toast.error('Şube bilgisi bulunamadı', {
+        description: 'Lütfen giriş yapın veya şube seçin',
+      });
+      return;
     }
-  ];
 
-  const filteredPersonnel = personnelList.filter(person =>
-    person.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    person.surname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    person.tcNo.includes(searchTerm) ||
-    person.position.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    try {
+      setLoading(true);
+      const data = await getPersonnel(effectiveBranchId);
+      setPersonnel(data);
+    } catch (error: any) {
+      toast.error('Personel listesi yüklenirken hata oluştu', {
+        description: error.message,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filterPersonnel = () => {
+    if (!searchTerm.trim()) {
+      setFilteredPersonnel(personnel);
+      return;
+    }
+
+    const term = searchTerm.toLowerCase();
+    const filtered = personnel.filter(
+      (p) =>
+        p.first_name.toLowerCase().includes(term) ||
+        p.last_name.toLowerCase().includes(term) ||
+        p.tc_kimlik?.toLowerCase().includes(term) ||
+        p.phone?.toLowerCase().includes(term) ||
+        p.position?.toLowerCase().includes(term) ||
+        p.department?.toLowerCase().includes(term)
+    );
+    setFilteredPersonnel(filtered);
+  };
+
+  const handleAddPersonnel = () => {
+    navigate('/personnel/new');
+  };
+
+  const handlePersonnelClick = (personnelId: string) => {
+    navigate(`/personnel/${personnelId}`);
+  };
+
+  const handleEdit = (personnelId: string) => {
+    navigate(`/personnel/${personnelId}/edit`);
+  };
+
+  const handleDeleteClick = (personnelId: string) => {
+    const person = personnel.find(p => p.id === personnelId);
+    if (person) {
+      setPersonnelToDelete(person);
+      setDeleteDialogOpen(true);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!personnelToDelete) return;
+
+    try {
+      await deletePersonnel(personnelToDelete.id);
+      toast.success('Personel silindi', {
+        description: `${personnelToDelete.first_name} ${personnelToDelete.last_name} başarıyla silindi`,
+      });
+      loadPersonnel();
+    } catch (error: any) {
+      toast.error('Personel silinirken hata oluştu', {
+        description: error.message,
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setPersonnelToDelete(null);
+    }
+  };
+
+  const activeCount = personnel.filter((p) => p.is_active).length;
+  const inactiveCount = personnel.filter((p) => !p.is_active).length;
+  const totalSalaries = personnel.reduce((sum, p) => sum + Number(p.monthly_salary), 0);
+  const totalAdvances = personnel.reduce((sum, p) => sum + Number(p.remaining_advances), 0);
 
   return (
-    <Layout
-      title="Personel Yönetimi"
-      subtitle="Şirket personellerini yönetin, evrakları takip edin ve maaş bilgilerini güncelleyin"
-    >
-      <div className="space-y-6">
-        {/* Header Actions */}
-        <div className="flex items-center justify-between">
+    <Layout>
+      <div className="container mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Personel Yönetimi</h1>
+          <p className="text-muted-foreground mt-1">
+            Personel bilgileri, maaş ve avans takibi
+          </p>
+        </div>
+        <Button onClick={handleAddPersonnel} size="lg">
+          <UserPlus className="mr-2 h-5 w-5" />
+          Yeni Personel
+        </Button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Toplam Personel</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{personnel.length}</div>
+            <p className="text-xs text-muted-foreground">
+              {activeCount} aktif, {inactiveCount} pasif
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Toplam Maaş</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {totalSalaries.toLocaleString('tr-TR', {
+                style: 'currency',
+                currency: 'TRY',
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground">Aylık brüt toplam</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Toplam Avans</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {totalAdvances.toLocaleString('tr-TR', {
+                style: 'currency',
+                currency: 'TRY',
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground">Kalan avans borcu</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Aktif Personel</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{activeCount}</div>
+            <p className="text-xs text-muted-foreground">
+              {((activeCount / personnel.length) * 100 || 0).toFixed(0)}% oranı
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search and Filter */}
+      <Card>
+        <CardHeader>
           <div className="flex items-center gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Personel adı, evrak tipi ile arayın"
+                placeholder="Personel ara (ad, soyad, TC, telefon, pozisyon...)"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-80"
+                className="pl-10"
               />
             </div>
           </div>
-          
-          <Button onClick={() => navigate('/personnel/new')}>
-            <Plus className="h-4 w-4 mr-2" />
-            Yeni Personel
-          </Button>
-        </div>
+        </CardHeader>
+        <CardContent>
+          <PersonnelTable
+            personnel={filteredPersonnel}
+            loading={loading}
+            onPersonnelClick={handlePersonnelClick}
+            onEdit={handleEdit}
+            onDelete={handleDeleteClick}
+            onRefresh={loadPersonnel}
+          />
+        </CardContent>
+      </Card>
 
-        {/* Personnel List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Personel Listesi</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {filteredPersonnel.length === 0 ? (
-              <div className="text-center py-12">
-                <UserCheck className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {searchTerm ? 'Personel bulunamadı' : 'Kayıt bulunamadı.'}
-                </h3>
-                <p className="text-gray-500 mb-6">
-                  {searchTerm 
-                    ? 'Arama kriterlerinizi değiştirin veya yeni personel ekleyin.'
-                    : 'İlk personel kaydınızı oluşturmak için aşağıdaki butona tıklayın.'
-                  }
-                </p>
-                <Button onClick={() => navigate('/personnel/new')}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Yeni Personel Ekle
-                </Button>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">Ad Soyad</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">T.C. Kimlik No</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">Şube</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">Telefon</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">Durum ↕</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">Maaş ↕</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">Evrak Durumu</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">İşe Başlama ↕</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">İşlemler</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredPersonnel.map((person) => (
-                      <tr key={person.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <UserCheck className="h-4 w-4 text-gray-400" />
-                            <span className="font-medium">{person.name} {person.surname}</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 text-gray-900">{person.tcNo}</td>
-                        <td className="py-3 px-4 text-gray-900">{person.branch}</td>
-                        <td className="py-3 px-4 text-gray-900">{person.phone}</td>
-                        <td className="py-3 px-4">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            person.status === 'Aktif Çalışan' 
-                              ? 'bg-green-100 text-green-800' 
-                              : person.status === 'Aday'
-                              ? 'bg-blue-100 text-blue-800'
-                              : person.status === 'İstifa Etti'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : person.status === 'İşten Çıkarıldı'
-                              ? 'bg-red-100 text-red-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {person.status}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 font-medium text-green-600">
-                          ₺{person.salary.toLocaleString()}
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            Tamamlandı
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-gray-900">{person.startDate}</td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="sm" title="Görüntüle">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" title="Düzenle">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" title="Sil" className="text-red-600 hover:text-red-700">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-            
-            {filteredPersonnel.length > 0 && (
-              <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
-                <p className="text-sm text-gray-500">
-                  Toplam {filteredPersonnel.length} kayıttan 1-{Math.min(10, filteredPersonnel.length)} arası gösteriliyor
-                </p>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-500">Sayfa başına</span>
-                  <select className="border border-gray-300 rounded px-2 py-1 text-sm">
-                    <option>10</option>
-                    <option>25</option>
-                    <option>50</option>
-                  </select>
-                  <span className="text-sm text-gray-500">Sayfa 1 / 1</span>
-                  <div className="flex gap-1">
-                    <Button variant="outline" size="sm" disabled>«</Button>
-                    <Button variant="outline" size="sm" disabled>‹</Button>
-                    <Button variant="outline" size="sm" disabled>›</Button>
-                    <Button variant="outline" size="sm" disabled>»</Button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Personeli Sil</AlertDialogTitle>
+            <AlertDialogDescription>
+              {personnelToDelete && (
+                <>
+                  <strong>{personnelToDelete.first_name} {personnelToDelete.last_name}</strong> adlı personeli silmek istediğinize emin misiniz?
+                  <br /><br />
+                  Bu işlem geri alınamaz ve personele ait tüm maaş ve avans kayıtları da silinecektir.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>İptal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-red-600 hover:bg-red-700">
+              Sil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       </div>
     </Layout>
   );

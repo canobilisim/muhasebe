@@ -132,7 +132,7 @@ export class SaleService {
             product:products(*)
           ),
           customer:customers(*),
-          user:users(*)
+          user:users!sales_user_id_fkey(*)
         `)
         .eq('customer_id', customerId)
         .order('sale_date', { ascending: false });
@@ -159,7 +159,7 @@ export class SaleService {
             product:products(*)
           ),
           customer:customers(*),
-          user:users(*)
+          user:users!sales_user_id_fkey(*)
         `)
         .eq('id', saleId)
         .single();

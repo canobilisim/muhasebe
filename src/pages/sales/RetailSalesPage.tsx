@@ -7,8 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useState, useEffect } from 'react';
 import { useRetailSales } from '@/hooks/useRetailSales';
-import { RetailSaleDetailModal } from '@/components/sales/RetailSaleDetailModal';
-import type { SaleWithDetails } from '@/types/sales';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import {
@@ -24,47 +22,51 @@ import {
 
 export default function RetailSalesPage() {
   const navigate = useNavigate();
-  const { sales, summary, loading, loadSales, getSaleDetail, deleteSale } = useRetailSales();
+  const { sales, summary, loading, loadSales, loadSummary, deleteSale } = useRetailSales();
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSale, setSelectedSale] = useState<SaleWithDetails | null>(null);
-  const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [saleToDelete, setSaleToDelete] = useState<string | null>(null);
   
   // Filtre state'leri
   const [startDate, setStartDate] = useState(() => {
-    // Bugünün başlangıcı (00:00:00)
+    // Bugünün tarihi (yerel saat dilimi)
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return today.toISOString().split('T')[0];
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   });
   const [endDate, setEndDate] = useState(() => {
-    // Bugünün sonu (23:59:59)
+    // Bugünün tarihi (yerel saat dilimi)
     const today = new Date();
-    today.setHours(23, 59, 59, 999);
-    return today.toISOString().split('T')[0];
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   });
   const [paymentFilter, setPaymentFilter] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
 
   // Arama ve filtreleme
   const handleSearch = () => {
+    const startDateTime = startDate ? `${startDate}T00:00:00` : undefined;
+    const endDateTime = endDate ? `${endDate}T23:59:59` : undefined;
+    
     loadSales({ 
       search: searchQuery,
-      startDate: startDate ? `${startDate}T00:00:00` : undefined,
-      endDate: endDate ? `${endDate}T23:59:59` : undefined,
+      startDate: startDateTime,
+      endDate: endDateTime,
       paymentMethod: paymentFilter !== 'all' ? paymentFilter : undefined,
     });
+    
+    // Özet kartlarını da güncelle
+    loadSummary(startDateTime, endDateTime);
   };
 
   // Satış detayını görüntüle
-  const handleViewSale = async (saleId: string) => {
-    const sale = await getSaleDetail(saleId);
-    if (sale) {
-      setSelectedSale(sale);
-      setDetailModalOpen(true);
-    }
+  const handleViewSale = (saleId: string) => {
+    navigate(`/retail-sales/${saleId}`);
   };
 
   // Satış silme onayı
@@ -105,16 +107,26 @@ export default function RetailSalesPage() {
   // Filtreleri temizle
   const handleClearFilters = () => {
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    setStartDate(today.toISOString().split('T')[0]);
-    today.setHours(23, 59, 59, 999);
-    setEndDate(today.toISOString().split('T')[0]);
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
+    
+    setStartDate(todayStr);
+    setEndDate(todayStr);
     setPaymentFilter('all');
     setSearchQuery('');
+    
+    const startDateTime = `${todayStr}T00:00:00`;
+    const endDateTime = `${todayStr}T23:59:59`;
+    
     loadSales({
-      startDate: `${today.toISOString().split('T')[0]}T00:00:00`,
-      endDate: `${today.toISOString().split('T')[0]}T23:59:59`,
+      startDate: startDateTime,
+      endDate: endDateTime,
     });
+    
+    // Özet kartlarını da güncelle
+    loadSummary(startDateTime, endDateTime);
   };
 
   return (
@@ -163,7 +175,7 @@ export default function RetailSalesPage() {
 
           {/* Filtre Paneli */}
           {showFilters && (
-            <Card>
+            <Card className="border-0 shadow-sm">
               <CardContent className="pt-6">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
@@ -214,58 +226,58 @@ export default function RetailSalesPage() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="bg-blue-100 p-2 rounded-lg">
-                  <Receipt className="h-5 w-5 text-blue-600" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-600 mb-1">Toplam Satış</p>
+                  <p className="text-3xl font-bold text-gray-900">{summary.totalSales}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Toplam Satış</p>
-                  <p className="text-xl font-bold">{summary.totalSales}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="bg-green-100 p-2 rounded-lg">
-                  <Receipt className="h-5 w-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Toplam Tutar</p>
-                  <p className="text-xl font-bold">₺{summary.totalAmount.toFixed(2)}</p>
+                <div className="bg-blue-100 p-3 rounded-xl">
+                  <Receipt className="h-6 w-6 text-blue-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
           
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="bg-orange-100 p-2 rounded-lg">
-                  <Receipt className="h-5 w-5 text-orange-600" />
+          <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-600 mb-1">Toplam Tutar</p>
+                  <p className="text-3xl font-bold text-green-600">₺{summary.totalAmount.toFixed(2)}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Ortalama Satış</p>
-                  <p className="text-xl font-bold">₺{summary.averageAmount.toFixed(2)}</p>
+                <div className="bg-green-100 p-3 rounded-xl">
+                  <Receipt className="h-6 w-6 text-green-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
           
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="bg-purple-100 p-2 rounded-lg">
-                  <Receipt className="h-5 w-5 text-purple-600" />
+          <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-600 mb-1">Ortalama Satış</p>
+                  <p className="text-3xl font-bold text-orange-600">₺{summary.averageAmount.toFixed(2)}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Toplam Ürün</p>
-                  <p className="text-xl font-bold">{summary.totalItems}</p>
+                <div className="bg-orange-100 p-3 rounded-xl">
+                  <Receipt className="h-6 w-6 text-orange-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-600 mb-1">Toplam Ürün</p>
+                  <p className="text-3xl font-bold text-purple-600">{summary.totalItems}</p>
+                </div>
+                <div className="bg-purple-100 p-3 rounded-xl">
+                  <Receipt className="h-6 w-6 text-purple-600" />
                 </div>
               </div>
             </CardContent>
@@ -273,18 +285,23 @@ export default function RetailSalesPage() {
         </div>
 
         {/* Sales Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Perakende Satışlar</CardTitle>
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="border-b bg-white">
+            <div className="flex items-center gap-3">
+              <div className="bg-blue-100 p-2 rounded-lg">
+                <Receipt className="w-5 h-5 text-blue-600" />
+              </div>
+              <CardTitle className="text-lg">Perakende Satışlar</CardTitle>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {loading ? (
-              <div className="text-center py-12">
+              <div className="text-center py-16">
                 <Loader2 className="h-16 w-16 mx-auto text-gray-300 mb-4 animate-spin" />
                 <p className="text-gray-500">Satışlar yükleniyor...</p>
               </div>
             ) : sales.length === 0 ? (
-              <div className="text-center py-12">
+              <div className="text-center py-16">
                 <Receipt className="h-16 w-16 mx-auto text-gray-300 mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
                   {searchQuery ? 'Satış bulunamadı' : 'Henüz perakende satış bulunmuyor'}
@@ -296,14 +313,14 @@ export default function RetailSalesPage() {
                   }
                 </p>
                 {!searchQuery && (
-                  <Button onClick={() => navigate('/pos2')}>
+                  <Button onClick={() => navigate('/pos2')} className="shadow-sm">
                     <Zap className="h-4 w-4 mr-2" />
                     POS Satış Yap
                   </Button>
                 )}
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto p-6">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-200">
@@ -412,16 +429,6 @@ export default function RetailSalesPage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Satış Detay Modalı */}
-      <RetailSaleDetailModal
-        sale={selectedSale}
-        open={detailModalOpen}
-        onClose={() => {
-          setDetailModalOpen(false);
-          setSelectedSale(null);
-        }}
-      />
 
       {/* Silme Onay Dialogu */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

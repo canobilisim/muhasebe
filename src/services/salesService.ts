@@ -190,7 +190,7 @@ export async function getSaleDetails(saleId: string) {
     .select(`
       *,
       customer:customers(*),
-      user:users(*),
+      user:users!sales_user_id_fkey(*),
       sale_items(
         *,
         product:products(*)

@@ -130,6 +130,16 @@ export type {
   SaleSummary
 } from './sales'
 
+// Re-export supplier types
+export type {
+  Supplier,
+  SupplierRow,
+  SupplierInsert,
+  SupplierUpdate,
+  SupplierFilter,
+  PaginatedSupplierResponse
+} from './supplier'
+
 // Re-export invoice types
 export type {
   ApiSettings,

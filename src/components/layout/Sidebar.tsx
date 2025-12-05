@@ -77,12 +77,12 @@ const navItems: NavItem[] = [
     roles: ['admin', 'manager', 'cashier']
   },
   {
-    title: 'Müşteri & Tedarikçi',
+    title: 'Müşteriler',
     icon: Users,
     roles: ['admin', 'manager'],
     subItems: [
       {
-        title: 'Müşteriler & Tedarik',
+        title: 'Müşteri Listesi',
         href: '/customers',
         icon: Users
       },
@@ -95,6 +95,23 @@ const navItems: NavItem[] = [
         title: 'İçe Aktarım',
         href: '/customers/import',
         icon: Download
+      }
+    ]
+  },
+  {
+    title: 'Tedarikçiler',
+    icon: Truck,
+    roles: ['admin', 'manager'],
+    subItems: [
+      {
+        title: 'Tedarikçi Listesi',
+        href: '/suppliers',
+        icon: Truck
+      },
+      {
+        title: 'Yeni Tedarikçi',
+        href: '/suppliers/new',
+        icon: Plus
       }
     ]
   },

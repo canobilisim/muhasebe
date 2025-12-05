@@ -29,6 +29,7 @@ const NewSalePage = lazy(() => import('@/pages/sales/NewSalePage'))
 const SalesListPage = lazy(() => import('@/pages/sales/SalesListPage'))
 const ReturnsPage = lazy(() => import('@/pages/sales/ReturnsPage'))
 const RetailSalesPage = lazy(() => import('@/pages/sales/RetailSalesPage'))
+const RetailSaleDetailPage = lazy(() => import('@/pages/sales/RetailSaleDetailPage'))
 
 // Purchase pages
 const NewPurchasePage = lazy(() => import('@/pages/purchases/NewPurchasePage'))
@@ -44,8 +45,15 @@ const IrsaliyeListPage = lazy(() => import('@/modules/irsaliye/IrsaliyeList'))
 
 // Personnel pages
 const PersonnelListPage = lazy(() => import('@/pages/personnel/PersonnelListPage'))
+const PersonnelDetailPage = lazy(() => import('@/pages/personnel/PersonnelDetailPage'))
 const DocumentManagementPage = lazy(() => import('@/pages/personnel/DocumentManagementPage'))
 const NewPersonnelPage = lazy(() => import('@/pages/personnel/NewPersonnelPage'))
+const EditPersonnelPage = lazy(() => import('@/pages/personnel/EditPersonnelPage'))
+
+// Supplier pages
+const SuppliersPage = lazy(() => import('@/pages/suppliers/SuppliersPage'))
+const NewSupplierPage = lazy(() => import('@/pages/suppliers/NewSupplierPage'))
+const SupplierDetailPage = lazy(() => import('@/pages/suppliers/SupplierDetailPage'))
 
 // Financial pages
 const CheckPortfolioPage = lazy(() => import('@/pages/financial/CheckPortfolioPage'))
@@ -224,6 +232,40 @@ function App() {
                   </PrivateRoute>
                 } 
               />
+
+              {/* Suppliers - Manager and above */}
+              <Route 
+                path="/suppliers" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <SuppliersPage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/suppliers/new" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <NewSupplierPage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/suppliers/:id" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <SupplierDetailPage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/suppliers/:id/edit" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <NewSupplierPage />
+                  </PrivateRoute>
+                } 
+              />
               
               {/* Products - Manager and above */}
               <Route 
@@ -388,6 +430,14 @@ function App() {
                   </PrivateRoute>
                 } 
               />
+              <Route 
+                path="/retail-sales/:id" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager', 'cashier']}>
+                    <RetailSaleDetailPage />
+                  </PrivateRoute>
+                } 
+              />
 
               {/* Sales - Cashier and above */}
               <Route 
@@ -417,6 +467,14 @@ function App() {
               
               {/* Personnel Routes - Manager and above */}
               <Route 
+                path="/personnel" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <PersonnelListPage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
                 path="/personnel/list" 
                 element={
                   <PrivateRoute requiredRoles={['admin', 'manager']}>
@@ -425,18 +483,34 @@ function App() {
                 } 
               />
               <Route 
-                path="/personnel/documents" 
-                element={
-                  <PrivateRoute requiredRoles={['admin', 'manager']}>
-                    <DocumentManagementPage />
-                  </PrivateRoute>
-                } 
-              />
-              <Route 
                 path="/personnel/new" 
                 element={
                   <PrivateRoute requiredRoles={['admin', 'manager']}>
                     <NewPersonnelPage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/personnel/:id" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <PersonnelDetailPage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/personnel/:id/edit" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <EditPersonnelPage />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/personnel/documents" 
+                element={
+                  <PrivateRoute requiredRoles={['admin', 'manager']}>
+                    <DocumentManagementPage />
                   </PrivateRoute>
                 } 
               />

@@ -8,6 +8,7 @@ export type SupabaseClient = typeof supabase
 export type AuthUser = {
   id: string
   email?: string
+  branch_id?: string | null
   user_metadata?: {
     full_name?: string
     avatar_url?: string

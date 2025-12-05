@@ -9,6 +9,7 @@ interface LayoutProps {
   subtitle?: string
   actions?: ReactNode
   className?: string
+  fullWidth?: boolean // Hızlı satış gibi sayfalar için tam genişlik
 }
 
 export const Layout = ({ 
@@ -16,7 +17,8 @@ export const Layout = ({
   title, 
   subtitle, 
   actions, 
-  className 
+  className,
+  fullWidth = false
 }: LayoutProps) => {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
 
@@ -48,6 +50,7 @@ export const Layout = ({
           subtitle={subtitle}
           actions={actions}
           className={className}
+          fullWidth={fullWidth}
         >
           {children}
         </MainContent>

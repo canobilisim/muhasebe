@@ -7,6 +7,7 @@ interface MainContentProps {
   title?: string
   subtitle?: string
   actions?: ReactNode
+  fullWidth?: boolean
 }
 
 export const MainContent = ({ 
@@ -14,27 +15,28 @@ export const MainContent = ({
   className, 
   title, 
   subtitle, 
-  actions 
+  actions,
+  fullWidth = false
 }: MainContentProps) => {
   return (
     <main 
       id="main-content" 
-      className={cn("flex-1 flex flex-col h-[calc(100vh-4rem)] w-full overflow-hidden", className)}
+      className={cn("flex-1 flex flex-col h-[calc(100vh-4rem)] w-full overflow-hidden", fullWidth ? "bg-white" : "bg-gray-50", className)}
       role="main"
       aria-label="Ana içerik"
     >
       {/* Page Header */}
       {(title || subtitle || actions) && (
-        <div className="bg-white border-b border-gray-200 px-4 py-2 flex-shrink-0">
-          <div className="flex items-center justify-between">
+        <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
+          <div className={cn(fullWidth ? "w-full" : "max-w-7xl mx-auto", "flex items-center justify-between")}>
             <div>
               {title && (
-                <h1 className="text-xl font-semibold text-gray-900">
+                <h1 className="text-2xl font-bold text-gray-900">
                   {title}
                 </h1>
               )}
               {subtitle && (
-                <p className="text-xs text-gray-600">
+                <p className="text-sm text-gray-600 mt-1">
                   {subtitle}
                 </p>
               )}
@@ -50,7 +52,13 @@ export const MainContent = ({
 
       {/* Page Content */}
       <div className={cn("flex-1 w-full", className?.includes('overflow-hidden') ? 'overflow-hidden' : 'overflow-auto')}>
-        {children}
+        {fullWidth ? (
+          children
+        ) : (
+          <div className="max-w-7xl mx-auto px-6 py-6">
+            {children}
+          </div>
+        )}
       </div>
     </main>
   )

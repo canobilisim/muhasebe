@@ -51,7 +51,7 @@ export class CustomerPaymentService {
         .select(`
           *,
           customer:customers(*),
-          user:users(*)
+          user:users!customer_payments_user_id_fkey(*)
         `)
         .eq('customer_id', customerId)
         .order('payment_date', { ascending: false })

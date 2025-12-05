@@ -128,11 +128,7 @@ export function useRetailSales() {
     }
   }, [loadSales])
 
-  // İlk yükleme
-  useEffect(() => {
-    loadSales()
-    loadSummary()
-  }, [loadSales, loadSummary])
+  // İlk yükleme kaldırıldı - sayfa kendi filtresiyle yükleyecek
 
   return {
     sales,

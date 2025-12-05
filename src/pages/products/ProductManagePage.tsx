@@ -186,53 +186,53 @@ const ProductManagePage = () => {
   }
 
   return (
-    <Layout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Ürün Yönetimi</h1>
-            <p className="text-gray-600 mt-1">
-              Ürün ekleyin, düzenleyin veya silin
-              <span className="text-xs text-gray-500 ml-2">(Kısayollar: Ctrl+N: Yeni, Ctrl+E: Dışa Aktar)</span>
-            </p>
-          </div>
-          <div className="flex gap-2" role="group" aria-label="Ürün yönetimi işlemleri">
-            <Button
-              onClick={handleExcelExport}
-              variant="outline"
-              disabled={products.length === 0}
-              aria-label="Ürünleri Excel dosyasına aktar (Ctrl+E)"
-              title="Ürünleri Excel dosyasına aktar (Ctrl+E)"
-            >
-              <Download className="w-4 h-4 mr-2" aria-hidden="true" />
-              Excel'e Aktar
-            </Button>
-            <Button
-              onClick={() => setIsExcelImportModalOpen(true)}
-              variant="outline"
-              aria-label="Excel dosyasından ürün içe aktar"
-            >
-              <Upload className="w-4 h-4 mr-2" aria-hidden="true" />
-              Excel İçe Aktar
-            </Button>
-            <Button
-              onClick={() => setIsBulkPriceModalOpen(true)}
-              variant="outline"
-              aria-label="Toplu fiyat güncelleme"
-            >
-              <Calculator className="w-4 h-4 mr-2" aria-hidden="true" />
-              Toplu Fiyat Güncelle
-            </Button>
-            <Button 
-              onClick={handleAddProduct}
-              aria-label="Yeni ürün ekle (Ctrl+N)"
-              title="Yeni ürün ekle (Ctrl+N)"
-            >
-              <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
-              Yeni Ürün
-            </Button>
-          </div>
+    <Layout
+      title="Ürün Yönetimi"
+      subtitle="Ürün ekleyin, düzenleyin veya silin (Kısayollar: Ctrl+N: Yeni, Ctrl+E: Dışa Aktar)"
+      actions={
+        <div className="flex gap-2" role="group" aria-label="Ürün yönetimi işlemleri">
+          <Button
+            onClick={handleExcelExport}
+            variant="outline"
+            disabled={products.length === 0}
+            aria-label="Ürünleri Excel dosyasına aktar (Ctrl+E)"
+            title="Ürünleri Excel dosyasına aktar (Ctrl+E)"
+            className="shadow-sm"
+          >
+            <Download className="w-4 h-4 mr-2" aria-hidden="true" />
+            Excel'e Aktar
+          </Button>
+          <Button
+            onClick={() => setIsExcelImportModalOpen(true)}
+            variant="outline"
+            aria-label="Excel dosyasından ürün içe aktar"
+            className="shadow-sm"
+          >
+            <Upload className="w-4 h-4 mr-2" aria-hidden="true" />
+            Excel İçe Aktar
+          </Button>
+          <Button
+            onClick={() => setIsBulkPriceModalOpen(true)}
+            variant="outline"
+            aria-label="Toplu fiyat güncelleme"
+            className="shadow-sm"
+          >
+            <Calculator className="w-4 h-4 mr-2" aria-hidden="true" />
+            Toplu Fiyat Güncelle
+          </Button>
+          <Button 
+            onClick={handleAddProduct}
+            aria-label="Yeni ürün ekle (Ctrl+N)"
+            title="Yeni ürün ekle (Ctrl+N)"
+            className="shadow-sm"
+          >
+            <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
+            Yeni Ürün
+          </Button>
         </div>
+      }
+    >
+      <div className="space-y-6">
 
         <StockFilters
           filter={filter}
@@ -240,19 +240,25 @@ const ProductManagePage = () => {
           categories={categories}
         />
 
-        <Card>
-          <CardHeader>
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="border-b bg-white">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Edit className="w-5 h-5" aria-hidden="true" />
-                Ürünler ({products.length})
-              </CardTitle>
+              <div className="flex items-center gap-3">
+                <div className="bg-blue-100 p-2 rounded-lg">
+                  <Edit className="w-5 h-5 text-blue-600" aria-hidden="true" />
+                </div>
+                <div className="flex-1">
+                  <CardTitle className="text-lg">Ürünler</CardTitle>
+                  <p className="text-sm text-gray-600 mt-1">{products.length} ürün bulundu</p>
+                </div>
+              </div>
               {selectedProductIds.length > 0 && (
                 <Button
                   variant="destructive"
-                  size="sm"
+                  size="default"
                   onClick={handleBulkDelete}
                   aria-label={`${selectedProductIds.length} ürünü toplu sil`}
+                  className="shadow-sm"
                 >
                   <Trash2 className="w-4 h-4 mr-2" aria-hidden="true" />
                   Toplu Sil ({selectedProductIds.length})
@@ -260,7 +266,7 @@ const ProductManagePage = () => {
               )}
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             {error && (
               <div 
                 className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700" 

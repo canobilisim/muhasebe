@@ -191,14 +191,16 @@ export default function SalesListPage() {
     >
       <div className="space-y-6">
         {/* Filters */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Filtreler
-            </CardTitle>
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="border-b bg-white">
+            <div className="flex items-center gap-3">
+              <div className="bg-blue-100 p-2 rounded-lg">
+                <Filter className="h-5 w-5 text-blue-600" />
+              </div>
+              <CardTitle className="text-lg">Filtreler</CardTitle>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* Start Date */}
               <div className="space-y-2">
@@ -260,24 +262,31 @@ export default function SalesListPage() {
         </Card>
 
         {/* Sales Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              Satışlar ({sales.length} kayıt)
-            </CardTitle>
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="border-b bg-white">
+            <div className="flex items-center gap-3">
+              <div className="bg-blue-100 p-2 rounded-lg">
+                <Receipt className="w-5 h-5 text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <CardTitle className="text-lg">Satışlar</CardTitle>
+                <p className="text-sm text-gray-600 mt-1">{sales.length} kayıt bulundu</p>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {isLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
+              <div className="text-center py-16">
+                <div className="animate-spin h-12 w-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
                 <p className="text-gray-500 mt-4">Yükleniyor...</p>
               </div>
             ) : currentSales.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                Satış kaydı bulunamadı
+              <div className="text-center py-16">
+                <Receipt className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-500">Satış kaydı bulunamadı</p>
               </div>
             ) : (
-              <>
+              <div className="p-6">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -344,17 +353,20 @@ export default function SalesListPage() {
                   </TableBody>
                 </Table>
 
+                </Table>
+                
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-between mt-4">
+                  <div className="flex items-center justify-between mt-6 pt-6 border-t">
                     <p className="text-sm text-gray-600">
-                      Sayfa {currentPage} / {totalPages}
+                      Sayfa <span className="font-semibold text-gray-900">{currentPage}</span> / {totalPages}
                     </p>
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
                         onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                         disabled={currentPage === 1}
+                        className="shadow-sm"
                       >
                         Önceki
                       </Button>
@@ -362,13 +374,14 @@ export default function SalesListPage() {
                         variant="outline"
                         onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                         disabled={currentPage === totalPages}
+                        className="shadow-sm"
                       >
                         Sonraki
                       </Button>
                     </div>
                   </div>
                 )}
-              </>
+              </div>
             )}
           </CardContent>
         </Card>

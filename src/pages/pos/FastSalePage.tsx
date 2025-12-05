@@ -585,6 +585,19 @@ const FastSalePage: React.FC = () => {
   };
 
   // Print receipt
+  // Sepete ürün eklendiğinde ses çal
+  const playBeepSound = () => {
+    try {
+      const audio = new Audio('/docs/beep.mp3');
+      audio.volume = 0.5; // Ses seviyesi %50
+      audio.play().catch(err => {
+        console.error('Ses çalınamadı:', err);
+      });
+    } catch (error) {
+      console.error('Ses dosyası yüklenemedi:', error);
+    }
+  };
+
   const handlePrint = () => {
     const activeCart = state.carts.find((cart: Cart) => cart.tabId === state.activeCustomerTab) || state.carts[0];
 
@@ -780,6 +793,9 @@ const FastSalePage: React.FC = () => {
   };
 
   const addToCart = (product: Product) => {
+    // Sepete ürün eklendiğinde ses çal
+    playBeepSound();
+    
     setState((prev: POSState) => {
       const activeCartIndex = prev.carts.findIndex((cart: Cart) => cart.tabId === prev.activeCustomerTab);
       if (activeCartIndex === -1) {
@@ -1211,7 +1227,7 @@ const FastSalePage: React.FC = () => {
   }, [state.activeCustomerTab, state.carts]);
 
   return (
-    <Layout title="Hızlı Satış" subtitle={state.activePriceList}>
+    <Layout title="Hızlı Satış" subtitle={state.activePriceList} fullWidth={true}>
       <div className="flex flex-col lg:flex-row bg-gray-100 gap-4 p-2 sm:p-4" style={{ height: 'calc(100vh - 120px)' }}>
         {/* Left Column - Cart Area (2/3) */}
         <div className="w-full lg:w-2/3 flex flex-col bg-white rounded-lg shadow p-2 sm:p-4" style={{ height: '100%' }}>

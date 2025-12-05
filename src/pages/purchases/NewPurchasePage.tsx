@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Receipt, Plus, FileText, User, Calendar, DollarSign } from 'lucide-react';
+import { Receipt, Plus, FileText, Truck, Calendar, DollarSign } from 'lucide-react';
 import {
     showErrorToast,
     showSuccessToast
@@ -14,15 +14,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { ProductSearchInput } from '@/components/sales/ProductSearchInput';
 import { type SaleItem } from '@/components/sales/SalesItemsTable';
-import { CustomerSelectionModal } from '@/components/sales/CustomerSelectionModal';
-
-import type { CustomerInfoFormData } from '@/utils/validationSchemas';
-import { SerialNumberSelectionModal } from '@/components/sales/SerialNumberSelectionModal';
+import { SupplierSelectionModal } from '@/components/suppliers/SupplierSelectionModal';
+import type { Supplier } from '@/types/supplier';
 import { ProductNotFoundModal } from '@/components/sales/ProductNotFoundModal';
-import { createSale } from '@/services/salesService';
-import { SerialNumberService } from '@/services/serialNumberService';
-import type { Product, SerialNumber } from '@/types/product';
-import type { CreateSaleInput, SaleItemInput } from '@/types/sales';
+import { PurchaseService, type PurchaseItemInput } from '@/services/purchaseService';
+import type { Product } from '@/types/product';
 import { useAuthStore } from '@/stores/authStore';
 
 export default function NewPurchasePage() {
@@ -32,11 +28,6 @@ export default function NewPurchasePage() {
     // Sale items state
     const [saleItems, setSaleItems] = useState<SaleItem[]>([]);
 
-    // Serial number selection modal state
-    const [serialNumberModalOpen, setSerialNumberModalOpen] = useState(false);
-    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-    const [availableSerialNumbers, setAvailableSerialNumbers] = useState<SerialNumber[]>([]);
-
     // Product not found modal state
     const [productNotFoundModalOpen, setProductNotFoundModalOpen] = useState(false);
     const [notFoundBarcode, setNotFoundBarcode] = useState('');
@@ -44,15 +35,16 @@ export default function NewPurchasePage() {
     // Submission state
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Customer form data (captured via onChange callback)
-    const [customerData, setCustomerData] = useState<CustomerInfoFormData | null>(null);
-    const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
-    const [customerModalOpen, setCustomerModalOpen] = useState(false);
+    // Supplier selection state
+    const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
+    const [supplierModalOpen, setSupplierModalOpen] = useState(false);
 
     // Invoice details state - Fixed for purchase invoice
     const [invoiceType] = useState('Alış Faturası'); // Fixed value
     const [currency, setCurrency] = useState('₺ Türk Lirası');
     const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
+    const [invoiceNumber, setInvoiceNumber] = useState('');
+    const [paymentType, setPaymentType] = useState<'cash' | 'pos' | 'credit' | 'partial'>('cash');
     const [dueDate, setDueDate] = useState('');
     const [invoiceNote, setInvoiceNote] = useState('');
 
@@ -61,22 +53,10 @@ export default function NewPurchasePage() {
 
     // Handle product selection from search
     const handleProductSelect = async (product: Product) => {
-        // Check if product has serial number tracking
-        if (product.serial_number_tracking_enabled) {
-            // Load available serial numbers
-            const result = await SerialNumberService.getAvailableSerialNumbers(product.id);
-
-            if (result.success && result.data && result.data.length > 0) {
-                setSelectedProduct(product);
-                setAvailableSerialNumbers(result.data);
-                setSerialNumberModalOpen(true);
-            } else {
-                showErrorToast('Bu ürün için mevcut seri numarası bulunmuyor');
-            }
-        } else {
-            // Add product directly to cart
-            addProductToCart(product);
-        }
+        // For purchases, we don't need to select serial numbers
+        // Serial numbers will be added when products are received
+        // Just add product directly to cart
+        addProductToCart(product);
     };
 
     // Handle product not found
@@ -90,39 +70,7 @@ export default function NewPurchasePage() {
         addProductToCart(product);
     };
 
-    // Handle serial number selection
-    const handleSerialNumberSelect = async (serialNumber: SerialNumber) => {
-        if (!selectedProduct) return;
 
-        // Reserve the serial number
-        const reserveResult = await SerialNumberService.reserveSerialNumber(serialNumber.id);
-
-        if (!reserveResult.success) {
-            showErrorToast('Seri numarası rezerve edilemedi');
-            return;
-        }
-
-        // Add to cart with serial number
-        const newItem: SaleItem = {
-            id: `${Date.now()}-${Math.random()}`,
-            productId: selectedProduct.id,
-            productName: selectedProduct.name,
-            barcode: selectedProduct.barcode,
-            quantity: 1, // Serial numbered items always have quantity 1
-            unitPrice: selectedProduct.purchase_price || selectedProduct.sale_price || 0, // Use purchase price for purchases
-            vatRate: selectedProduct.vat_rate || 0,
-            serialNumberId: serialNumber.id,
-            serialNumber: serialNumber.serial_number,
-        };
-
-        setSaleItems((prev) => [...prev, newItem]);
-        showSuccessToast('Ürün sepete eklendi');
-
-        // Close modal and reset state
-        setSerialNumberModalOpen(false);
-        setSelectedProduct(null);
-        setAvailableSerialNumbers([]);
-    };
 
     // Add product to cart (without serial number)
     const addProductToCart = (product: Product) => {
@@ -145,7 +93,7 @@ export default function NewPurchasePage() {
                 productName: product.name,
                 barcode: product.barcode,
                 quantity: 1,
-                unitPrice: product.purchase_price || product.sale_price || 0, // Use purchase price for purchases
+                unitPrice: product.purchase_price || product.sale_price_1 || 0, // Use purchase price for purchases
                 vatRate: product.vat_rate || 0,
             };
 
@@ -164,14 +112,7 @@ export default function NewPurchasePage() {
     };
 
     // Handle remove item
-    const handleRemoveItem = async (itemId: string) => {
-        const item = saleItems.find((i) => i.id === itemId);
-
-        // Release serial number if it was reserved
-        if (item?.serialNumberId) {
-            await SerialNumberService.releaseSerialNumber(item.serialNumberId);
-        }
-
+    const handleRemoveItem = (itemId: string) => {
         setSaleItems((prev) => prev.filter((item) => item.id !== itemId));
         showSuccessToast('Ürün sepetten çıkarıldı');
     };
@@ -201,9 +142,9 @@ export default function NewPurchasePage() {
             return false;
         }
 
-        // Validate supplier data
-        if (!customerData) {
-            showErrorToast('Tedarikçi bilgilerini doldurunuz');
+        // Validate supplier selection
+        if (!selectedSupplier) {
+            showErrorToast('Lütfen bir tedarikçi seçiniz');
             return false;
         }
 
@@ -217,7 +158,7 @@ export default function NewPurchasePage() {
             return;
         }
 
-        if (!user || !branchId) {
+        if (!user || !branchId || !selectedSupplier) {
             showErrorToast('Kullanıcı bilgileri alınamadı');
             return;
         }
@@ -228,44 +169,47 @@ export default function NewPurchasePage() {
             const { subtotal, totalVat, grandTotal } = calculateTotals();
 
             // Prepare purchase items
-            const items: SaleItemInput[] = saleItems.map((item) => ({
+            const items: PurchaseItemInput[] = saleItems.map((item) => ({
                 product_id: item.productId,
-                serial_number_id: item.serialNumberId,
                 product_name: item.productName,
                 barcode: item.barcode,
                 quantity: item.quantity,
                 unit_price: item.unitPrice,
-                vat_rate: item.vatRate,
-                vat_amount: (item.quantity * item.unitPrice * item.vatRate) / 100,
+                tax_rate: item.vatRate,
+                tax_amount: (item.quantity * item.unitPrice * item.vatRate) / 100,
                 total_amount: item.quantity * item.unitPrice * (1 + item.vatRate / 100),
             }));
 
+            // Calculate paid and remaining amounts based on payment type
+            let paidAmount = 0;
+            let remainingAmount = 0;
+
+            if (paymentType === 'cash' || paymentType === 'pos') {
+                paidAmount = grandTotal;
+                remainingAmount = 0;
+            } else if (paymentType === 'credit') {
+                paidAmount = 0;
+                remainingAmount = grandTotal;
+            }
+
             // Prepare purchase input
-            const purchaseInput: CreateSaleInput = {
-                customer: {
-                    customer_type: customerData!.customerType,
-                    customer_name: customerData!.customerName,
-                    vkn_tckn: customerData!.vknTckn,
-                    tax_office: customerData!.taxOffice,
-                    email: customerData!.email,
-                    phone: customerData!.phone,
-                    address: customerData!.address,
-                },
-                invoice: {
-                    invoice_type: 'ALIS_FATURASI', // Purchase invoice type
-                    invoice_date: new Date().toISOString().split('T')[0],
-                    currency: 'TRY',
-                    payment_type: 'NAKIT',
-                    note: invoiceNote,
-                },
+            const purchaseInput = {
+                supplier_id: selectedSupplier.id,
+                purchase_date: invoiceDate,
+                invoice_number: invoiceNumber || undefined,
+                payment_type: paymentType,
+                due_date: dueDate || undefined,
+                notes: invoiceNote || undefined,
                 items,
                 subtotal,
-                total_vat_amount: totalVat,
+                tax_amount: totalVat,
                 total_amount: grandTotal,
+                paid_amount: paidAmount,
+                remaining_amount: remainingAmount,
             };
 
-            // Create purchase (using same service for now)
-            const result = await createSale(purchaseInput, branchId, user.id);
+            // Create purchase
+            const result = await PurchaseService.createPurchase(purchaseInput, branchId, user.id);
 
             if (result.success) {
                 showSuccessToast('Alış faturası başarıyla oluşturuldu');
@@ -275,23 +219,13 @@ export default function NewPurchasePage() {
             }
         } catch (error) {
             console.error('Error creating purchase:', error);
-            showErrorToast(error, 'Alış faturası oluşturulurken hata oluştu');
+            showErrorToast('Alış faturası oluşturulurken hata oluştu');
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    // Cleanup: Release reserved serial numbers on unmount
-    useEffect(() => {
-        return () => {
-            // Release all reserved serial numbers
-            saleItems.forEach((item) => {
-                if (item.serialNumberId) {
-                    SerialNumberService.releaseSerialNumber(item.serialNumberId);
-                }
-            });
-        };
-    }, []);
+
 
     return (
         <Layout
@@ -349,28 +283,28 @@ export default function NewPurchasePage() {
                         <Card>
                             <CardHeader className="pb-3">
                                 <CardTitle className="text-lg flex items-center gap-2">
-                                    <User className="h-5 w-5" />
+                                    <Truck className="h-5 w-5" />
                                     Tedarikçi
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                {selectedCustomer ? (
+                                {selectedSupplier ? (
                                     <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
                                         <div className="flex items-center gap-3">
                                             <div className="bg-green-100 p-2 rounded-lg">
-                                                <User className="h-4 w-4 text-green-600" />
+                                                <Truck className="h-4 w-4 text-green-600" />
                                             </div>
                                             <div>
-                                                <p className="font-medium text-green-900">{selectedCustomer.name}</p>
+                                                <p className="font-medium text-green-900">{selectedSupplier.name}</p>
                                                 <p className="text-sm text-green-700">
-                                                    {selectedCustomer.email || selectedCustomer.phone || selectedCustomer.vkn_tckn}
+                                                    {selectedSupplier.company_name || selectedSupplier.phone || selectedSupplier.email}
                                                 </p>
                                             </div>
                                         </div>
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            onClick={() => setCustomerModalOpen(true)}
+                                            onClick={() => setSupplierModalOpen(true)}
                                             className="text-green-600 hover:text-green-700"
                                         >
                                             Değiştir
@@ -379,13 +313,13 @@ export default function NewPurchasePage() {
                                 ) : (
                                     <div
                                         className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors"
-                                        onClick={() => setCustomerModalOpen(true)}
+                                        onClick={() => setSupplierModalOpen(true)}
                                     >
-                                        <User className="h-5 w-5 text-gray-400" />
+                                        <Truck className="h-5 w-5 text-gray-400" />
                                         <span className="text-gray-500">Tedarikçi Seç</span>
                                         <span className="text-gray-400">Aramak için tıklayın</span>
                                         <Button variant="ghost" size="sm" className="ml-auto">
-                                            <User className="h-4 w-4" />
+                                            <Truck className="h-4 w-4" />
                                         </Button>
                                     </div>
                                 )}
@@ -440,7 +374,6 @@ export default function NewPurchasePage() {
                                                             onChange={(e) => handleQuantityChange(item.id, Number(e.target.value))}
                                                             className="text-center"
                                                             min="1"
-                                                            disabled={!!item.serialNumberId}
                                                         />
                                                     </div>
                                                     <div className="col-span-1 text-center text-sm">Adet</div>
@@ -535,6 +468,17 @@ export default function NewPurchasePage() {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-3">
+                                <div>
+                                    <Label htmlFor="invoiceNumber" className="text-sm">Fatura Numarası</Label>
+                                    <Input
+                                        id="invoiceNumber"
+                                        placeholder="Fatura numarası (opsiyonel)"
+                                        className="h-8"
+                                        value={invoiceNumber}
+                                        onChange={(e) => setInvoiceNumber(e.target.value)}
+                                    />
+                                </div>
+
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
                                         <Label htmlFor="invoiceType" className="text-sm">Fatura Tipi</Label>
@@ -561,6 +505,21 @@ export default function NewPurchasePage() {
                                             </SelectContent>
                                         </Select>
                                     </div>
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="paymentType" className="text-sm">Ödeme Tipi</Label>
+                                    <Select value={paymentType} onValueChange={(value: any) => setPaymentType(value)}>
+                                        <SelectTrigger className="h-8">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="cash">Nakit</SelectItem>
+                                            <SelectItem value="pos">Kredi Kartı</SelectItem>
+                                            <SelectItem value="credit">Vadeli</SelectItem>
+                                            <SelectItem value="partial">Kısmi Ödeme</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-3">
@@ -622,21 +581,6 @@ export default function NewPurchasePage() {
                 </div>
             </div>
 
-            {/* Serial Number Selection Modal */}
-            {selectedProduct && (
-                <SerialNumberSelectionModal
-                    isOpen={serialNumberModalOpen}
-                    product={selectedProduct}
-                    availableSerialNumbers={availableSerialNumbers}
-                    onSelect={handleSerialNumberSelect}
-                    onCancel={() => {
-                        setSerialNumberModalOpen(false);
-                        setSelectedProduct(null);
-                        setAvailableSerialNumbers([]);
-                    }}
-                />
-            )}
-
             {/* Product Not Found Modal */}
             <ProductNotFoundModal
                 isOpen={productNotFoundModalOpen}
@@ -645,26 +589,16 @@ export default function NewPurchasePage() {
                 onProductCreated={handleProductCreated}
             />
 
-            {/* Customer Selection Modal */}
-            <CustomerSelectionModal
-                isOpen={customerModalOpen}
-                onClose={() => setCustomerModalOpen(false)}
-                onSelect={(customer) => {
-                    setSelectedCustomer(customer);
-                    // Convert to CustomerInfoFormData format
-                    setCustomerData({
-                        customerType: customer.customer_type === 'INDIVIDUAL' ? 'Bireysel' : 'Kurumsal',
-                        customerName: customer.name,
-                        vknTckn: customer.vkn_tckn || '',
-                        taxOffice: customer.tax_office || '',
-                        email: customer.email || '',
-                        phone: customer.phone || '',
-                        address: customer.address || '',
-                    });
+            {/* Supplier Selection Modal */}
+            <SupplierSelectionModal
+                isOpen={supplierModalOpen}
+                onClose={() => setSupplierModalOpen(false)}
+                onSelect={(supplier) => {
+                    setSelectedSupplier(supplier);
                 }}
                 onCreateNew={() => {
-                    setCustomerModalOpen(false);
-                    // TODO: Open new supplier creation modal
+                    setSupplierModalOpen(false);
+                    navigate('/suppliers/new');
                 }}
             />
         </Layout>

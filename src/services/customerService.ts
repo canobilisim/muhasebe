@@ -134,25 +134,8 @@ export class CustomerService {
     }
   }
 
-  // Delete customer (soft delete by setting is_active to false)
+  // Delete customer (hard delete - cascades to sales and payments)
   static async deleteCustomer(id: string): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('customers')
-        .update({ is_active: false, updated_at: new Date().toISOString() })
-        .eq('id', id)
-
-      if (error) {
-        throw new Error(`Müşteri silinemedi: ${error.message}`)
-      }
-    } catch (error) {
-      console.error('Error deleting customer:', error)
-      throw error
-    }
-  }
-
-  // Permanently delete customer (hard delete - cascades to sales and payments)
-  static async permanentlyDeleteCustomer(id: string): Promise<void> {
     try {
       const { error } = await supabase
         .from('customers')
@@ -160,10 +143,10 @@ export class CustomerService {
         .eq('id', id)
 
       if (error) {
-        throw new Error(`Müşteri kalıcı olarak silinemedi: ${error.message}`)
+        throw new Error(`Müşteri silinemedi: ${error.message}`)
       }
     } catch (error) {
-      console.error('Error permanently deleting customer:', error)
+      console.error('Error deleting customer:', error)
       throw error
     }
   }
@@ -294,7 +277,7 @@ export class CustomerService {
             *,
             product:products(*)
           ),
-          user:users(*)
+          user:users!sales_user_id_fkey(*)
         `)
         .eq('customer_id', customerId)
         .order('sale_date', { ascending: false })
@@ -306,7 +289,7 @@ export class CustomerService {
         .from('customer_payments')
         .select(`
           *,
-          user:users(*)
+          user:users!customer_payments_user_id_fkey(*)
         `)
         .eq('customer_id', customerId)
         .order('payment_date', { ascending: false })

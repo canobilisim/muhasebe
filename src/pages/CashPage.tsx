@@ -85,13 +85,13 @@ const CashPage = () => {
     >
       <div className="space-y-6">
         {/* Tab Navigation */}
-        <Card>
-          <CardContent className="p-4">
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-6">
             <div className="flex flex-wrap gap-2">
               <Button
                 variant={activeTab === 'operations' ? 'default' : 'outline'}
                 onClick={() => setActiveTab('operations')}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 shadow-sm"
               >
                 <Wallet className="w-4 h-4" />
                 Kasa İşlemleri
@@ -99,7 +99,7 @@ const CashPage = () => {
               <Button
                 variant={activeTab === 'daily-report' ? 'default' : 'outline'}
                 onClick={() => setActiveTab('daily-report')}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 shadow-sm"
               >
                 <FileText className="w-4 h-4" />
                 Günlük Rapor
@@ -107,7 +107,7 @@ const CashPage = () => {
               <Button
                 variant={activeTab === 'reports' ? 'default' : 'outline'}
                 onClick={() => setActiveTab('reports')}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 shadow-sm"
               >
                 <BarChart3 className="w-4 h-4" />
                 Detaylı Raporlar
@@ -119,14 +119,16 @@ const CashPage = () => {
         {activeTab === 'operations' && (
           <>
             {/* Tarih Seçici ve Kontroller */}
-            <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
-              Kasa Kontrolü
-            </CardTitle>
+            <Card className="border-0 shadow-sm">
+          <CardHeader className="border-b bg-white">
+            <div className="flex items-center gap-3">
+              <div className="bg-blue-100 p-2 rounded-lg">
+                <Calendar className="w-5 h-5 text-blue-600" />
+              </div>
+              <CardTitle className="text-lg">Kasa Kontrolü</CardTitle>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
               <div className="space-y-2">
                 <Label htmlFor="date">Tarih</Label>

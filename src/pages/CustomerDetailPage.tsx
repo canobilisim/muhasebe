@@ -34,7 +34,16 @@ import {
 } from 'lucide-react'
 import type { Customer, SaleWithDetails } from '@/types'
 import { CustomerTransactionsTable, SaleDetailModal, CustomerModal, PaymentDetailModal } from '@/components/customers'
-import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 // Yerel saati datetime-local input formatında döndürür
 const getLocalDateTimeString = () => {
@@ -383,7 +392,8 @@ const CustomerDetailPage = () => {
 
         setIsDeleting(true)
         try {
-            await CustomerService.permanentlyDeleteCustomer(customer.id)
+            await CustomerService.deleteCustomer(customer.id)
+            showToast.success('Müşteri ve tüm kayıtları başarıyla silindi')
             navigate('/customers')
         } catch (error) {
             console.error('Delete error:', error)
@@ -901,48 +911,103 @@ const CustomerDetailPage = () => {
             />
 
             {/* Delete Confirmation Modals */}
-            <ConfirmDialog
-                isOpen={showDeleteConfirm}
-                onClose={() => setShowDeleteConfirm(false)}
-                onConfirm={handleFirstDeleteConfirm}
-                title="Müşteri Silme Onayı"
-                description={`"${customer?.name}" müşterisini kalıcı olarak silmek istediğinizden emin misiniz?${
-                    transactions.length > 0 
-                        ? `\n\n⚠️ UYARI: Bu müşteriye ait ${transactions.length} adet işlem (satış ve ödeme) kaydı da silinecektir!\n\nBu işlem geri alınamaz!`
-                        : '\n\nBu işlem geri alınamaz!'
-                }`}
-                confirmText="Evet, Sil"
-                cancelText="İptal"
-                variant="danger"
-            />
+            <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Müşteri Silme Onayı</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            <span className="font-semibold">{customer?.name}</span> müşterisini kalıcı olarak silmek istediğinizden emin misiniz?
+                            {transactions.length > 0 && (
+                                <>
+                                    <br /><br />
+                                    <span className="text-red-600 font-semibold">⚠️ UYARI:</span> Bu müşteriye ait <span className="font-semibold">{transactions.length} adet işlem kaydı</span> da otomatik olarak silinecektir:
+                                    <ul className="list-disc list-inside mt-2 space-y-1">
+                                        <li>Satış kayıtları</li>
+                                        <li>Ödeme kayıtları</li>
+                                        <li>İşlem geçmişi</li>
+                                    </ul>
+                                </>
+                            )}
+                            <br />
+                            <span className="text-red-600 font-semibold">Bu işlem geri alınamaz!</span>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>İptal</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleFirstDeleteConfirm}
+                            className="bg-red-600 hover:bg-red-700"
+                        >
+                            Devam Et
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
-            <ConfirmDialog
-                isOpen={showSecondDeleteConfirm}
-                onClose={() => setShowSecondDeleteConfirm(false)}
-                onConfirm={handleSecondDeleteConfirm}
-                title="Son Onay"
-                description="Tüm işlem kayıtlarının silineceğini anladınız mı?\n\nBu işlem GERİ ALINAMAZ!"
-                confirmText="Evet, Tümünü Sil"
-                cancelText="İptal"
-                variant="danger"
-                isLoading={isDeleting}
-            />
+            <AlertDialog open={showSecondDeleteConfirm} onOpenChange={setShowSecondDeleteConfirm}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Son Onay - Kalıcı Silme</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Müşteri ve tüm ilgili kayıtların kalıcı olarak silineceğini onaylıyor musunuz?
+                            <br /><br />
+                            <span className="text-red-600 font-semibold">⚠️ Bu işlem GERİ ALINAMAZ!</span>
+                            <br /><br />
+                            Silinecek veriler:
+                            <ul className="list-disc list-inside mt-2 space-y-1">
+                                <li>Müşteri bilgileri</li>
+                                <li>Tüm satış kayıtları</li>
+                                <li>Tüm ödeme kayıtları</li>
+                                <li>İşlem geçmişi</li>
+                            </ul>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>İptal</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleSecondDeleteConfirm}
+                            className="bg-red-600 hover:bg-red-700"
+                            disabled={isDeleting}
+                        >
+                            {isDeleting ? 'Siliniyor...' : 'Evet, Kalıcı Olarak Sil'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             {/* Transaction Delete Confirmation */}
-            <ConfirmDialog
-                isOpen={showDeleteTransactionConfirm}
-                onClose={() => {
-                    setShowDeleteTransactionConfirm(false)
-                    setTransactionToDelete(null)
-                }}
-                onConfirm={confirmDeleteTransaction}
-                title={`${transactionToDelete?.type === 'sale' ? 'Satış' : 'Ödeme'} Kaydını Sil`}
-                description={`Bu ${transactionToDelete?.type === 'sale' ? 'satış' : 'ödeme'} kaydını kalıcı olarak silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz!`}
-                confirmText="Evet, Sil"
-                cancelText="İptal"
-                variant="danger"
-                isLoading={isDeleting}
-            />
+            <AlertDialog open={showDeleteTransactionConfirm} onOpenChange={setShowDeleteTransactionConfirm}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            {transactionToDelete?.type === 'sale' ? 'Satış' : 'Ödeme'} Kaydını Sil
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Bu {transactionToDelete?.type === 'sale' ? 'satış' : 'ödeme'} kaydını kalıcı olarak silmek istediğinizden emin misiniz?
+                            <br /><br />
+                            <span className="text-red-600 font-semibold">Bu işlem geri alınamaz!</span>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel 
+                            disabled={isDeleting}
+                            onClick={() => {
+                                setShowDeleteTransactionConfirm(false)
+                                setTransactionToDelete(null)
+                            }}
+                        >
+                            İptal
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmDeleteTransaction}
+                            className="bg-red-600 hover:bg-red-700"
+                            disabled={isDeleting}
+                        >
+                            {isDeleting ? 'Siliniyor...' : 'Evet, Sil'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </Layout>
     )
 }

@@ -30,8 +30,7 @@ const StockPage = () => {
     checkBarcodeExists,
     bulkImportProducts,
     bulkUpdatePrices,
-    updateFilter,
-    refreshProducts
+    updateFilter
   } = useProducts()
 
   const [categories, setCategories] = useState<string[]>([])
@@ -139,61 +138,75 @@ const StockPage = () => {
   // Get statistics
   const totalProducts = products.length
   const activeProducts = products.filter(p => p.is_active).length
-  const lowStockProducts = products.filter(p => p.stock_quantity <= p.critical_stock_level).length
+  const lowStockProducts = products.filter(p => p.stock_quantity <= (p.critical_stock_level || 0)).length
   const outOfStockProducts = products.filter(p => p.stock_quantity <= 0).length
 
   return (
     <Layout 
       title="Stok Yönetimi" 
       subtitle="Ürün stok kontrolü ve yönetimi"
+      actions={
+        <Button onClick={handleAddProduct} className="shadow-sm">
+          <Plus className="w-4 h-4 mr-2" />
+          Yeni Ürün
+        </Button>
+      }
     >
       <div className="space-y-6">
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Toplam Ürün</p>
-                  <p className="text-2xl font-bold">{totalProducts}</p>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-600 mb-1">Toplam Ürün</p>
+                  <p className="text-3xl font-bold text-gray-900">{totalProducts}</p>
                 </div>
-                <Package className="w-8 h-8 text-blue-500" />
+                <div className="bg-blue-100 p-3 rounded-xl">
+                  <Package className="w-6 h-6 text-blue-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4">
+          <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Aktif Ürün</p>
-                  <p className="text-2xl font-bold text-green-600">{activeProducts}</p>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-600 mb-1">Aktif Ürün</p>
+                  <p className="text-3xl font-bold text-green-600">{activeProducts}</p>
                 </div>
-                <Package className="w-8 h-8 text-green-500" />
+                <div className="bg-green-100 p-3 rounded-xl">
+                  <Package className="w-6 h-6 text-green-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4">
+          <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Kritik Stok</p>
-                  <p className="text-2xl font-bold text-orange-600">{lowStockProducts}</p>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-600 mb-1">Kritik Stok</p>
+                  <p className="text-3xl font-bold text-orange-600">{lowStockProducts}</p>
                 </div>
-                <AlertTriangle className="w-8 h-8 text-orange-500" />
+                <div className="bg-orange-100 p-3 rounded-xl">
+                  <AlertTriangle className="w-6 h-6 text-orange-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4">
+          <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Tükenen</p>
-                  <p className="text-2xl font-bold text-red-600">{outOfStockProducts}</p>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-600 mb-1">Tükenen</p>
+                  <p className="text-3xl font-bold text-red-600">{outOfStockProducts}</p>
                 </div>
-                <AlertTriangle className="w-8 h-8 text-red-500" />
+                <div className="bg-red-100 p-3 rounded-xl">
+                  <AlertTriangle className="w-6 h-6 text-red-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -206,17 +219,20 @@ const StockPage = () => {
         />
 
         {/* Main Content */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Package className="w-5 h-5" />
-                Ürün Listesi
-              </CardTitle>
-              <div className="flex gap-2">
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="border-b bg-white">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-blue-100 p-2 rounded-lg">
+                  <Package className="w-5 h-5 text-blue-600" />
+                </div>
+                <CardTitle className="text-lg">Ürün Listesi</CardTitle>
+              </div>
+              <div className="flex flex-wrap gap-2">
                 <Button 
                   variant="outline" 
                   onClick={() => setIsExcelImportModalOpen(true)}
+                  className="shadow-sm"
                 >
                   <Upload className="w-4 h-4 mr-2" />
                   Excel İçe Aktar
@@ -224,18 +240,15 @@ const StockPage = () => {
                 <Button 
                   variant="outline" 
                   onClick={() => setIsBulkPriceModalOpen(true)}
+                  className="shadow-sm"
                 >
                   <Calculator className="w-4 h-4 mr-2" />
                   Toplu Fiyat Güncelle
                 </Button>
-                <Button onClick={handleAddProduct}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Yeni Ürün
-                </Button>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 p-6">
             {/* Filters */}
             <StockFilters
               filter={filter}

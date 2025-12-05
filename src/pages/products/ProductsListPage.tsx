@@ -28,31 +28,32 @@ const ProductsListPage = () => {
   }, [])
 
   return (
-    <Layout>
+    <Layout
+      title="Ürün Listesi"
+      subtitle="Tüm ürünleri görüntüleyin ve yönetin"
+    >
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Ürün Listesi</h1>
-            <p className="text-gray-600 mt-1">Tüm ürünleri görüntüleyin ve yönetin</p>
-          </div>
-        </div>
-
         <StockFilters
           filter={filter}
           onFilterChange={updateFilter}
           categories={categories}
         />
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="w-5 h-5" />
-              Ürünler ({products.length})
-            </CardTitle>
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="border-b bg-white">
+            <div className="flex items-center gap-3">
+              <div className="bg-blue-100 p-2 rounded-lg">
+                <Package className="w-5 h-5 text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <CardTitle className="text-lg">Ürünler</CardTitle>
+                <p className="text-sm text-gray-600 mt-1">{products.length} ürün bulundu</p>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {error && (
-              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+              <div className="m-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
                 {error}
               </div>
             )}

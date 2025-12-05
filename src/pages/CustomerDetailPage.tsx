@@ -30,7 +30,11 @@ import {
     Printer,
     Calendar,
     Loader2,
-    Trash2
+    Trash2,
+    DollarSign,
+    ShoppingCart,
+    AlertTriangle,
+    Clock
 } from 'lucide-react'
 import type { Customer, SaleWithDetails } from '@/types'
 import { CustomerTransactionsTable, SaleDetailModal, CustomerModal, PaymentDetailModal } from '@/components/customers'
@@ -48,7 +52,6 @@ import {
 // Yerel saati datetime-local input formatında döndürür
 const getLocalDateTimeString = () => {
     const now = new Date()
-    // Timezone offset'ini hesapla ve yerel saate çevir
     const localDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000))
     return localDate.toISOString().slice(0, 16)
 }
@@ -84,7 +87,6 @@ const CustomerDetailPage = () => {
         }
     }, [id])
 
-    // Modal açıldığında güncel saati set et
     useEffect(() => {
         if (showPaymentModal) {
             setPaymentDate(getLocalDateTimeString())
@@ -95,14 +97,11 @@ const CustomerDetailPage = () => {
         try {
             setLoading(true)
             setError(null)
-
-            // Müşteri bilgilerini, satışlarını ve işlemlerini paralel yükle
             const [customerData, salesData, transactionsData] = await Promise.all([
                 CustomerService.getCustomerById(customerId),
                 SaleService.getCustomerSales(customerId),
                 CustomerService.getCustomerTransactions(customerId)
             ])
-
             setCustomer(customerData)
             setSales(salesData)
             setTransactions(transactionsData)
@@ -134,8 +133,6 @@ const CustomerDetailPage = () => {
         setSelectedSale(null)
     }
 
-
-
     const handlePrint = () => {
         const printWindow = window.open('', '_blank')
         if (!printWindow) return
@@ -155,84 +152,23 @@ const CustomerDetailPage = () => {
                 <meta charset="utf-8">
                 <title>Hesap Ekstresi - ${customer?.name}</title>
                 <style>
-                    @page {
-                        size: A4;
-                        margin: 20mm;
-                    }
-                    body {
-                        font-family: Arial, sans-serif;
-                        font-size: 12px;
-                        line-height: 1.6;
-                        color: #333;
-                    }
-                    .header {
-                        text-align: center;
-                        margin-bottom: 30px;
-                        border-bottom: 2px solid #333;
-                        padding-bottom: 20px;
-                    }
-                    .header h1 {
-                        margin: 0;
-                        font-size: 24px;
-                    }
-                    .customer-info {
-                        margin-bottom: 30px;
-                        background: #f5f5f5;
-                        padding: 15px;
-                        border-radius: 5px;
-                    }
-                    .customer-info p {
-                        margin: 5px 0;
-                    }
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin-bottom: 20px;
-                    }
-                    th, td {
-                        border: 1px solid #ddd;
-                        padding: 8px;
-                        text-align: left;
-                    }
-                    th {
-                        background-color: #333;
-                        color: white;
-                    }
-                    .text-right {
-                        text-align: right;
-                    }
-                    .sale-row {
-                        background-color: #fff5f5;
-                    }
-                    .payment-row {
-                        background-color: #f0fff4;
-                    }
-                    .credit-amount {
-                        color: #dc2626;
-                        font-weight: bold;
-                    }
-                    .payment-amount {
-                        color: #16a34a;
-                        font-weight: bold;
-                    }
-                    .total {
-                        margin-top: 20px;
-                        text-align: right;
-                        font-size: 16px;
-                        font-weight: bold;
-                    }
-                    .footer {
-                        margin-top: 50px;
-                        text-align: center;
-                        font-size: 10px;
-                        color: #666;
-                    }
-                    @media print {
-                        body {
-                            print-color-adjust: exact;
-                            -webkit-print-color-adjust: exact;
-                        }
-                    }
+                    @page { size: A4; margin: 20mm; }
+                    body { font-family: Arial, sans-serif; font-size: 12px; line-height: 1.6; color: #333; }
+                    .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+                    .header h1 { margin: 0; font-size: 24px; }
+                    .customer-info { margin-bottom: 30px; background: #f5f5f5; padding: 15px; border-radius: 5px; }
+                    .customer-info p { margin: 5px 0; }
+                    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                    th { background-color: #333; color: white; }
+                    .text-right { text-align: right; }
+                    .sale-row { background-color: #fff5f5; }
+                    .payment-row { background-color: #f0fff4; }
+                    .credit-amount { color: #dc2626; font-weight: bold; }
+                    .payment-amount { color: #16a34a; font-weight: bold; }
+                    .total { margin-top: 20px; text-align: right; font-size: 16px; font-weight: bold; }
+                    .footer { margin-top: 50px; text-align: center; font-size: 10px; color: #666; }
+                    @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
                 </style>
             </head>
             <body>
@@ -240,16 +176,13 @@ const CustomerDetailPage = () => {
                     <h1>HESAP EKSTRESİ</h1>
                     <p>Yazdırma Tarihi: ${new Date().toLocaleDateString('tr-TR')} ${new Date().toLocaleTimeString('tr-TR')}</p>
                 </div>
-
                 <div class="customer-info">
                     <h3>Müşteri Bilgileri</h3>
                     <p><strong>Müşteri Adı:</strong> ${customer?.name}</p>
                     ${customer?.phone ? `<p><strong>Telefon:</strong> ${customer.phone}</p>` : ''}
                     ${customer?.email ? `<p><strong>E-posta:</strong> ${customer.email}</p>` : ''}
                     ${customer?.address ? `<p><strong>Adres:</strong> ${customer.address}</p>` : ''}
-                    ${startDate || endDate ? `<p><strong>Tarih Aralığı:</strong> ${startDate ? new Date(startDate).toLocaleDateString('tr-TR') : 'Başlangıç'} - ${endDate ? new Date(endDate).toLocaleDateString('tr-TR') : 'Bitiş'}</p>` : ''}
                 </div>
-
                 <table>
                     <thead>
                         <tr>
@@ -281,115 +214,49 @@ const CustomerDetailPage = () => {
                         `).join('')}
                     </tbody>
                 </table>
-
                 <div class="total">
                     <p>Toplam İşlem: ${filteredTransactions.length}</p>
                     <p>Toplam Veresiye Satış: ${formatCurrency(totalSales)}</p>
                     <p>Toplam Ödeme: ${formatCurrency(totalPayments)}</p>
                     <p>Güncel Bakiye: ${formatCurrency(customer?.current_balance || 0)}</p>
                 </div>
-
-                <div class="footer">
-                    <p>Bu belge elektronik ortamda oluşturulmuştur.</p>
-                </div>
+                <div class="footer"><p>Bu belge elektronik ortamda oluşturulmuştur.</p></div>
             </body>
             </html>
         `
-
         printWindow.document.write(printContent)
         printWindow.document.close()
         printWindow.focus()
-        setTimeout(() => {
-            printWindow.print()
-            printWindow.close()
-        }, 250)
+        setTimeout(() => { printWindow.print(); printWindow.close() }, 250)
     }
 
     const getPaymentTypeLabel = (type: string) => {
-        const labels: Record<string, string> = {
-            cash: 'Nakit',
-            pos: 'Kredi Kartı',
-            credit: 'Veresiye',
-            partial: 'Karma'
-        }
+        const labels: Record<string, string> = { cash: 'Nakit', pos: 'Kredi Kartı', credit: 'Veresiye', partial: 'Karma' }
         return labels[type] || type
-    }
-
-
-
-    const getFilteredSales = () => {
-        let filtered = showOverdueOnly ? overdueSales : sales
-
-        if (startDate) {
-            filtered = filtered.filter(sale =>
-                sale.sale_date && new Date(sale.sale_date) >= new Date(startDate)
-            )
-        }
-
-        if (endDate) {
-            filtered = filtered.filter(sale =>
-                sale.sale_date && new Date(sale.sale_date) <= new Date(endDate)
-            )
-        }
-
-        return filtered
     }
 
     const getFilteredTransactions = () => {
         let filtered = transactions
-
-        if (startDate) {
-            filtered = filtered.filter(t =>
-                t.date && new Date(t.date) >= new Date(startDate)
-            )
-        }
-
-        if (endDate) {
-            filtered = filtered.filter(t =>
-                t.date && new Date(t.date) <= new Date(endDate)
-            )
-        }
-
+        if (startDate) filtered = filtered.filter(t => t.date && new Date(t.date) >= new Date(startDate))
+        if (endDate) filtered = filtered.filter(t => t.date && new Date(t.date) <= new Date(endDate))
         return filtered
     }
 
-    const handleEdit = () => {
-        setIsEditModalOpen(true)
-    }
-
-    const handleCloseEditModal = () => {
-        setIsEditModalOpen(false)
-    }
-
-    const handleSaveCustomer = () => {
-        if (id) {
-            loadCustomerData(id)
-        }
-        setIsEditModalOpen(false)
-    }
-
-    const handleDelete = () => {
-        setShowDeleteConfirm(true)
-    }
+    const handleEdit = () => setIsEditModalOpen(true)
+    const handleCloseEditModal = () => setIsEditModalOpen(false)
+    const handleSaveCustomer = () => { if (id) loadCustomerData(id); setIsEditModalOpen(false) }
+    const handleDelete = () => setShowDeleteConfirm(true)
 
     const handleFirstDeleteConfirm = () => {
         setShowDeleteConfirm(false)
-        const hasTransactions = transactions.length > 0
-        if (hasTransactions) {
-            setShowSecondDeleteConfirm(true)
-        } else {
-            performDelete()
-        }
+        if (transactions.length > 0) setShowSecondDeleteConfirm(true)
+        else performDelete()
     }
 
-    const handleSecondDeleteConfirm = () => {
-        setShowSecondDeleteConfirm(false)
-        performDelete()
-    }
+    const handleSecondDeleteConfirm = () => { setShowSecondDeleteConfirm(false); performDelete() }
 
     const performDelete = async () => {
         if (!customer) return
-
         setIsDeleting(true)
         try {
             await CustomerService.deleteCustomer(customer.id)
@@ -403,35 +270,21 @@ const CustomerDetailPage = () => {
         }
     }
 
-    const handleDeleteSale = (transaction: any) => {
-        setTransactionToDelete(transaction)
-        setShowDeleteTransactionConfirm(true)
-    }
-
-    const handleDeletePayment = (transaction: any) => {
-        setTransactionToDelete(transaction)
-        setShowDeleteTransactionConfirm(true)
-    }
+    const handleDeleteSale = (transaction: any) => { setTransactionToDelete(transaction); setShowDeleteTransactionConfirm(true) }
+    const handleDeletePayment = (transaction: any) => { setTransactionToDelete(transaction); setShowDeleteTransactionConfirm(true) }
 
     const confirmDeleteTransaction = async () => {
         if (!transactionToDelete || !id) return
-
         setIsDeleting(true)
         try {
             if (transactionToDelete.type === 'sale') {
-                // Satış sil
                 await SaleService.deleteSale(transactionToDelete.id)
                 showToast.success('Satış kaydı silindi')
             } else {
-                // Ödeme sil
                 await CustomerPaymentService.deletePayment(transactionToDelete.id)
                 showToast.success('Ödeme kaydı silindi')
             }
-
-            // Müşteri bakiyesini yeniden hesapla
             await CustomerService.recalculateCustomerBalance(id)
-            
-            // Sayfayı yenile
             await loadCustomerData(id)
             setShowDeleteTransactionConfirm(false)
             setTransactionToDelete(null)
@@ -444,17 +297,10 @@ const CustomerDetailPage = () => {
     }
 
     const handlePayment = async () => {
-        if (!paymentAmount || parseFloat(paymentAmount) <= 0) {
-            alert('Lütfen geçerli bir tutar girin')
-            return
-        }
-
+        if (!paymentAmount || parseFloat(paymentAmount) <= 0) { alert('Lütfen geçerli bir tutar girin'); return }
         if (!customer) return
-
         setIsProcessingPayment(true)
-
         try {
-            // Ödeme kaydı oluştur
             await CustomerPaymentService.createPayment({
                 customer_id: customer.id,
                 amount: parseFloat(paymentAmount),
@@ -462,17 +308,10 @@ const CustomerDetailPage = () => {
                 payment_date: new Date(paymentDate).toISOString(),
                 notes: null
             })
-
-            // Müşteri bakiyesini güncelle
             await CustomerService.updateCustomer(customer.id, {
                 current_balance: (customer.current_balance || 0) - parseFloat(paymentAmount)
             })
-
-            // Sayfayı yenile
-            if (id) {
-                await loadCustomerData(id)
-            }
-
+            if (id) await loadCustomerData(id)
             setShowPaymentModal(false)
             setPaymentAmount('')
             setPaymentType('cash')
@@ -485,26 +324,14 @@ const CustomerDetailPage = () => {
         }
     }
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('tr-TR', {
-            style: 'currency',
-            currency: 'TRY'
-        }).format(amount)
-    }
-
-    const formatDate = (date: string) => {
-        return new Date(date).toLocaleDateString('tr-TR', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        })
-    }
+    const formatCurrency = (amount: number) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(amount)
+    const formatDate = (date: string) => new Date(date).toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric' })
 
     if (loading) {
         return (
-            <Layout title="Müşteri Detayı">
-                <div className="flex justify-center items-center h-64">
-                    <Loading />
+            <Layout>
+                <div className="container mx-auto p-6">
+                    <div className="flex justify-center items-center h-64"><Loading /></div>
                 </div>
             </Layout>
         )
@@ -512,138 +339,119 @@ const CustomerDetailPage = () => {
 
     if (error || !customer) {
         return (
-            <Layout title="Müşteri Detayı">
-                <Card>
-                    <CardContent className="py-8">
-                        <div className="text-center">
-                            <p className="text-red-600 mb-4">{error || 'Müşteri bulunamadı'}</p>
-                            <Button onClick={() => navigate('/customers')}>
-                                <ArrowLeft className="w-4 h-4 mr-2" />
-                                Müşteri Listesine Dön
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
+            <Layout>
+                <div className="container mx-auto p-6">
+                    <Card>
+                        <CardContent className="py-8">
+                            <div className="text-center">
+                                <p className="text-red-600 mb-4">{error || 'Müşteri bulunamadı'}</p>
+                                <Button onClick={() => navigate('/customers')}>
+                                    <ArrowLeft className="w-4 h-4 mr-2" />
+                                    Müşteri Listesine Dön
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             </Layout>
         )
     }
 
     const totalPurchases = sales.reduce((sum, sale) => sum + (sale.net_amount || 0), 0)
     const lastPurchaseDate = sales.length > 0 ? sales[0].sale_date : null
-    const overdueSales = sales.filter(sale =>
-        sale.payment_type === 'credit' &&
-        sale.due_date &&
-        new Date(sale.due_date) < new Date()
-    )
+    const overdueSales = sales.filter(sale => sale.payment_type === 'credit' && sale.due_date && new Date(sale.due_date) < new Date())
     const overdueAmount = overdueSales.reduce((sum, sale) => sum + (sale.net_amount || 0), 0)
 
     return (
-        <Layout
-            title="Müşteri Detayı"
-            subtitle={customer.name}
-        >
-            <div className="space-y-6">
-                {/* Header Actions */}
-                <div className="flex justify-between items-center">
-                    <Button variant="outline" onClick={() => navigate('/customers')}>
-                        <ArrowLeft className="w-4 h-4 mr-2" />
-                        Geri
-                    </Button>
-                    <Button onClick={() => {
-                        setShowPaymentModal(true)
-                        setPaymentDate(getLocalDateTimeString())
-                    }}>
-                        <TrendingUp className="w-4 h-4 mr-2" />
+        <Layout>
+            <div className="container mx-auto p-6 space-y-6">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <Button variant="ghost" size="icon" onClick={() => navigate('/customers')}>
+                            <ArrowLeft className="h-5 w-5" />
+                        </Button>
+                        <div>
+                            <h1 className="text-3xl font-bold tracking-tight">{customer.name}</h1>
+                            <p className="text-muted-foreground mt-1">Müşteri detayları ve hesap hareketleri</p>
+                        </div>
+                    </div>
+                    <Button onClick={() => { setShowPaymentModal(true); setPaymentDate(getLocalDateTimeString()) }} size="lg" className="shadow-lg">
+                        <TrendingUp className="mr-2 h-5 w-5" />
                         Ödeme Al
                     </Button>
                 </div>
 
-                {/* Customer Info Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {/* Balance Card */}
-                    <Card>
+                {/* Stats Cards */}
+                <div className="grid gap-4 md:grid-cols-4">
+                    <Card className="border-l-4 border-l-red-500 bg-gradient-to-br from-red-50 to-background dark:from-red-950/20 dark:to-background">
                         <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-medium text-gray-600">
+                            <CardTitle className="text-sm font-medium flex items-center gap-2">
+                                <DollarSign className="h-4 w-4 text-red-600" />
                                 Güncel Bakiye
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="flex flex-col">
-                                <p className={`text-2xl font-bold ${(customer.current_balance ?? 0) > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                                    {formatCurrency(customer.current_balance ?? 0)}
-                                </p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                    Limit: {formatCurrency(customer.credit_limit ?? 0)}
-                                </p>
+                            <div className={`text-3xl font-bold ${(customer.current_balance ?? 0) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                {formatCurrency(customer.current_balance ?? 0)}
                             </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                Limit: {formatCurrency(customer.credit_limit ?? 0)}
+                            </p>
                         </CardContent>
                     </Card>
 
-                    {/* Total Purchases Card */}
-                    <Card>
+                    <Card className="border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-50 to-background dark:from-blue-950/20 dark:to-background">
                         <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-medium text-gray-600">
+                            <CardTitle className="text-sm font-medium flex items-center gap-2">
+                                <ShoppingCart className="h-4 w-4 text-blue-600" />
                                 Toplam Alışveriş
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="flex flex-col">
-                                <p className="text-2xl font-bold">{formatCurrency(totalPurchases)}</p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                    {sales.length} işlem
-                                </p>
-                            </div>
+                            <div className="text-3xl font-bold text-blue-600">{formatCurrency(totalPurchases)}</div>
+                            <p className="text-xs text-muted-foreground mt-1">{sales.length} işlem</p>
                         </CardContent>
                     </Card>
 
-                    {/* Overdue Card */}
-                    <Card
-                        className={`cursor-pointer transition-colors ${showOverdueOnly ? 'ring-2 ring-red-500' : 'hover:bg-gray-50'}`}
-                        onClick={() => setShowOverdueOnly(!showOverdueOnly)}
-                    >
+                    <Card className={`border-l-4 border-l-amber-500 bg-gradient-to-br from-amber-50 to-background dark:from-amber-950/20 dark:to-background cursor-pointer transition-all ${showOverdueOnly ? 'ring-2 ring-amber-500' : 'hover:shadow-md'}`}
+                        onClick={() => setShowOverdueOnly(!showOverdueOnly)}>
                         <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-medium text-gray-600">
+                            <CardTitle className="text-sm font-medium flex items-center gap-2">
+                                <AlertTriangle className="h-4 w-4 text-amber-600" />
                                 Vadesi Geçen
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="flex flex-col">
-                                <p className="text-2xl font-bold text-red-600">
-                                    {formatCurrency(overdueAmount)}
-                                </p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                    {overdueSales.length} işlem
-                                </p>
-                            </div>
+                            <div className="text-3xl font-bold text-amber-600">{formatCurrency(overdueAmount)}</div>
+                            <p className="text-xs text-muted-foreground mt-1">{overdueSales.length} işlem</p>
                         </CardContent>
                     </Card>
 
-                    {/* Last Purchase Card */}
-                    <Card>
+                    <Card className="border-l-4 border-l-purple-500 bg-gradient-to-br from-purple-50 to-background dark:from-purple-950/20 dark:to-background">
                         <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-medium text-gray-600">
+                            <CardTitle className="text-sm font-medium flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-purple-600" />
                                 Son Alışveriş
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="flex flex-col">
-                                <p className="text-base font-semibold">
-                                    {lastPurchaseDate ? formatDate(lastPurchaseDate) : 'Henüz yok'}
-                                </p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                    {lastPurchaseDate ? 'Tarih' : 'Alışveriş yapılmadı'}
-                                </p>
+                            <div className="text-lg font-bold text-purple-600">
+                                {lastPurchaseDate ? formatDate(lastPurchaseDate) : 'Henüz yok'}
                             </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                {lastPurchaseDate ? 'Tarih' : 'Alışveriş yapılmadı'}
+                            </p>
                         </CardContent>
                     </Card>
                 </div>
 
-                {/* Customer Details */}
-                <Card>
-                    <CardHeader>
+                {/* Customer Details Card */}
+                <Card className="border-l-4 border-l-primary">
+                    <CardHeader className="bg-muted/30">
                         <div className="flex justify-between items-center">
                             <CardTitle className="flex items-center gap-2">
-                                <FileText className="w-5 h-5" />
+                                <User className="h-5 w-5 text-primary" />
                                 Müşteri Bilgileri
                             </CardTitle>
                             <div className="flex gap-2">
@@ -651,63 +459,54 @@ const CustomerDetailPage = () => {
                                     <Edit className="w-4 h-4 mr-2" />
                                     Düzenle
                                 </Button>
-                                <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    onClick={handleDelete}
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                >
+                                <Button variant="outline" size="sm" onClick={handleDelete} className="text-red-600 hover:text-red-700 hover:bg-red-50">
                                     <Trash2 className="w-4 h-4 mr-2" />
                                     Sil
                                 </Button>
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent>
-                        <div className="flex flex-wrap gap-x-12 gap-y-4">
-                            <div className="flex items-center gap-3">
-                                <User className="w-4 h-4 text-gray-400" />
+                    <CardContent className="pt-6">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                            <div className="flex items-start gap-3">
+                                <User className="w-4 h-4 text-muted-foreground mt-1" />
                                 <div>
-                                    <span className="text-sm text-gray-500">Müşteri Adı</span>
+                                    <span className="text-sm text-muted-foreground">Müşteri Adı</span>
                                     <p className="font-semibold">{customer.name}</p>
                                 </div>
                             </div>
-
                             {customer.phone && (
-                                <div className="flex items-center gap-3">
-                                    <Phone className="w-4 h-4 text-gray-400" />
+                                <div className="flex items-start gap-3">
+                                    <Phone className="w-4 h-4 text-muted-foreground mt-1" />
                                     <div>
-                                        <span className="text-sm text-gray-500">Telefon</span>
+                                        <span className="text-sm text-muted-foreground">Telefon</span>
                                         <p className="font-medium">{customer.phone}</p>
                                     </div>
                                 </div>
                             )}
-
                             {customer.email && (
-                                <div className="flex items-center gap-3">
-                                    <Mail className="w-4 h-4 text-gray-400" />
+                                <div className="flex items-start gap-3">
+                                    <Mail className="w-4 h-4 text-muted-foreground mt-1" />
                                     <div>
-                                        <span className="text-sm text-gray-500">E-posta</span>
+                                        <span className="text-sm text-muted-foreground">E-posta</span>
                                         <p className="font-medium">{customer.email}</p>
                                     </div>
                                 </div>
                             )}
-
                             {customer.address && (
-                                <div className="flex items-center gap-3">
-                                    <MapPin className="w-4 h-4 text-gray-400" />
+                                <div className="flex items-start gap-3">
+                                    <MapPin className="w-4 h-4 text-muted-foreground mt-1" />
                                     <div>
-                                        <span className="text-sm text-gray-500">Adres</span>
+                                        <span className="text-sm text-muted-foreground">Adres</span>
                                         <p className="font-medium">{customer.address}</p>
                                     </div>
                                 </div>
                             )}
-
                             {customer.tax_number && (
-                                <div className="flex items-center gap-3">
-                                    <FileText className="w-4 h-4 text-gray-400" />
+                                <div className="flex items-start gap-3">
+                                    <FileText className="w-4 h-4 text-muted-foreground mt-1" />
                                     <div>
-                                        <span className="text-sm text-gray-500">Vergi Numarası</span>
+                                        <span className="text-sm text-muted-foreground">Vergi Numarası</span>
                                         <p className="font-medium">{customer.tax_number}</p>
                                     </div>
                                 </div>
@@ -717,58 +516,27 @@ const CustomerDetailPage = () => {
                 </Card>
 
                 {/* Transaction History */}
-                <Card>
-                    <CardHeader>
+                <Card className="border-t-4 border-t-primary shadow-lg">
+                    <CardHeader className="bg-muted/30">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                             <CardTitle className="flex items-center gap-2">
-                                <TrendingUp className="w-5 h-5" />
+                                <TrendingUp className="h-5 w-5 text-primary" />
                                 Hesap Hareketleri
                                 {getFilteredTransactions().length > 0 && (
-                                    <Badge variant="secondary" className="ml-2">
-                                        {getFilteredTransactions().length} işlem
-                                    </Badge>
+                                    <Badge variant="secondary" className="ml-2">{getFilteredTransactions().length} işlem</Badge>
                                 )}
                             </CardTitle>
-
                             <div className="flex flex-wrap items-center gap-2">
                                 <div className="flex items-center gap-2">
-                                    <Calendar className="w-4 h-4 text-gray-500" />
-                                    <Input
-                                        type="date"
-                                        value={startDate}
-                                        onChange={(e) => setStartDate(e.target.value)}
-                                        className="h-9 w-40"
-                                        placeholder="Başlangıç"
-                                    />
-                                    <span className="text-gray-500">-</span>
-                                    <Input
-                                        type="date"
-                                        value={endDate}
-                                        onChange={(e) => setEndDate(e.target.value)}
-                                        className="h-9 w-40"
-                                        placeholder="Bitiş"
-                                    />
+                                    <Calendar className="w-4 h-4 text-muted-foreground" />
+                                    <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-9 w-40" />
+                                    <span className="text-muted-foreground">-</span>
+                                    <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-9 w-40" />
                                 </div>
-
                                 {(startDate || endDate) && (
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => {
-                                            setStartDate('')
-                                            setEndDate('')
-                                        }}
-                                    >
-                                        Temizle
-                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={() => { setStartDate(''); setEndDate('') }}>Temizle</Button>
                                 )}
-
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={handlePrint}
-                                    disabled={getFilteredTransactions().length === 0}
-                                >
+                                <Button variant="outline" size="sm" onClick={handlePrint} disabled={getFilteredTransactions().length === 0}>
                                     <Printer className="w-4 h-4 mr-2" />
                                     Yazdır
                                 </Button>
@@ -789,126 +557,53 @@ const CustomerDetailPage = () => {
 
             {/* Sale Detail Modal */}
             {selectedSale && (
-                <SaleDetailModal
-                    sale={selectedSale}
-                    isOpen={!!selectedSale}
-                    onClose={handleCloseSaleDetail}
-                />
+                <SaleDetailModal sale={selectedSale} isOpen={!!selectedSale} onClose={handleCloseSaleDetail} />
             )}
 
             {/* Customer Edit Modal */}
-            <CustomerModal
-                isOpen={isEditModalOpen}
-                onClose={handleCloseEditModal}
-                customer={customer || undefined}
-                onSave={handleSaveCustomer}
-            />
+            <CustomerModal isOpen={isEditModalOpen} onClose={handleCloseEditModal} customer={customer || undefined} onSave={handleSaveCustomer} />
 
             {/* Payment Modal */}
             <Dialog open={showPaymentModal} onOpenChange={(open) => {
                 setShowPaymentModal(open)
-                if (!open) {
-                    // Modal kapatıldığında state'leri reset et
-                    setPaymentAmount('')
-                    setPaymentType('cash')
-                    setPaymentDate(getLocalDateTimeString())
-                }
+                if (!open) { setPaymentAmount(''); setPaymentType('cash'); setPaymentDate(getLocalDateTimeString()) }
             }}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>Ödeme Al</DialogTitle>
-                        <DialogDescription>
-                            {customer?.name} için ödeme kaydı oluşturun
-                        </DialogDescription>
+                        <DialogDescription>{customer?.name} için ödeme kaydı oluşturun</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
                             <Label htmlFor="payment-amount">Ödeme Tutarı (₺)</Label>
-                            <Input
-                                id="payment-amount"
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={paymentAmount}
-                                onChange={(e) => setPaymentAmount(e.target.value)}
-                                placeholder="0.00"
-                                autoFocus
-                            />
+                            <Input id="payment-amount" type="number" min="0" step="0.01" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} placeholder="0.00" autoFocus />
                             {customer && (customer.current_balance ?? 0) > 0 && (
-                                <p className="text-sm text-gray-500">
-                                    Güncel Borç: {formatCurrency(customer.current_balance ?? 0)}
-                                </p>
+                                <p className="text-sm text-muted-foreground">Güncel Borç: {formatCurrency(customer.current_balance ?? 0)}</p>
                             )}
                         </div>
-
                         <div className="space-y-2">
                             <Label htmlFor="payment-type">Ödeme Tipi</Label>
                             <div className="flex gap-2">
-                                <Button
-                                    type="button"
-                                    variant={paymentType === 'cash' ? 'default' : 'outline'}
-                                    className="flex-1"
-                                    onClick={() => setPaymentType('cash')}
-                                >
-                                    Nakit
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant={paymentType === 'pos' ? 'default' : 'outline'}
-                                    className="flex-1"
-                                    onClick={() => setPaymentType('pos')}
-                                >
-                                    Kredi Kartı
-                                </Button>
+                                <Button type="button" variant={paymentType === 'cash' ? 'default' : 'outline'} className="flex-1" onClick={() => setPaymentType('cash')}>Nakit</Button>
+                                <Button type="button" variant={paymentType === 'pos' ? 'default' : 'outline'} className="flex-1" onClick={() => setPaymentType('pos')}>Kredi Kartı</Button>
                             </div>
                         </div>
-
                         <div className="space-y-2">
                             <Label htmlFor="payment-date">Tarih ve Saat</Label>
-                            <Input
-                                id="payment-date"
-                                type="datetime-local"
-                                value={paymentDate}
-                                onChange={(e) => setPaymentDate(e.target.value)}
-                            />
+                            <Input id="payment-date" type="datetime-local" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
                         </div>
                     </div>
                     <div className="flex justify-end gap-2">
-                        <Button
-                            variant="outline"
-                            onClick={() => {
-                                setShowPaymentModal(false)
-                                setPaymentAmount('')
-                                setPaymentType('cash')
-                                setPaymentDate(getLocalDateTimeString())
-                            }}
-                            disabled={isProcessingPayment}
-                        >
-                            İptal
-                        </Button>
-                        <Button
-                            onClick={handlePayment}
-                            disabled={isProcessingPayment || !paymentAmount || parseFloat(paymentAmount) <= 0}
-                        >
-                            {isProcessingPayment ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    İşleniyor...
-                                </>
-                            ) : (
-                                'Ödemeyi Kaydet'
-                            )}
+                        <Button variant="outline" onClick={() => { setShowPaymentModal(false); setPaymentAmount(''); setPaymentType('cash'); setPaymentDate(getLocalDateTimeString()) }} disabled={isProcessingPayment}>İptal</Button>
+                        <Button onClick={handlePayment} disabled={isProcessingPayment || !paymentAmount || parseFloat(paymentAmount) <= 0}>
+                            {isProcessingPayment ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />İşleniyor...</>) : 'Ödemeyi Kaydet'}
                         </Button>
                     </div>
                 </DialogContent>
             </Dialog>
 
             {/* Payment Detail Modal */}
-            <PaymentDetailModal
-                payment={selectedPayment}
-                isOpen={!!selectedPayment}
-                onClose={handleClosePaymentDetail}
-            />
+            <PaymentDetailModal payment={selectedPayment} isOpen={!!selectedPayment} onClose={handleClosePaymentDetail} />
 
             {/* Delete Confirmation Modals */}
             <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
@@ -916,30 +611,20 @@ const CustomerDetailPage = () => {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Müşteri Silme Onayı</AlertDialogTitle>
                         <AlertDialogDescription>
-                            <span className="font-semibold">{customer?.name}</span> müşterisini kalıcı olarak silmek istediğinizden emin misiniz?
+                            <strong>{customer?.name}</strong> müşterisini kalıcı olarak silmek istediğinizden emin misiniz?
                             {transactions.length > 0 && (
                                 <>
                                     <br /><br />
-                                    <span className="text-red-600 font-semibold">⚠️ UYARI:</span> Bu müşteriye ait <span className="font-semibold">{transactions.length} adet işlem kaydı</span> da otomatik olarak silinecektir:
-                                    <ul className="list-disc list-inside mt-2 space-y-1">
-                                        <li>Satış kayıtları</li>
-                                        <li>Ödeme kayıtları</li>
-                                        <li>İşlem geçmişi</li>
-                                    </ul>
+                                    <span className="text-red-600 font-semibold">⚠️ UYARI:</span> Bu müşteriye ait <strong>{transactions.length} adet işlem kaydı</strong> da silinecektir.
                                 </>
                             )}
-                            <br />
+                            <br /><br />
                             <span className="text-red-600 font-semibold">Bu işlem geri alınamaz!</span>
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>İptal</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handleFirstDeleteConfirm}
-                            className="bg-red-600 hover:bg-red-700"
-                        >
-                            Devam Et
-                        </AlertDialogAction>
+                        <AlertDialogAction onClick={handleFirstDeleteConfirm} className="bg-red-600 hover:bg-red-700">Devam Et</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
@@ -952,23 +637,11 @@ const CustomerDetailPage = () => {
                             Müşteri ve tüm ilgili kayıtların kalıcı olarak silineceğini onaylıyor musunuz?
                             <br /><br />
                             <span className="text-red-600 font-semibold">⚠️ Bu işlem GERİ ALINAMAZ!</span>
-                            <br /><br />
-                            Silinecek veriler:
-                            <ul className="list-disc list-inside mt-2 space-y-1">
-                                <li>Müşteri bilgileri</li>
-                                <li>Tüm satış kayıtları</li>
-                                <li>Tüm ödeme kayıtları</li>
-                                <li>İşlem geçmişi</li>
-                            </ul>
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel disabled={isDeleting}>İptal</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handleSecondDeleteConfirm}
-                            className="bg-red-600 hover:bg-red-700"
-                            disabled={isDeleting}
-                        >
+                        <AlertDialogAction onClick={handleSecondDeleteConfirm} className="bg-red-600 hover:bg-red-700" disabled={isDeleting}>
                             {isDeleting ? 'Siliniyor...' : 'Evet, Kalıcı Olarak Sil'}
                         </AlertDialogAction>
                     </AlertDialogFooter>
@@ -979,9 +652,7 @@ const CustomerDetailPage = () => {
             <AlertDialog open={showDeleteTransactionConfirm} onOpenChange={setShowDeleteTransactionConfirm}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>
-                            {transactionToDelete?.type === 'sale' ? 'Satış' : 'Ödeme'} Kaydını Sil
-                        </AlertDialogTitle>
+                        <AlertDialogTitle>{transactionToDelete?.type === 'sale' ? 'Satış' : 'Ödeme'} Kaydını Sil</AlertDialogTitle>
                         <AlertDialogDescription>
                             Bu {transactionToDelete?.type === 'sale' ? 'satış' : 'ödeme'} kaydını kalıcı olarak silmek istediğinizden emin misiniz?
                             <br /><br />
@@ -989,20 +660,8 @@ const CustomerDetailPage = () => {
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel 
-                            disabled={isDeleting}
-                            onClick={() => {
-                                setShowDeleteTransactionConfirm(false)
-                                setTransactionToDelete(null)
-                            }}
-                        >
-                            İptal
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={confirmDeleteTransaction}
-                            className="bg-red-600 hover:bg-red-700"
-                            disabled={isDeleting}
-                        >
+                        <AlertDialogCancel disabled={isDeleting} onClick={() => { setShowDeleteTransactionConfirm(false); setTransactionToDelete(null) }}>İptal</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDeleteTransaction} className="bg-red-600 hover:bg-red-700" disabled={isDeleting}>
                             {isDeleting ? 'Siliniyor...' : 'Evet, Sil'}
                         </AlertDialogAction>
                     </AlertDialogFooter>

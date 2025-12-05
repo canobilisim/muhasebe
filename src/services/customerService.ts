@@ -1,7 +1,36 @@
 import { supabase } from '@/lib/supabase'
 import type { Customer, CustomerInsert, CustomerUpdate, CustomerFilter, PaginatedResponse } from '@/types'
 
+export interface CustomerStats {
+  totalCount: number
+  activeCount: number
+  totalBalance: number
+  customersWithDebt: number
+}
+
 export class CustomerService {
+  // Get customer statistics (lightweight query)
+  static async getCustomerStats(): Promise<CustomerStats> {
+    try {
+      const { data, error } = await supabase
+        .from('customers')
+        .select('is_active, current_balance')
+
+      if (error) throw new Error(`İstatistikler alınamadı: ${error.message}`)
+
+      const customers = data || []
+      return {
+        totalCount: customers.length,
+        activeCount: customers.filter(c => c.is_active).length,
+        totalBalance: customers.reduce((sum, c) => sum + (c.current_balance || 0), 0),
+        customersWithDebt: customers.filter(c => (c.current_balance || 0) > 0).length
+      }
+    } catch (error) {
+      console.error('Error fetching customer stats:', error)
+      return { totalCount: 0, activeCount: 0, totalBalance: 0, customersWithDebt: 0 }
+    }
+  }
+
   // Get all customers with filtering and pagination
   static async getCustomers(
     filter: CustomerFilter = {},

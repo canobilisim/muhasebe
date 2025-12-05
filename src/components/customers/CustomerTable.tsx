@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -11,6 +11,14 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -20,8 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { SkeletonTable, EmptyCustomers, ButtonLoading } from '@/components/ui'
-import { Edit, Trash2, Phone, Mail } from 'lucide-react'
+import { MoreHorizontal, Eye, Edit, Trash2, Users } from 'lucide-react'
 import { CustomerService } from '@/services/customerService'
 import { useErrorHandler } from '@/hooks/useErrorHandler'
 import type { Customer } from '@/types'
@@ -30,17 +37,13 @@ interface CustomerTableProps {
   customers: Customer[]
   onEdit: (customer: Customer) => void
   onRefresh: () => void
-  onAddCustomer?: () => void
-  isLoading?: boolean
 }
 
-export const CustomerTable = ({ 
-  customers, 
-  onEdit, 
-  onRefresh, 
-  onAddCustomer,
-  isLoading = false 
-}: CustomerTableProps) => {
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(amount)
+}
+
+export const CustomerTable = memo(({ customers, onEdit, onRefresh }: CustomerTableProps) => {
   const navigate = useNavigate()
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -54,7 +57,6 @@ export const CustomerTable = ({
 
   const handleConfirmDelete = async () => {
     if (!customerToDelete) return
-
     setDeletingId(customerToDelete.id)
     try {
       await CustomerService.deleteCustomer(customerToDelete.id)
@@ -69,158 +71,111 @@ export const CustomerTable = ({
     }
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('tr-TR', {
-      style: 'currency',
-      currency: 'TRY'
-    }).format(amount)
-  }
-
-  const formatPhone = (phone: string | null) => {
-    if (!phone) return '-'
-    return phone
-  }
-
-  // Show loading skeleton
-  if (isLoading) {
+  if (customers.length === 0) {
     return (
-      <div className="rounded-md border">
-        <SkeletonTable rows={5} columns={7} />
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <Users className="h-16 w-16 text-muted-foreground/50 mb-4" />
+        <p className="text-lg font-medium text-muted-foreground mb-2">Müşteri bulunamadı</p>
+        <p className="text-sm text-muted-foreground">Yeni müşteri eklemek için yukarıdaki butonu kullanın</p>
       </div>
     )
   }
 
-  // Show empty state
-  if (customers.length === 0) {
-    return <EmptyCustomers onAddCustomer={onAddCustomer} />
-  }
-
   return (
-    <div className="rounded-md border">
+    <>
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead>Müşteri Adı</TableHead>
-            <TableHead>İletişim</TableHead>
-            <TableHead>Vergi No</TableHead>
-            <TableHead className="text-right">Kredi Limiti</TableHead>
-            <TableHead className="text-right">Bakiye</TableHead>
-            <TableHead>Durum</TableHead>
-            <TableHead className="text-right">İşlemler</TableHead>
+          <TableRow className="bg-muted/50">
+            <TableHead className="font-semibold text-left">Müşteri Adı</TableHead>
+            <TableHead className="font-semibold text-left">İletişim</TableHead>
+            <TableHead className="font-semibold text-left">Vergi No</TableHead>
+            <TableHead className="font-semibold text-left">Kredi Limiti</TableHead>
+            <TableHead className="font-semibold text-left">Bakiye</TableHead>
+            <TableHead className="font-semibold text-left">Durum</TableHead>
+            <TableHead className="w-[50px]"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {customers.map((customer) => (
-            <TableRow 
+            <TableRow
               key={customer.id}
-              className="cursor-pointer hover:bg-gray-50"
+              className="cursor-pointer hover:bg-muted/50"
               onClick={() => navigate(`/customers/${customer.id}`)}
             >
-              <TableCell className="font-medium align-top">
-                <div>
-                  <div className="font-semibold">
-                    {customer.name}
-                  </div>
-                  {customer.address && (
-                    <div className="text-sm text-gray-500 truncate max-w-xs mt-1">
-                      {customer.address}
-                    </div>
-                  )}
+              <TableCell className="text-left">
+                <div className="font-semibold">{customer.name}</div>
+                {customer.address && (
+                  <div className="text-xs text-muted-foreground truncate max-w-[200px]">{customer.address}</div>
+                )}
+              </TableCell>
+              <TableCell className="text-left">
+                <div className="text-sm">
+                  {customer.phone && <div>{customer.phone}</div>}
+                  {customer.email && <div className="text-muted-foreground truncate max-w-[150px]">{customer.email}</div>}
+                  {!customer.phone && !customer.email && <span className="text-muted-foreground">-</span>}
                 </div>
               </TableCell>
-              <TableCell className="align-top">
-                <div className="space-y-1">
-                  {customer.phone && (
-                    <div className="flex items-center gap-1 text-sm">
-                      <Phone className="w-3 h-3" />
-                      {formatPhone(customer.phone)}
-                    </div>
-                  )}
-                  {customer.email && (
-                    <div className="flex items-center gap-1 text-sm">
-                      <Mail className="w-3 h-3" />
-                      {customer.email}
-                    </div>
-                  )}
-                  {!customer.phone && !customer.email && (
-                    <span className="text-gray-400">-</span>
-                  )}
-                </div>
+              <TableCell className="text-left">
+                <span className="text-sm">{customer.tax_number || '-'}</span>
               </TableCell>
-              <TableCell className="align-top">
-                {customer.tax_number || '-'}
+              <TableCell className="text-left">
+                <span className="text-sm">{formatCurrency(customer.credit_limit ?? 0)}</span>
               </TableCell>
-              <TableCell className="text-right align-top">
-                {formatCurrency(customer.credit_limit ?? 0)}
-              </TableCell>
-              <TableCell className="text-right align-top">
-                <span className={(customer.current_balance ?? 0) > 0 ? 'text-red-600 font-semibold' : 'text-gray-600'}>
+              <TableCell className="text-left">
+                <span className={`font-semibold ${(customer.current_balance ?? 0) > 0 ? 'text-red-600' : 'text-green-600'}`}>
                   {formatCurrency(customer.current_balance ?? 0)}
                 </span>
               </TableCell>
-              <TableCell className="align-top">
-                <Badge variant={customer.is_active ? 'default' : 'secondary'}>
+              <TableCell className="text-left">
+                <Badge variant={customer.is_active ? 'default' : 'secondary'} className={customer.is_active ? 'bg-green-600' : ''}>
                   {customer.is_active ? 'Aktif' : 'Pasif'}
                 </Badge>
               </TableCell>
-              <TableCell className="text-right align-top">
-                <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onEdit(customer)}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDeleteClick(customer)}
-                    disabled={deletingId === customer.id}
-                  >
-                    {deletingId === customer.id ? (
-                      <ButtonLoading text="" />
-                    ) : (
-                      <Trash2 className="w-4 h-4" />
-                    )}
-                  </Button>
-                </div>
+              <TableCell onClick={(e) => e.stopPropagation()}>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuLabel>İşlemler</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate(`/customers/${customer.id}`)}>
+                      <Eye className="mr-2 h-4 w-4" />Detaylar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onEdit(customer)}>
+                      <Edit className="mr-2 h-4 w-4" />Düzenle
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => handleDeleteClick(customer)} className="text-red-600 focus:text-red-600">
+                      <Trash2 className="mr-2 h-4 w-4" />Sil
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
 
-      {/* Silme Onay Dialogu */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Müşteri Silme Onayı</AlertDialogTitle>
+            <AlertDialogTitle>Müşteriyi Sil</AlertDialogTitle>
             <AlertDialogDescription>
-              <span className="font-semibold">{customerToDelete?.name}</span> müşterisini kalıcı olarak silmek istediğinizden emin misiniz?
-              <br /><br />
-              <span className="text-red-600 font-semibold">⚠️ Bu işlem geri alınamaz!</span>
-              <br /><br />
-              Müşteriye ait tüm kayıtlar silinecek:
-              <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>Satış kayıtları</li>
-                <li>Ödeme kayıtları</li>
-                <li>İşlem geçmişi</li>
-              </ul>
+              <strong>{customerToDelete?.name}</strong> adlı müşteriyi silmek istediğinize emin misiniz?
+              <br /><br />Bu işlem geri alınamaz.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>İptal</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDelete}
-              className="bg-red-600 hover:bg-red-700"
-              disabled={deletingId === customerToDelete?.id}
-            >
-              {deletingId === customerToDelete?.id ? 'Siliniyor...' : 'Evet, Sil'}
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700" disabled={deletingId === customerToDelete?.id}>
+              {deletingId === customerToDelete?.id ? 'Siliniyor...' : 'Sil'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   )
-}
+})
+
+CustomerTable.displayName = 'CustomerTable'

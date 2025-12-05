@@ -10,6 +10,15 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,41 +29,88 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Trash2, TrendingUp, TrendingDown } from 'lucide-react';
+import { Trash2, TrendingUp, TrendingDown, FileText, Filter, Printer, X, Download } from 'lucide-react';
 import { getPersonnelTransactions, deleteTransaction } from '@/services/personnelService';
 import { formatCurrency } from '@/lib/utils';
-import type { Database } from '@/types/database';
 import { toast } from 'sonner';
+import { downloadPersonnelTransactionsPDF, type PersonnelTransactionPDF, type PersonnelPDF } from '@/utils/personnelTransactionsPdfGenerator';
 
-type PersonnelTransaction = Database['public']['Tables']['personnel_transactions']['Row'];
+type PersonnelTransaction = PersonnelTransactionPDF;
+type Personnel = PersonnelPDF;
 
 interface PersonnelTransactionsTabProps {
   personnelId: string;
+  personnel?: Personnel;
 }
 
 const TRANSACTION_TYPE_LABELS: Record<string, string> = {
   hakedis: 'Hakediş',
-  avans: 'Avans',
   odeme: 'Ödeme',
-  kesinti: 'Kesinti',
 };
 
 const TRANSACTION_TYPE_COLORS: Record<string, string> = {
-  hakedis: 'bg-green-100 text-green-800',
-  avans: 'bg-orange-100 text-orange-800',
-  odeme: 'bg-blue-100 text-blue-800',
-  kesinti: 'bg-red-100 text-red-800',
+  hakedis: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
+  odeme: 'bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300',
 };
 
-export function PersonnelTransactionsTab({ personnelId }: PersonnelTransactionsTabProps) {
+export function PersonnelTransactionsTab({ personnelId, personnel }: PersonnelTransactionsTabProps) {
   const [transactions, setTransactions] = useState<PersonnelTransaction[]>([]);
+  const [filteredTransactions, setFilteredTransactions] = useState<PersonnelTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState<PersonnelTransaction | null>(null);
+  
+  // Detay modal state'leri
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<PersonnelTransaction | null>(null);
+  
+  // Filtre state'leri
+  const [showFilters, setShowFilters] = useState(false);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [transactionType, setTransactionType] = useState<string>('all');
+  const [paymentType, setPaymentType] = useState<string>('all');
 
   useEffect(() => {
     loadTransactions();
   }, [personnelId]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [transactions, startDate, endDate, transactionType, paymentType]);
+
+  // Maaş gününden bugüne varsayılan tarih aralığını ayarla
+  useEffect(() => {
+    const formatDateLocal = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    if (personnel?.salary_day) {
+      const today = new Date();
+      const currentMonth = today.getMonth();
+      const currentYear = today.getFullYear();
+      
+      // Maaş günü bu ayda geçtiyse bu aydan başla, geçmediyse geçen aydan
+      let salaryDate = new Date(currentYear, currentMonth, personnel.salary_day);
+      if (salaryDate > today) {
+        salaryDate = new Date(currentYear, currentMonth - 1, personnel.salary_day);
+      }
+      
+      setStartDate(formatDateLocal(salaryDate));
+      setEndDate(formatDateLocal(today));
+    } else {
+      // Maaş günü yoksa son 30 gün
+      const today = new Date();
+      const thirtyDaysAgo = new Date(today);
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+      
+      setStartDate(formatDateLocal(thirtyDaysAgo));
+      setEndDate(formatDateLocal(today));
+    }
+  }, [personnel]);
 
   const loadTransactions = async () => {
     try {
@@ -70,7 +126,113 @@ export function PersonnelTransactionsTab({ personnelId }: PersonnelTransactionsT
     }
   };
 
-  const handleDeleteClick = (transaction: PersonnelTransaction) => {
+  const applyFilters = () => {
+    let filtered = [...transactions];
+
+    // Tarih filtresi
+    if (startDate) {
+      filtered = filtered.filter(t => t.transaction_date >= startDate);
+    }
+    if (endDate) {
+      filtered = filtered.filter(t => t.transaction_date <= endDate);
+    }
+
+    // İşlem tipi filtresi
+    if (transactionType !== 'all') {
+      filtered = filtered.filter(t => t.transaction_type === transactionType);
+    }
+
+    // Ödeme tipi filtresi
+    if (paymentType !== 'all') {
+      filtered = filtered.filter(t => t.payment_type === paymentType);
+    }
+
+    setFilteredTransactions(filtered);
+  };
+
+  const clearFilters = () => {
+    const formatDateLocal = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    if (personnel?.salary_day) {
+      const today = new Date();
+      const currentMonth = today.getMonth();
+      const currentYear = today.getFullYear();
+      let salaryDate = new Date(currentYear, currentMonth, personnel.salary_day);
+      if (salaryDate > today) {
+        salaryDate = new Date(currentYear, currentMonth - 1, personnel.salary_day);
+      }
+      setStartDate(formatDateLocal(salaryDate));
+      setEndDate(formatDateLocal(today));
+    } else {
+      const today = new Date();
+      const thirtyDaysAgo = new Date(today);
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+      setStartDate(formatDateLocal(thirtyDaysAgo));
+      setEndDate(formatDateLocal(today));
+    }
+    setTransactionType('all');
+    setPaymentType('all');
+  };
+
+  const handlePrint = () => {
+    // Yazdırma öncesi sayfa başlığını güncelle
+    const originalTitle = document.title;
+    if (personnel) {
+      document.title = `${personnel.first_name} ${personnel.last_name} - Hesap Hareketleri`;
+    }
+    
+    window.print();
+    
+    // Yazdırma sonrası başlığı geri yükle
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 100);
+  };
+
+  const handleExportPDF = () => {
+    if (!personnel) {
+      toast.error('Personel bilgisi bulunamadı');
+      return;
+    }
+
+    try {
+      downloadPersonnelTransactionsPDF({
+        personnel,
+        transactions: filteredTransactions,
+        dateRange: {
+          startDate,
+          endDate,
+        },
+        summary: {
+          currentBalance,
+          totalCredit,
+          totalDebit,
+          transactionCount: filteredTransactions.length,
+        },
+        companyInfo: {
+          name: 'HesapOnda',
+        },
+      });
+      toast.success('PDF başarıyla oluşturuldu');
+    } catch (error: any) {
+      toast.error('PDF oluşturulurken hata oluştu', {
+        description: error.message,
+      });
+    }
+  };
+
+  const handleTransactionClick = (transaction: PersonnelTransaction) => {
+    setSelectedTransaction(transaction);
+    setDetailDialogOpen(true);
+  };
+
+  const handleDeleteClick = (transaction: PersonnelTransaction, e: React.MouseEvent) => {
+    e.stopPropagation();
     setTransactionToDelete(transaction);
     setDeleteDialogOpen(true);
   };
@@ -92,7 +254,7 @@ export function PersonnelTransactionsTab({ personnelId }: PersonnelTransactionsT
     }
   };
 
-  // Özet hesaplamaları
+  // Özet hesaplamaları (TÜM veriye göre - filtrelerden etkilenmesin)
   const currentBalance = transactions.length > 0 ? Number(transactions[0].balance) : 0;
   const totalCredit = transactions.reduce((sum, t) => sum + Number(t.credit_amount), 0);
   const totalDebit = transactions.reduce((sum, t) => sum + Number(t.debit_amount), 0);
@@ -101,151 +263,276 @@ export function PersonnelTransactionsTab({ personnelId }: PersonnelTransactionsT
     <div className="space-y-6">
       {/* Özet Kartlar */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Güncel Bakiye</CardTitle>
+        <Card className={`border-l-4 ${currentBalance > 0 ? 'border-l-green-500 bg-green-50/50 dark:bg-green-950/10' : currentBalance < 0 ? 'border-l-red-500 bg-red-50/50 dark:bg-red-950/10' : 'border-l-gray-500'}`}>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <TrendingUp className={`h-4 w-4 ${currentBalance > 0 ? 'text-green-600' : currentBalance < 0 ? 'text-red-600' : 'text-gray-600'}`} />
+              Güncel Bakiye
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${currentBalance > 0 ? 'text-green-600' : currentBalance < 0 ? 'text-red-600' : ''}`}>
+            <div className={`text-3xl font-bold ${currentBalance > 0 ? 'text-green-600' : currentBalance < 0 ? 'text-red-600' : 'text-gray-600'}`}>
               {formatCurrency(Math.abs(currentBalance))}
             </div>
-            <p className="text-xs text-muted-foreground">
-              {currentBalance > 0 ? 'Personel alacaklı' : currentBalance < 0 ? 'Personel borçlu' : 'Bakiye sıfır'}
+            <p className="text-xs text-muted-foreground mt-1">
+              {currentBalance > 0 ? '✓ Personel alacaklı' : currentBalance < 0 ? '⚠ Personel borçlu' : 'Bakiye sıfır'}
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Toplam Alacak</CardTitle>
+        <Card className="border-l-4 border-l-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/10">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-emerald-600" />
+              Toplam Hakediş
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-3xl font-bold text-emerald-600">
               {formatCurrency(totalCredit)}
             </div>
-            <p className="text-xs text-muted-foreground">Hakediş toplamı</p>
+            <p className="text-xs text-muted-foreground mt-1">Alacak toplamı</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Toplam Borç</CardTitle>
+        <Card className="border-l-4 border-l-orange-500 bg-orange-50/50 dark:bg-orange-950/10">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <TrendingDown className="h-4 w-4 text-orange-600" />
+              Toplam Ödeme
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
+            <div className="text-3xl font-bold text-orange-600">
               {formatCurrency(totalDebit)}
             </div>
-            <p className="text-xs text-muted-foreground">Avans/Ödeme toplamı</p>
+            <p className="text-xs text-muted-foreground mt-1">Borç toplamı</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">İşlem Sayısı</CardTitle>
+        <Card className="border-l-4 border-l-blue-500 bg-blue-50/50 dark:bg-blue-950/10">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <FileText className="h-4 w-4 text-blue-600" />
+              İşlem Sayısı
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{transactions.length}</div>
-            <p className="text-xs text-muted-foreground">Toplam hareket</p>
+            <div className="text-3xl font-bold text-blue-600">{transactions.length}</div>
+            <p className="text-xs text-muted-foreground mt-1">Toplam hareket</p>
           </CardContent>
         </Card>
       </div>
 
+      {/* Filtre ve Yazdırma Butonları */}
+      <div className="flex items-center gap-2 print:hidden">
+        <Button
+          variant={showFilters ? 'default' : 'outline'}
+          onClick={() => setShowFilters(!showFilters)}
+          className="gap-2"
+        >
+          <Filter className="h-4 w-4" />
+          Filtrele
+        </Button>
+        <Button variant="outline" onClick={handleExportPDF} className="gap-2">
+          <Download className="h-4 w-4" />
+          PDF İndir
+        </Button>
+        <Button variant="outline" onClick={handlePrint} className="gap-2">
+          <Printer className="h-4 w-4" />
+          Yazdır
+        </Button>
+        {(transactionType !== 'all' || paymentType !== 'all') && (
+          <Button variant="ghost" onClick={clearFilters} className="gap-2">
+            <X className="h-4 w-4" />
+            Filtreleri Temizle
+          </Button>
+        )}
+      </div>
+
+      {/* Filtre Paneli */}
+      {showFilters && (
+        <Card className="print:hidden">
+          <CardHeader>
+            <CardTitle className="text-base">Filtreler</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="space-y-2">
+                <Label htmlFor="startDate">Başlangıç Tarihi</Label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="endDate">Bitiş Tarihi</Label>
+                <Input
+                  id="endDate"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="transactionType">İşlem Tipi</Label>
+                <Select value={transactionType} onValueChange={setTransactionType}>
+                  <SelectTrigger id="transactionType">
+                    <SelectValue placeholder="Tümü" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tümü</SelectItem>
+                    <SelectItem value="hakedis">Hakediş</SelectItem>
+                    <SelectItem value="odeme">Ödeme</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="paymentType">Ödeme Tipi</Label>
+                <Select value={paymentType} onValueChange={setPaymentType}>
+                  <SelectTrigger id="paymentType">
+                    <SelectValue placeholder="Tümü" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tümü</SelectItem>
+                    <SelectItem value="cash">Nakit</SelectItem>
+                    <SelectItem value="bank">Banka</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* İşlem Listesi */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Hesap Hareketleri</CardTitle>
+      <Card className="border-t-4 border-t-primary">
+        <CardHeader className="bg-muted/30">
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Hesap Hareketleri
+          </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           {loading ? (
-            <div className="flex items-center justify-center py-8">
+            <div className="flex items-center justify-center py-12">
               <div className="text-muted-foreground">Yükleniyor...</div>
             </div>
-          ) : transactions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-muted-foreground">Henüz hesap hareketi bulunmuyor</p>
+          ) : filteredTransactions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <FileText className="h-12 w-12 text-muted-foreground/50 mb-4" />
+              <p className="text-muted-foreground font-medium">
+                {transactions.length === 0 ? 'Henüz hesap hareketi bulunmuyor' : 'Filtreye uygun işlem bulunamadı'}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {transactions.length === 0 ? 'Hakediş veya ödeme ekleyerek başlayın' : 'Farklı filtre kriterleri deneyin'}
+              </p>
             </div>
           ) : (
-            <div className="rounded-md border">
+            <div className="overflow-hidden">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Tarih</TableHead>
-                    <TableHead>İşlem Tipi</TableHead>
-                    <TableHead>Açıklama</TableHead>
-                    <TableHead className="text-right">Borç</TableHead>
-                    <TableHead className="text-right">Alacak</TableHead>
-                    <TableHead className="text-right">Bakiye</TableHead>
-                    <TableHead>Ödeme Tipi</TableHead>
-                    <TableHead>İşlem No</TableHead>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="font-semibold">Tarih</TableHead>
+                    <TableHead className="font-semibold">İşlem</TableHead>
+                    <TableHead className="font-semibold">Açıklama</TableHead>
+                    <TableHead className="text-right font-semibold">Borç</TableHead>
+                    <TableHead className="text-right font-semibold">Alacak</TableHead>
+                    <TableHead className="text-right font-semibold">Bakiye</TableHead>
+                    <TableHead className="font-semibold">Ödeme</TableHead>
+                    <TableHead className="font-semibold">İşlem No</TableHead>
                     <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {transactions.map((transaction) => (
-                    <TableRow key={transaction.id}>
-                      <TableCell>
-                        {new Date(transaction.transaction_date).toLocaleDateString('tr-TR')}
+                  {filteredTransactions.map((transaction, index) => (
+                    <TableRow 
+                      key={transaction.id}
+                      className={`cursor-pointer hover:bg-muted/50 transition-colors ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}
+                      onClick={() => handleTransactionClick(transaction)}
+                    >
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <div className="h-8 w-1 rounded-full bg-primary/20" />
+                          {new Date(transaction.transaction_date).toLocaleDateString('tr-TR', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric'
+                          })}
+                        </div>
                       </TableCell>
                       <TableCell>
-                        <Badge className={TRANSACTION_TYPE_COLORS[transaction.transaction_type]}>
+                        <Badge className={`${TRANSACTION_TYPE_COLORS[transaction.transaction_type]} font-medium`}>
                           {TRANSACTION_TYPE_LABELS[transaction.transaction_type] || transaction.transaction_type}
                         </Badge>
                       </TableCell>
                       <TableCell className="max-w-[250px]">
-                        <div className="truncate">{transaction.description || '-'}</div>
+                        <div className="font-medium truncate">{transaction.description || '-'}</div>
                         {transaction.notes && (
-                          <div className="text-xs text-muted-foreground truncate mt-1">
+                          <div className="text-xs text-muted-foreground truncate mt-0.5">
                             {transaction.notes}
                           </div>
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        {transaction.debit_amount > 0 ? (
-                          <span className="text-orange-600 font-medium flex items-center justify-end gap-1">
-                            <TrendingDown className="h-3 w-3" />
-                            {formatCurrency(transaction.debit_amount)}
-                          </span>
+                        {(transaction.debit_amount || 0) > 0 ? (
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-orange-100 dark:bg-orange-950/30">
+                            <TrendingDown className="h-3.5 w-3.5 text-orange-600" />
+                            <span className="text-orange-700 dark:text-orange-400 font-semibold">
+                              {formatCurrency(transaction.debit_amount || 0)}
+                            </span>
+                          </div>
                         ) : (
-                          '-'
+                          <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        {transaction.credit_amount > 0 ? (
-                          <span className="text-green-600 font-medium flex items-center justify-end gap-1">
-                            <TrendingUp className="h-3 w-3" />
-                            {formatCurrency(transaction.credit_amount)}
-                          </span>
+                        {(transaction.credit_amount || 0) > 0 ? (
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-100 dark:bg-emerald-950/30">
+                            <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
+                            <span className="text-emerald-700 dark:text-emerald-400 font-semibold">
+                              {formatCurrency(transaction.credit_amount || 0)}
+                            </span>
+                          </div>
                         ) : (
-                          '-'
+                          <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-right font-semibold">
-                        <span className={transaction.balance > 0 ? 'text-green-600' : transaction.balance < 0 ? 'text-red-600' : ''}>
-                          {formatCurrency(Math.abs(transaction.balance))}
-                        </span>
+                      <TableCell className="text-right">
+                        <div className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-md font-bold ${
+                          (transaction.balance || 0) > 0 
+                            ? 'bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400' 
+                            : (transaction.balance || 0) < 0 
+                            ? 'bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400' 
+                            : 'bg-gray-100 dark:bg-gray-950/30 text-gray-700 dark:text-gray-400'
+                        }`}>
+                          {formatCurrency(Math.abs(transaction.balance || 0))}
+                        </div>
                       </TableCell>
                       <TableCell>
-                        {transaction.payment_type ? (
-                          <Badge variant="outline">
-                            {transaction.payment_type === 'cash' ? 'Nakit' : 'Banka'}
+                        {transaction.transaction_type === 'odeme' && transaction.payment_type ? (
+                          <Badge variant="outline" className="font-medium">
+                            {transaction.payment_type === 'cash' ? '💵 Nakit' : '🏦 Banka'}
                           </Badge>
                         ) : (
-                          '-'
+                          <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {transaction.transaction_number || '-'}
+                      <TableCell>
+                        <code className="text-xs bg-muted px-2 py-1 rounded">
+                          {transaction.transaction_number || '-'}
+                        </code>
                       </TableCell>
                       <TableCell>
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteClick(transaction);
-                          }}
+                          className="hover:bg-red-100 hover:text-red-700 dark:hover:bg-red-950/30"
+                          onClick={(e) => handleDeleteClick(transaction, e)}
                         >
-                          <Trash2 className="h-4 w-4 text-red-600" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -256,6 +543,91 @@ export function PersonnelTransactionsTab({ personnelId }: PersonnelTransactionsT
           )}
         </CardContent>
       </Card>
+
+      {/* Transaction Detail Dialog */}
+      <AlertDialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
+        <AlertDialogContent className="max-w-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              İşlem Detayları
+            </AlertDialogTitle>
+          </AlertDialogHeader>
+          {selectedTransaction && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Tarih</p>
+                  <p className="text-base font-semibold">
+                    {new Date(selectedTransaction.transaction_date).toLocaleDateString('tr-TR', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric'
+                    })}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">İşlem Tipi</p>
+                  <Badge className={`${TRANSACTION_TYPE_COLORS[selectedTransaction.transaction_type]} font-medium mt-1`}>
+                    {TRANSACTION_TYPE_LABELS[selectedTransaction.transaction_type]}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {selectedTransaction.transaction_type === 'hakedis' ? 'Alacak Tutarı' : 'Borç Tutarı'}
+                  </p>
+                  <p className={`text-2xl font-bold ${selectedTransaction.transaction_type === 'hakedis' ? 'text-emerald-600' : 'text-orange-600'}`}>
+                    {formatCurrency(selectedTransaction.transaction_type === 'hakedis' ? (selectedTransaction.credit_amount || 0) : (selectedTransaction.debit_amount || 0))}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">İşlem Sonrası Bakiye</p>
+                  <p className={`text-2xl font-bold ${(selectedTransaction.balance || 0) > 0 ? 'text-green-600' : (selectedTransaction.balance || 0) < 0 ? 'text-red-600' : 'text-gray-600'}`}>
+                    {formatCurrency(Math.abs(selectedTransaction.balance || 0))}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {(selectedTransaction.balance || 0) > 0 ? 'Alacaklı' : (selectedTransaction.balance || 0) < 0 ? 'Borçlu' : 'Dengede'}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Açıklama</p>
+                <p className="text-base">{selectedTransaction.description || '-'}</p>
+              </div>
+
+              {selectedTransaction.transaction_type === 'odeme' && selectedTransaction.payment_type && (
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Ödeme Tipi</p>
+                  <Badge variant="outline" className="font-medium mt-1">
+                    {selectedTransaction.payment_type === 'cash' ? '💵 Nakit' : '🏦 Banka Transferi'}
+                  </Badge>
+                </div>
+              )}
+
+              {selectedTransaction.notes && (
+                <div className="p-4 bg-muted/30 rounded-lg">
+                  <p className="text-sm font-medium text-muted-foreground mb-2">Notlar</p>
+                  <p className="text-sm whitespace-pre-wrap">{selectedTransaction.notes}</p>
+                </div>
+              )}
+
+              <div className="pt-2 border-t">
+                <p className="text-xs text-muted-foreground">İşlem No: {selectedTransaction.transaction_number}</p>
+                <p className="text-xs text-muted-foreground">
+                  Oluşturulma: {selectedTransaction.created_at ? new Date(selectedTransaction.created_at).toLocaleString('tr-TR') : '-'}
+                </p>
+              </div>
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel>Kapat</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

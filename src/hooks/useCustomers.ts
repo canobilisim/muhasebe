@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
-import { CustomerService } from '@/services/customerService'
-import type { Customer, CustomerFilter, PaginatedResponse } from '@/types'
+import { CustomerService, type CustomerStats } from '@/services/customerService'
+import type { Customer, CustomerFilter } from '@/types'
 
 export const useCustomers = (initialFilter: CustomerFilter = {}) => {
   const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<CustomerFilter>(initialFilter)
+  const [stats, setStats] = useState<CustomerStats>({ totalCount: 0, activeCount: 0, totalBalance: 0, customersWithDebt: 0 })
   const [pagination, setPagination] = useState({
     page: 1,
     pageSize: 20,
@@ -19,11 +20,10 @@ export const useCustomers = (initialFilter: CustomerFilter = {}) => {
     setError(null)
     
     try {
-      const result: PaginatedResponse<Customer> = await CustomerService.getCustomers(
-        filter,
-        page,
-        pagination.pageSize
-      )
+      const [result, statsData] = await Promise.all([
+        CustomerService.getCustomers(filter, page, pagination.pageSize),
+        page === 1 ? CustomerService.getCustomerStats() : Promise.resolve(stats)
+      ])
       
       setCustomers(result.data)
       setPagination({
@@ -32,12 +32,13 @@ export const useCustomers = (initialFilter: CustomerFilter = {}) => {
         totalPages: result.totalPages,
         totalCount: result.count
       })
+      if (page === 1) setStats(statsData)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Müşteri listesi alınamadı')
     } finally {
       setLoading(false)
     }
-  }, [filter, pagination.pageSize])
+  }, [filter, pagination.pageSize, stats])
 
   const refreshCustomers = useCallback(() => {
     fetchCustomers(pagination.page)
@@ -73,6 +74,7 @@ export const useCustomers = (initialFilter: CustomerFilter = {}) => {
     error,
     filter,
     pagination,
+    stats,
     updateFilter,
     refreshCustomers,
     goToPage,

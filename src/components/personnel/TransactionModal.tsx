@@ -37,7 +37,7 @@ type Personnel = Database['public']['Tables']['personnel']['Row'];
 
 interface TransactionModalProps {
   personnel: Personnel;
-  transactionType: 'hakedis' | 'avans' | 'odeme' | 'kesinti';
+  transactionType: 'hakedis' | 'odeme';
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
@@ -45,9 +45,7 @@ interface TransactionModalProps {
 
 const TRANSACTION_LABELS: Record<string, string> = {
   hakedis: 'Hakediş',
-  avans: 'Avans',
   odeme: 'Ödeme',
-  kesinti: 'Kesinti',
 };
 
 const formSchema = z.object({
@@ -92,9 +90,9 @@ export function TransactionModal({
 
       const amount = parseFloat(data.amount);
 
-      // Hakediş ve kesinti için credit (alacak), avans ve ödeme için debit (borç)
+      // Hakediş için credit (alacak), Ödeme için debit (borç)
       const isCredit = transactionType === 'hakedis';
-      const isDebit = transactionType === 'avans' || transactionType === 'odeme' || transactionType === 'kesinti';
+      const isDebit = transactionType === 'odeme';
 
       await createTransaction({
         personnel_id: personnel.id,
@@ -105,7 +103,8 @@ export function TransactionModal({
         description: data.description,
         debit_amount: isDebit ? amount : 0,
         credit_amount: isCredit ? amount : 0,
-        payment_type: data.payment_type || null,
+        // Ödeme tipi sadece ödeme işlemlerinde kaydet
+        payment_type: transactionType === 'odeme' ? (data.payment_type || null) : null,
         notes: data.notes || null,
       });
 
@@ -176,11 +175,7 @@ export function TransactionModal({
                       placeholder={
                         transactionType === 'hakedis'
                           ? 'Örn: Ocak 2024 Maaşı'
-                          : transactionType === 'avans'
-                          ? 'Örn: Acil Avans'
-                          : transactionType === 'odeme'
-                          ? 'Örn: Maaş Ödemesi'
-                          : 'Örn: SGK Kesintisi'
+                          : 'Örn: Maaş Ödemesi'
                       }
                       {...field}
                     />
@@ -190,30 +185,33 @@ export function TransactionModal({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="payment_type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Ödeme Tipi</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Ödeme tipi seçin" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="cash">Nakit</SelectItem>
-                      <SelectItem value="bank">Banka Transferi</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Ödeme tipi sadece ödeme işlemlerinde göster */}
+            {transactionType === 'odeme' && (
+              <FormField
+                control={form.control}
+                name="payment_type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Ödeme Tipi</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Ödeme tipi seçin" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="cash">Nakit</SelectItem>
+                        <SelectItem value="bank">Banka Transferi</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}

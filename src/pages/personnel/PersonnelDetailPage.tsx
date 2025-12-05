@@ -31,8 +31,9 @@ export default function PersonnelDetailPage() {
   const [personnel, setPersonnel] = useState<Personnel | null>(null);
   const [loading, setLoading] = useState(true);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
-  const [transactionType, setTransactionType] = useState<'hakedis' | 'avans' | 'odeme' | 'kesinti'>('hakedis');
+  const [transactionType, setTransactionType] = useState<'hakedis' | 'odeme'>('hakedis');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (id) {
@@ -124,16 +125,6 @@ export default function PersonnelDetailPage() {
           <Button 
             variant="outline" 
             onClick={() => {
-              setTransactionType('avans');
-              setShowTransactionModal(true);
-            }}
-          >
-            <CreditCard className="mr-2 h-4 w-4" />
-            Avans Ver
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => {
               setTransactionType('odeme');
               setShowTransactionModal(true);
             }}
@@ -164,9 +155,27 @@ export default function PersonnelDetailPage() {
         </TabsContent>
 
         <TabsContent value="transactions">
-          <PersonnelTransactionsTab personnelId={personnel.id} />
+          <PersonnelTransactionsTab key={refreshKey} personnelId={personnel.id} personnel={personnel} />
         </TabsContent>
       </Tabs>
+
+      {/* Print Styles */}
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          .print\\:block, .print\\:block * {
+            visibility: visible;
+          }
+          .print\\:hidden {
+            display: none !important;
+          }
+          @page {
+            margin: 1cm;
+          }
+        }
+      `}</style>
 
       {/* Transaction Modal */}
       {showTransactionModal && (
@@ -177,7 +186,7 @@ export default function PersonnelDetailPage() {
           onClose={() => setShowTransactionModal(false)}
           onSuccess={() => {
             setShowTransactionModal(false);
-            loadPersonnel();
+            setRefreshKey(prev => prev + 1);
           }}
         />
       )}

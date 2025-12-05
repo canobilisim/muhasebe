@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   Table,
   TableBody,
@@ -17,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Eye, Edit, Trash2, DollarSign, CreditCard } from 'lucide-react';
+import { MoreHorizontal, Eye, Edit, Trash2, Users } from 'lucide-react';
 import { PersonnelWithStats } from '@/services/personnelService';
 import { formatCurrency } from '@/lib/utils';
 
@@ -27,7 +26,6 @@ interface PersonnelTableProps {
   onPersonnelClick: (id: string) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
-  onRefresh: () => void;
 }
 
 export function PersonnelTable({
@@ -36,11 +34,10 @@ export function PersonnelTable({
   onPersonnelClick,
   onEdit,
   onDelete,
-  onRefresh,
 }: PersonnelTableProps) {
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
+      <div className="flex items-center justify-center py-12">
         <div className="text-muted-foreground">Yükleniyor...</div>
       </div>
     );
@@ -48,8 +45,9 @@ export function PersonnelTable({
 
   if (personnel.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <p className="text-muted-foreground mb-2">Personel bulunamadı</p>
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <Users className="h-16 w-16 text-muted-foreground/50 mb-4" />
+        <p className="text-lg font-medium text-muted-foreground mb-2">Personel bulunamadı</p>
         <p className="text-sm text-muted-foreground">
           Yeni personel eklemek için yukarıdaki butonu kullanın
         </p>
@@ -58,64 +56,76 @@ export function PersonnelTable({
   }
 
   return (
-    <div className="rounded-md border">
+    <div className="overflow-hidden">
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead>Ad Soyad</TableHead>
-            <TableHead>Pozisyon</TableHead>
-            <TableHead>Departman</TableHead>
-            <TableHead>Telefon</TableHead>
-            <TableHead>İşe Başlama</TableHead>
-            <TableHead className="text-right">Maaş</TableHead>
-            <TableHead className="text-right">Kalan Avans</TableHead>
-            <TableHead>Durum</TableHead>
+          <TableRow className="bg-muted/50">
+            <TableHead className="font-semibold">Ad Soyad</TableHead>
+            <TableHead className="font-semibold">Pozisyon</TableHead>
+            <TableHead className="font-semibold">Departman</TableHead>
+            <TableHead className="font-semibold">Telefon</TableHead>
+            <TableHead className="font-semibold">İşe Başlama</TableHead>
+            <TableHead className="text-right font-semibold">Maaş</TableHead>
+            <TableHead className="font-semibold">Durum</TableHead>
             <TableHead className="w-[50px]"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {personnel.map((person) => (
+          {personnel.map((person, index) => (
             <TableRow
               key={person.id}
-              className="cursor-pointer hover:bg-muted/50"
+              className={`cursor-pointer hover:bg-muted/50 transition-colors ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}`}
               onClick={() => onPersonnelClick(person.id)}
             >
-              <TableCell className="font-medium">
-                {person.first_name} {person.last_name}
+              <TableCell className="font-semibold">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-1 rounded-full bg-primary/20" />
+                  {person.first_name} {person.last_name}
+                </div>
               </TableCell>
-              <TableCell>{person.position || '-'}</TableCell>
-              <TableCell>{person.department || '-'}</TableCell>
-              <TableCell>{person.phone || '-'}</TableCell>
               <TableCell>
-                {person.hire_date
-                  ? new Date(person.hire_date).toLocaleDateString('tr-TR')
-                  : '-'}
+                <span className="text-sm">{person.position || '-'}</span>
+              </TableCell>
+              <TableCell>
+                <span className="text-sm">{person.department || '-'}</span>
+              </TableCell>
+              <TableCell>
+                <span className="text-sm font-mono">{person.phone || '-'}</span>
+              </TableCell>
+              <TableCell>
+                <span className="text-sm">
+                  {person.hire_date
+                    ? new Date(person.hire_date).toLocaleDateString('tr-TR', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                      })
+                    : '-'}
+                </span>
               </TableCell>
               <TableCell className="text-right">
-                {formatCurrency(person.monthly_salary)}
-              </TableCell>
-              <TableCell className="text-right">
-                {person.remaining_advances > 0 ? (
-                  <span className="text-orange-600 font-medium">
-                    {formatCurrency(person.remaining_advances)}
+                <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-emerald-100 dark:bg-emerald-950/30">
+                  <span className="text-emerald-700 dark:text-emerald-400 font-semibold">
+                    {formatCurrency(person.monthly_salary || 0)}
                   </span>
-                ) : (
-                  <span className="text-muted-foreground">-</span>
-                )}
+                </div>
               </TableCell>
               <TableCell>
-                <Badge variant={person.is_active ? 'default' : 'secondary'}>
-                  {person.is_active ? 'Aktif' : 'Pasif'}
+                <Badge 
+                  variant={person.is_active ? 'default' : 'secondary'}
+                  className={person.is_active ? 'bg-green-600 hover:bg-green-700' : ''}
+                >
+                  {person.is_active ? '✓ Aktif' : 'Pasif'}
                 </Badge>
               </TableCell>
               <TableCell onClick={(e) => e.stopPropagation()}>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon" className="hover:bg-primary/10">
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuLabel>İşlemler</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => onPersonnelClick(person.id)}>
@@ -126,18 +136,10 @@ export function PersonnelTable({
                       <Edit className="mr-2 h-4 w-4" />
                       Düzenle
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onPersonnelClick(person.id)}>
-                      <DollarSign className="mr-2 h-4 w-4" />
-                      Maaş Öde
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onPersonnelClick(person.id)}>
-                      <CreditCard className="mr-2 h-4 w-4" />
-                      Avans Ver
-                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem 
                       onClick={() => onDelete(person.id)}
-                      className="text-red-600"
+                      className="text-red-600 focus:text-red-600"
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
                       Sil

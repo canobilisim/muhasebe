@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, User, Briefcase, MapPin, Building2, FileText } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +28,7 @@ const personnelSchema = z.object({
   position: z.string().optional(),
   department: z.string().optional(),
   monthly_salary: z.number().min(0, 'Maaş 0 veya daha büyük olmalıdır'),
+  salary_day: z.number().min(1, 'Maaş günü 1-31 arası olmalıdır').max(31, 'Maaş günü 1-31 arası olmalıdır').optional(),
   iban: z.string().optional(),
   bank_name: z.string().optional(),
   notes: z.string().optional(),
@@ -49,6 +50,7 @@ export default function NewPersonnelPage() {
     defaultValues: {
       hire_date: new Date().toISOString().split('T')[0],
       monthly_salary: 0,
+      salary_day: 1,
     },
   });
 
@@ -98,11 +100,14 @@ export default function NewPersonnelPage() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Kişisel Bilgiler */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Kişisel Bilgiler</CardTitle>
+        <Card className="border-l-4 border-l-blue-500">
+          <CardHeader className="bg-muted/30">
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5 text-blue-500" />
+              Kişisel Bilgiler
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="first_name">Ad *</Label>
@@ -154,11 +159,14 @@ export default function NewPersonnelPage() {
         </Card>
 
         {/* İş Bilgileri */}
-        <Card>
-          <CardHeader>
-            <CardTitle>İş Bilgileri</CardTitle>
+        <Card className="border-l-4 border-l-green-500">
+          <CardHeader className="bg-muted/30">
+            <CardTitle className="flex items-center gap-2">
+              <Briefcase className="h-5 w-5 text-green-500" />
+              İş Bilgileri
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="position">Pozisyon</Label>
@@ -191,16 +199,36 @@ export default function NewPersonnelPage() {
                   <p className="text-sm text-red-500 mt-1">{errors.monthly_salary.message}</p>
                 )}
               </div>
+
+              <div>
+                <Label htmlFor="salary_day">Maaş Günü (Ayın Kaçı)</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="31"
+                  placeholder="1-31 arası"
+                  {...register('salary_day', { valueAsNumber: true })}
+                />
+                {errors.salary_day && (
+                  <p className="text-sm text-red-500 mt-1">{errors.salary_day.message}</p>
+                )}
+                <p className="text-xs text-muted-foreground mt-1">
+                  Hesap hareketleri bu günden itibaren filtrelenecektir
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Adres Bilgileri */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Adres Bilgileri</CardTitle>
+        <Card className="border-l-4 border-l-purple-500">
+          <CardHeader className="bg-muted/30">
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-purple-500" />
+              Adres Bilgileri
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="city">İl</Label>
@@ -221,11 +249,14 @@ export default function NewPersonnelPage() {
         </Card>
 
         {/* Banka Bilgileri */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Banka Bilgileri</CardTitle>
+        <Card className="border-l-4 border-l-amber-500">
+          <CardHeader className="bg-muted/30">
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-amber-500" />
+              Banka Bilgileri
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="bank_name">Banka Adı</Label>
@@ -241,25 +272,29 @@ export default function NewPersonnelPage() {
         </Card>
 
         {/* Notlar */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Notlar</CardTitle>
+        <Card className="border-l-4 border-l-slate-500">
+          <CardHeader className="bg-muted/30">
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-slate-500" />
+              Notlar
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <Textarea {...register('notes')} rows={4} placeholder="Ek notlar..." />
+          <CardContent className="pt-6">
+            <Textarea {...register('notes')} rows={4} placeholder="Ek notlar..." className="resize-none" />
           </CardContent>
         </Card>
 
         {/* Actions */}
-        <div className="flex justify-end gap-4">
+        <div className="flex justify-end gap-4 sticky bottom-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 border-t">
           <Button
             type="button"
             variant="outline"
+            size="lg"
             onClick={() => navigate('/personnel')}
           >
             İptal
           </Button>
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" disabled={loading} size="lg" className="min-w-[150px]">
             {loading ? 'Kaydediliyor...' : 'Personel Ekle'}
           </Button>
         </div>

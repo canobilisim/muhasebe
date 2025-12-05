@@ -14,7 +14,7 @@ import {
   ExcelImportModal,
   BulkPriceUpdateModal
 } from '@/components/stock'
-import { Edit, Plus, Upload, Calculator, Download, Trash2 } from 'lucide-react'
+import { Edit, Plus, Upload, Calculator, Download, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { ExcelService } from '@/services/excelService'
 import {
   Dialog,
@@ -36,8 +36,12 @@ const ProductManagePage = () => {
     bulkImportProducts,
     bulkUpdatePrices,
     updateFilter,
-    refreshProducts
-  } = useProducts()
+    refreshProducts,
+    paginationInfo,
+    goToPage,
+    nextPage,
+    prevPage
+  } = useProducts({}, { paginated: true, pageSize: 50 })
 
   const [categories, setCategories] = useState<string[]>([])
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -249,7 +253,7 @@ const ProductManagePage = () => {
                 </div>
                 <div className="flex-1">
                   <CardTitle className="text-lg">Ürünler</CardTitle>
-                  <p className="text-sm text-gray-600 mt-1">{products.length} ürün bulundu</p>
+                  <p className="text-sm text-gray-600 mt-1">{paginationInfo.totalCount} ürün bulundu</p>
                 </div>
               </div>
               {selectedProductIds.length > 0 && (
@@ -286,6 +290,65 @@ const ProductManagePage = () => {
               selectedProducts={selectedProductIds}
               onSelectionChange={setSelectedProductIds}
             />
+
+            {/* Pagination Controls */}
+            {paginationInfo.totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                <div className="text-sm text-gray-600">
+                  Sayfa {paginationInfo.page} / {paginationInfo.totalPages}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={prevPage}
+                    disabled={paginationInfo.page <= 1 || isLoading}
+                  >
+                    <ChevronLeft className="w-4 h-4 mr-1" />
+                    Önceki
+                  </Button>
+                  
+                  {/* Page numbers */}
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, paginationInfo.totalPages) }, (_, i) => {
+                      let pageNum: number
+                      if (paginationInfo.totalPages <= 5) {
+                        pageNum = i + 1
+                      } else if (paginationInfo.page <= 3) {
+                        pageNum = i + 1
+                      } else if (paginationInfo.page >= paginationInfo.totalPages - 2) {
+                        pageNum = paginationInfo.totalPages - 4 + i
+                      } else {
+                        pageNum = paginationInfo.page - 2 + i
+                      }
+                      
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={paginationInfo.page === pageNum ? 'default' : 'outline'}
+                          size="sm"
+                          className="w-8 h-8 p-0"
+                          onClick={() => goToPage(pageNum)}
+                          disabled={isLoading}
+                        >
+                          {pageNum}
+                        </Button>
+                      )
+                    })}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={nextPage}
+                    disabled={paginationInfo.page >= paginationInfo.totalPages || isLoading}
+                  >
+                    Sonraki
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

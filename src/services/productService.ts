@@ -1,6 +1,21 @@
 import { supabase } from '@/lib/supabase'
 import { Product, ProductFilter, ProductInsert, ProductUpdate, ApiResponse } from '@/types'
 
+export interface PaginatedResponse<T> {
+  data: T[]
+  totalCount: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
+export interface ProductPaginationParams {
+  page?: number
+  pageSize?: number
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+}
+
 export class ProductService {
   /**
    * Search products by barcode
@@ -79,7 +94,7 @@ export class ProductService {
   }
 
   /**
-   * Get products with filters
+   * Get products with filters (legacy - returns all)
    */
   static async getProducts(filter: ProductFilter = {}): Promise<ApiResponse<Product[]>> {
     try {
@@ -117,6 +132,85 @@ export class ProductService {
       console.error('Error getting products:', error)
       return {
         data: [],
+        error: 'Ürünler getirilirken hata oluştu',
+        success: false
+      }
+    }
+  }
+
+  /**
+   * Get products with pagination - backend handles all calculations
+   */
+  static async getProductsPaginated(
+    filter: ProductFilter = {},
+    pagination: ProductPaginationParams = {}
+  ): Promise<ApiResponse<PaginatedResponse<Product>>> {
+    try {
+      const { page = 1, pageSize = 50, sortBy = 'name', sortOrder = 'asc' } = pagination
+      const from = (page - 1) * pageSize
+      const to = from + pageSize - 1
+
+      // First get total count with filters
+      let countQuery = supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+
+      // Apply filters to count query
+      if (filter.category) {
+        countQuery = countQuery.eq('category', filter.category)
+      }
+      if (filter.isActive !== undefined) {
+        countQuery = countQuery.eq('is_active', filter.isActive)
+      }
+      if (filter.search) {
+        countQuery = countQuery.or(`name.ilike.%${filter.search}%,barcode.ilike.%${filter.search}%`)
+      }
+
+      const { count, error: countError } = await countQuery
+
+      if (countError) throw countError
+
+      // Now get paginated data
+      let dataQuery = supabase
+        .from('products')
+        .select('*')
+
+      // Apply filters
+      if (filter.category) {
+        dataQuery = dataQuery.eq('category', filter.category)
+      }
+      if (filter.isActive !== undefined) {
+        dataQuery = dataQuery.eq('is_active', filter.isActive)
+      }
+      if (filter.search) {
+        dataQuery = dataQuery.or(`name.ilike.%${filter.search}%,barcode.ilike.%${filter.search}%`)
+      }
+
+      // Apply sorting and pagination
+      const { data, error } = await dataQuery
+        .order(sortBy, { ascending: sortOrder === 'asc' })
+        .range(from, to)
+
+      if (error) throw error
+
+      const totalCount = count || 0
+      const totalPages = Math.ceil(totalCount / pageSize)
+
+      return {
+        data: {
+          data: data || [],
+          totalCount,
+          page,
+          pageSize,
+          totalPages
+        },
+        error: null,
+        success: true
+      }
+    } catch (error) {
+      console.error('Error getting paginated products:', error)
+      return {
+        data: null,
         error: 'Ürünler getirilirken hata oluştu',
         success: false
       }

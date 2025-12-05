@@ -1,32 +1,85 @@
-import { useState, useEffect } from 'react'
-import { ProductService } from '@/services/productService'
+import { useState, useEffect, useCallback } from 'react'
+import { ProductService, ProductPaginationParams, PaginatedResponse } from '@/services/productService'
 import { Product, ProductFilter, ProductInsert, ProductUpdate } from '@/types'
 import { useFastSaleStore } from '@/stores/fastSaleStore'
 
-export const useProducts = (initialFilter: ProductFilter = {}) => {
+interface UseProductsOptions {
+  paginated?: boolean
+  pageSize?: number
+}
+
+export const useProducts = (initialFilter: ProductFilter = {}, options: UseProductsOptions = {}) => {
+  const { paginated = false, pageSize = 50 } = options
   const [products, setProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<ProductFilter>(initialFilter)
+  const [pagination, setPagination] = useState<ProductPaginationParams>({
+    page: 1,
+    pageSize,
+    sortBy: 'name',
+    sortOrder: 'asc'
+  })
+  const [paginationInfo, setPaginationInfo] = useState<Omit<PaginatedResponse<Product>, 'data'>>({
+    totalCount: 0,
+    page: 1,
+    pageSize,
+    totalPages: 0
+  })
   const refreshFastSaleData = useFastSaleStore(state => state.refreshData)
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setIsLoading(true)
     setError(null)
     
     try {
-      const response = await ProductService.getProducts(filter)
-      if (response.success && response.data) {
-        setProducts(response.data)
+      if (paginated) {
+        const response = await ProductService.getProductsPaginated(filter, pagination)
+        if (response.success && response.data) {
+          setProducts(response.data.data)
+          setPaginationInfo({
+            totalCount: response.data.totalCount,
+            page: response.data.page,
+            pageSize: response.data.pageSize,
+            totalPages: response.data.totalPages
+          })
+        } else {
+          setError(response.error || 'Ürünler yüklenirken hata oluştu')
+        }
       } else {
-        setError(response.error || 'Ürünler yüklenirken hata oluştu')
+        const response = await ProductService.getProducts(filter)
+        if (response.success && response.data) {
+          setProducts(response.data)
+        } else {
+          setError(response.error || 'Ürünler yüklenirken hata oluştu')
+        }
       }
     } catch (err) {
       setError('Ürünler yüklenirken hata oluştu')
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [filter, pagination, paginated])
+
+  const goToPage = useCallback((page: number) => {
+    setPagination(prev => ({ ...prev, page }))
+  }, [])
+
+  const nextPage = useCallback(() => {
+    if (paginationInfo.page < paginationInfo.totalPages) {
+      setPagination(prev => ({ ...prev, page: prev.page! + 1 }))
+    }
+  }, [paginationInfo.page, paginationInfo.totalPages])
+
+  const prevPage = useCallback(() => {
+    if (paginationInfo.page > 1) {
+      setPagination(prev => ({ ...prev, page: prev.page! - 1 }))
+    }
+  }, [paginationInfo.page])
+
+  const setSort = useCallback((sortBy: string, sortOrder: 'asc' | 'desc') => {
+    setPagination(prev => ({ ...prev, sortBy, sortOrder, page: 1 }))
+  }, [])
 
   const createProduct = async (productData: ProductInsert) => {
     setIsLoading(true)
@@ -135,6 +188,10 @@ export const useProducts = (initialFilter: ProductFilter = {}) => {
 
   const updateFilter = (newFilter: ProductFilter) => {
     setFilter(newFilter)
+    // Reset to page 1 when filter changes
+    if (paginated) {
+      setPagination(prev => ({ ...prev, page: 1 }))
+    }
   }
 
   const bulkImportProducts = async (products: ProductInsert[]) => {
@@ -198,7 +255,7 @@ export const useProducts = (initialFilter: ProductFilter = {}) => {
 
   useEffect(() => {
     fetchProducts()
-  }, [filter])
+  }, [fetchProducts])
 
   return {
     products,
@@ -212,6 +269,12 @@ export const useProducts = (initialFilter: ProductFilter = {}) => {
     bulkImportProducts,
     bulkUpdatePrices,
     updateFilter,
-    refreshProducts
+    refreshProducts,
+    // Pagination
+    paginationInfo,
+    goToPage,
+    nextPage,
+    prevPage,
+    setSort
   }
 }

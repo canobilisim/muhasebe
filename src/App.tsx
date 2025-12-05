@@ -18,7 +18,6 @@ const CustomersPage = lazy(() => import('@/pages/CustomersPage'))
 const CustomerDetailPage = lazy(() => import('@/pages/CustomerDetailPage'))
 
 // Product pages
-const ProductsListPage = lazy(() => import('@/pages/products/ProductsListPage'))
 const ProductManagePage = lazy(() => import('@/pages/products/ProductManagePage'))
 const ProductCreatePage = lazy(() => import('@/pages/products/ProductCreatePage'))
 const ProductEditPage = lazy(() => import('@/pages/products/ProductEditPage'))
@@ -268,14 +267,6 @@ function App() {
               />
               
               {/* Products - Manager and above */}
-              <Route 
-                path="/products" 
-                element={
-                  <PrivateRoute requiredRoles={['admin', 'manager']}>
-                    <ProductsListPage />
-                  </PrivateRoute>
-                } 
-              />
               <Route 
                 path="/products/manage" 
                 element={

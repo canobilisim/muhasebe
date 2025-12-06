@@ -8,8 +8,9 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Search, CheckCircle2 } from 'lucide-react';
+import { Loader2, Search, CheckCircle2, Plus } from 'lucide-react';
 import { SerialNumberService } from '@/services/serialNumberService';
 import { showToast } from '@/lib/toast';
 import type { SerialNumber } from '@/types/product';
@@ -17,7 +18,7 @@ import type { SerialNumber } from '@/types/product';
 interface SerialNumberSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelect: (serialNumber: SerialNumber) => void;
+  onSelect: (serialNumber: SerialNumber | null) => void; // null = seri numarası olmadan devam et
   productId: string;
   productName: string;
 }
@@ -35,6 +36,10 @@ export const SerialNumberSelectionModal: React.FC<SerialNumberSelectionModalProp
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSerialNumber, setSelectedSerialNumber] = useState<SerialNumber | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newSerialNumber, setNewSerialNumber] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
+  const addInputRef = useRef<HTMLInputElement>(null);
 
   // Load available serial numbers when modal opens
   useEffect(() => {
@@ -78,9 +83,7 @@ export const SerialNumberSelectionModal: React.FC<SerialNumberSelectionModalProp
         setSerialNumbers(result.data);
         setFilteredSerialNumbers(result.data);
         
-        if (result.data.length === 0) {
-          showToast.error('Bu ürün için müsait seri numarası yok!');
-        }
+        // Seri numarası yoksa toast gösterme - kullanıcı "Seri No Olmadan Devam Et" butonunu kullanabilir
       } else {
         showToast.error(result.error || 'Seri numaraları yüklenemedi');
         setSerialNumbers([]);
@@ -115,6 +118,61 @@ export const SerialNumberSelectionModal: React.FC<SerialNumberSelectionModalProp
     onClose();
   };
 
+  const handleContinueWithoutSerial = () => {
+    onSelect(null); // null = seri numarası olmadan devam et
+    onClose();
+  };
+
+  const handleShowAddForm = () => {
+    setShowAddForm(true);
+    setTimeout(() => {
+      addInputRef.current?.focus();
+    }, 100);
+  };
+
+  const handleCancelAdd = () => {
+    setShowAddForm(false);
+    setNewSerialNumber('');
+  };
+
+  const handleAddSerialNumber = async () => {
+    if (!newSerialNumber.trim()) {
+      showToast.error('Lütfen seri numarası girin');
+      return;
+    }
+
+    setIsAdding(true);
+    try {
+      const result = await SerialNumberService.addSerialNumber(productId, newSerialNumber.trim());
+      if (result.success && result.data) {
+        showToast.success('Seri numarası eklendi');
+        // Listeyi yenile
+        await loadSerialNumbers();
+        // Yeni eklenen seri numarasını otomatik seç
+        setSelectedSerialNumber(result.data);
+        setShowAddForm(false);
+        setNewSerialNumber('');
+      } else {
+        showToast.error(result.error || 'Seri numarası eklenemedi');
+      }
+    } catch (error) {
+      console.error('Error adding serial number:', error);
+      showToast.error('Seri numarası eklenirken hata oluştu');
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
+  const handleAddKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddSerialNumber();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      handleCancelAdd();
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && selectedSerialNumber) {
       e.preventDefault();
@@ -137,18 +195,75 @@ export const SerialNumberSelectionModal: React.FC<SerialNumberSelectionModalProp
 
         <div className="flex flex-col gap-4 flex-1 min-h-0">
           {/* Search Input */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              ref={searchInputRef}
-              placeholder="Seri numarası ara veya barkod okut..."
-              className="pl-10"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={isLoading}
-            />
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                ref={searchInputRef}
+                placeholder="Seri numarası ara veya barkod okut..."
+                className="pl-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={isLoading || showAddForm}
+              />
+            </div>
+            {!showAddForm && (
+              <Button
+                variant="outline"
+                onClick={handleShowAddForm}
+                className="shrink-0"
+                disabled={isLoading}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Yeni Ekle
+              </Button>
+            )}
           </div>
+
+          {/* Add Serial Number Form */}
+          {showAddForm && (
+            <div className="border rounded-lg p-4 bg-blue-50 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Yeni Seri Numarası</Label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCancelAdd}
+                  disabled={isAdding}
+                >
+                  İptal
+                </Button>
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  ref={addInputRef}
+                  placeholder="Seri numarasını girin veya okutun..."
+                  value={newSerialNumber}
+                  onChange={(e) => setNewSerialNumber(e.target.value)}
+                  onKeyDown={handleAddKeyDown}
+                  disabled={isAdding}
+                  className="flex-1"
+                />
+                <Button
+                  onClick={handleAddSerialNumber}
+                  disabled={isAdding || !newSerialNumber.trim()}
+                >
+                  {isAdding ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Ekleniyor...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Ekle
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Serial Numbers List */}
           <div className="border rounded-lg flex-1 overflow-auto">
@@ -157,10 +272,15 @@ export const SerialNumberSelectionModal: React.FC<SerialNumberSelectionModalProp
                 <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
               </div>
             ) : filteredSerialNumbers.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-40 text-gray-500">
+              <div className="flex flex-col items-center justify-center h-40 text-gray-500 gap-2">
                 <p className="text-sm">
                   {searchQuery ? 'Seri numarası bulunamadı' : 'Müsait seri numarası yok'}
                 </p>
+                {!searchQuery && (
+                  <p className="text-xs text-orange-600">
+                    "Seri No Olmadan Devam Et" butonunu kullanabilirsiniz
+                  </p>
+                )}
               </div>
             ) : (
               <Table>
@@ -204,16 +324,25 @@ export const SerialNumberSelectionModal: React.FC<SerialNumberSelectionModalProp
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-2 justify-end pt-2 border-t">
-            <Button variant="outline" onClick={handleCancel}>
-              İptal
-            </Button>
-            <Button
-              onClick={handleConfirm}
-              disabled={!selectedSerialNumber || isLoading}
+          <div className="flex gap-2 justify-between pt-2 border-t">
+            <Button 
+              variant="outline" 
+              onClick={handleContinueWithoutSerial}
+              className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
             >
-              Seç ve Sepete Ekle
+              Seri No Olmadan Devam Et
             </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleCancel}>
+                İptal
+              </Button>
+              <Button
+                onClick={handleConfirm}
+                disabled={!selectedSerialNumber || isLoading}
+              >
+                Seç ve Sepete Ekle
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>

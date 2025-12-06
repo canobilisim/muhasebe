@@ -893,19 +893,29 @@ const FastSalePage: React.FC = () => {
 
         // Copy the active cart's lines array
         const updatedLines = [...cart.lines];
-        const existingItemIndex = updatedLines.findIndex(
-          (item: Product) => item.id === product.id
-        );
+        
+        // Seri numaralı ürünler için özel kontrol
+        // Her seri numarası ayrı bir satır olmalı
+        const existingItemIndex = updatedLines.findIndex((item: Product) => {
+          if (product.serialNumberId) {
+            // Seri numaralı ürün: hem product.id hem de serialNumberId eşleşmeli
+            return item.id === product.id && item.serialNumberId === product.serialNumberId;
+          } else {
+            // Normal ürün: sadece product.id eşleşmeli ve seri numarası olmamalı
+            return item.id === product.id && !item.serialNumberId;
+          }
+        });
 
-        if (existingItemIndex >= 0) {
-          // Increase quantity if product already in cart (immutable update)
+        if (existingItemIndex >= 0 && !product.serialNumberId) {
+          // Sadece normal ürünlerde miktarı artır
+          // Seri numaralı ürünler her zaman yeni satır olarak eklenir
           updatedLines[existingItemIndex] = {
             ...updatedLines[existingItemIndex],
             qty: updatedLines[existingItemIndex].qty + 1,
             lineTotal: updatedLines[existingItemIndex].unitPrice * (updatedLines[existingItemIndex].qty + 1),
           };
         } else {
-          // Add new product to cart
+          // Yeni ürün ekle (seri numaralı veya sepette olmayan)
           updatedLines.push({
             ...product,
             lineTotal: product.unitPrice * product.qty,
@@ -1139,15 +1149,16 @@ const FastSalePage: React.FC = () => {
     });
   };
 
-  const removeFromCart = async (itemId: string) => {
+  const removeFromCart = async (lineIndex: number) => {
     // Önce seri numaralı ürün mü kontrol et
     const activeCart = state.carts.find((cart: Cart) => cart.tabId === state.activeCustomerTab);
-    const item = activeCart?.lines.find((item: Product) => item.id === itemId);
+    const item = activeCart?.lines[lineIndex];
     
     // Eğer seri numaralı ürünse, seri numarasını serbest bırak
     if (item?.serialNumberId) {
       try {
         await SerialNumberService.releaseSerialNumber(item.serialNumberId);
+        console.log('Serial number released:', item.serialNumberId);
       } catch (error) {
         console.error('Error releasing serial number:', error);
         // Hata olsa bile sepetten çıkar
@@ -1164,9 +1175,9 @@ const FastSalePage: React.FC = () => {
           return cart; // Return unchanged cart
         }
 
-        // Filter out the removed item (creates new array)
+        // Remove the item at the specific index (creates new array)
         const updatedLines = cart.lines.filter(
-          (item: Product) => item.id !== itemId
+          (_: Product, idx: number) => idx !== lineIndex
         );
 
         // Return updated cart with new lines
@@ -1181,6 +1192,7 @@ const FastSalePage: React.FC = () => {
       console.log('Item removed from cart:', {
         activeTab: prev.activeCustomerTab,
         cartIndex: activeCartIndex,
+        lineIndex,
         itemsCount: updatedCarts[activeCartIndex].lines.length,
       });
 
@@ -1359,22 +1371,33 @@ const FastSalePage: React.FC = () => {
     if (!pendingSerialProduct) return;
 
     try {
-      // Seri numarasını rezerve et
-      const reserveResult = await SerialNumberService.reserveSerialNumber(serialNumber.id);
-      if (!reserveResult.success) {
-        showToast.error(reserveResult.error || 'Seri numarası rezerve edilemedi');
-        return;
+      let productToAdd: Product;
+
+      if (serialNumber === null) {
+        // Seri numarası olmadan devam et
+        productToAdd = {
+          ...pendingSerialProduct.product,
+          // serialNumberId ve serialNumber eklenmez
+        };
+        showToast.success(`${pendingSerialProduct.product.name} sepete eklendi (Seri No: Yok)`);
+      } else {
+        // Seri numarasını rezerve et
+        const reserveResult = await SerialNumberService.reserveSerialNumber(serialNumber.id);
+        if (!reserveResult.success) {
+          showToast.error(reserveResult.error || 'Seri numarası rezerve edilemedi');
+          return;
+        }
+
+        // Ürünü sepete ekle - seri numarası bilgisiyle
+        productToAdd = {
+          ...pendingSerialProduct.product,
+          serialNumberId: serialNumber.id,
+          serialNumber: serialNumber.serial_number,
+        };
+        showToast.success(`${pendingSerialProduct.product.name} sepete eklendi (SN: ${serialNumber.serial_number})`);
       }
 
-      // Ürünü sepete ekle - seri numarası bilgisiyle
-      const productWithSerial: Product = {
-        ...pendingSerialProduct.product,
-        serialNumberId: serialNumber.id,
-        serialNumber: serialNumber.serial_number,
-      };
-
-      addToCart(productWithSerial);
-      showToast.success(`${pendingSerialProduct.product.name} sepete eklendi (SN: ${serialNumber.serial_number})`);
+      addToCart(productToAdd);
 
       // Temizle
       setPendingSerialProduct(null);
@@ -1609,13 +1632,13 @@ const FastSalePage: React.FC = () => {
               </TableHeader>
               <TableBody>
                 {activeCart.lines.length > 0 ? (
-                  activeCart.lines.map((item: Product) => (
-                    <TableRow key={item.id}>
+                  activeCart.lines.map((item: Product, index: number) => (
+                    <TableRow key={item.serialNumberId ? `${item.id}-${item.serialNumberId}` : `${item.id}-${index}`}>
                       <TableCell className="text-center">
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => removeFromCart(item.id)}
+                          onClick={() => removeFromCart(index)}
                           className="hover:bg-red-50 text-red-600 hover:text-red-700 h-8 w-8"
                         >
                           <Trash2 className="h-4 w-4" />

@@ -142,8 +142,9 @@ export function SerialNumberManager({
             Seri Numaraları
           </Label>
           <p className="text-sm text-muted-foreground mt-1">
-            Toplam: {serialNumbers.length} • Mevcut: {availableCount} • Satılan: {soldCount}
+            Mevcut: {availableCount}
             {reservedCount > 0 && ` • Rezerve: ${reservedCount}`}
+            {soldCount > 0 && ` • Satılan: ${soldCount} (gizli)`}
           </p>
         </div>
         <Button
@@ -197,7 +198,7 @@ export function SerialNumberManager({
       {/* Serial Numbers List */}
       {serialNumbers.length > 0 && (
         <div className="border rounded-lg divide-y max-h-[400px] overflow-y-auto">
-          {serialNumbers.map((sn) => (
+          {serialNumbers.filter(sn => sn.status !== 'sold').map((sn) => (
             <div
               key={sn.id}
               className={cn(

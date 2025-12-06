@@ -16,6 +16,7 @@ interface FastSaleProduct {
   category_id: string;
   category_name: string;
   fast_sale_order: number;
+  serial_number_tracking_enabled?: boolean;
 }
 
 interface FastSaleStore {

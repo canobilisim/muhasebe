@@ -226,6 +226,9 @@ export default function RetailSaleDetailPage() {
                           {item.product?.barcode && (
                             <p className="text-sm text-gray-500">Barkod: {item.product.barcode}</p>
                           )}
+                          {item.serial_number && (
+                            <p className="text-sm text-blue-600 font-mono">SN: {item.serial_number.serial_number}</p>
+                          )}
                         </div>
                       </td>
                       <td className="py-3 px-4 text-right">

@@ -31,8 +31,10 @@ import { QuickCustomerModal } from '@/components/pos/QuickCustomerModal';
 import { SplitPaymentModal } from '@/components/pos/SplitPaymentModal';
 import { ProductNotFoundModal } from '@/components/pos/ProductNotFoundModal';
 import { QuickProductAddModal } from '@/components/pos/QuickProductAddModal';
+import { SerialNumberSelectionModal } from '@/components/pos/SerialNumberSelectionModal';
 import { formatNameToTitleCase } from '@/utils/inputFormatters';
 import { SaleService } from '@/services/saleService';
+import { SerialNumberService } from '@/services/serialNumberService';
 
 const initialCart: Cart = {
   tabId: 'tab-1',
@@ -111,13 +113,19 @@ const FastSalePage: React.FC = () => {
   const [showQuickProductAddModal, setShowQuickProductAddModal] = useState(false);
   const [notFoundBarcode, setNotFoundBarcode] = useState('');
 
+  // Seri numarası seçim modalı state
+  const [showSerialNumberModal, setShowSerialNumberModal] = useState(false);
+  const [pendingSerialProduct, setPendingSerialProduct] = useState<{
+    product: Product;
+    dbProduct: any;
+  } | null>(null);
+
   // Use fast sale store instead of local state
   const {
     categories: fastSaleCategories,
     products: fastSaleProducts,
     isLoading: isLoadingFastSale,
     loadData: loadFastSaleData,
-    refreshData: refreshFastSaleData
   } = useFastSaleStore();
   const [state, setState] = useState<POSState>({
     activePriceList: 'Fiyat 1',
@@ -240,7 +248,7 @@ const FastSalePage: React.FC = () => {
       const barcodeResult = await ProductService.searchByBarcode(barcode.trim());
 
       if (barcodeResult.success && barcodeResult.data) {
-        const dbProduct = barcodeResult.data;
+        const dbProduct = barcodeResult.data as any; // DB Product type
 
         if (dbProduct.stock_quantity <= 0) {
           showToast.error(`${dbProduct.name} stokta yok!`);
@@ -248,6 +256,29 @@ const FastSalePage: React.FC = () => {
           return;
         }
 
+        // Seri numaralı ürün kontrolü
+        if (dbProduct.serial_number_tracking_enabled) {
+          const posProduct: Product = {
+            id: dbProduct.id,
+            barcode: dbProduct.barcode,
+            name: dbProduct.name,
+            unitPrice: getPriceByList(dbProduct),
+            qty: 1,
+            discount: 0,
+            currency: 'TRY',
+            vatRate: 18,
+            category: dbProduct.category || 'GENEL',
+            requiresSerialNumber: true,
+          };
+
+          // Modal aç - seri numarası seçimi için
+          setPendingSerialProduct({ product: posProduct, dbProduct });
+          setShowSerialNumberModal(true);
+          setIsSearching(false);
+          return;
+        }
+
+        // Normal ürün - direkt sepete ekle
         const posProduct: Product = {
           id: dbProduct.id,
           barcode: dbProduct.barcode,
@@ -298,7 +329,7 @@ const FastSalePage: React.FC = () => {
       const searchResult = await ProductService.searchProducts(query.trim(), 10);
 
       if (searchResult.success && searchResult.data) {
-        setSearchResults(searchResult.data);
+        setSearchResults(searchResult.data as any[]);
         setShowDropdown(searchResult.data.length > 0);
       } else {
         setSearchResults([]);
@@ -314,17 +345,45 @@ const FastSalePage: React.FC = () => {
   };
 
   // Select product from dropdown
-  const selectProduct = (dbProduct: typeof searchResults[0]) => {
+  const selectProduct = async (dbProduct: any) => {
     if (dbProduct.stock_quantity <= 0) {
       showToast.error(`${dbProduct.name} stokta yok!`);
       return;
     }
 
+    // Seri numaralı ürün kontrolü - önce tam ürün bilgisini çek
+    const fullProductResult = await ProductService.getProductById(dbProduct.id);
+    const fullProduct = fullProductResult.data as any;
+    if (fullProductResult.success && fullProduct?.serial_number_tracking_enabled) {
+      const posProduct: Product = {
+        id: dbProduct.id,
+        barcode: dbProduct.barcode,
+        name: dbProduct.name,
+        unitPrice: getPriceByList(dbProduct),
+        qty: 1,
+        discount: 0,
+        currency: 'TRY',
+        vatRate: 18,
+        category: dbProduct.category || 'GENEL',
+        requiresSerialNumber: true,
+      };
+
+      // Modal aç - seri numarası seçimi için
+      setPendingSerialProduct({ product: posProduct, dbProduct: fullProduct });
+      setShowSerialNumberModal(true);
+      
+      setSearchQuery('');
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    // Normal ürün - direkt sepete ekle
     const posProduct: Product = {
       id: dbProduct.id,
       barcode: dbProduct.barcode,
       name: dbProduct.name,
-      unitPrice: getPriceByList(dbProduct as any),
+      unitPrice: getPriceByList(dbProduct),
       qty: 1,
       discount: 0,
       currency: 'TRY',
@@ -509,7 +568,29 @@ const FastSalePage: React.FC = () => {
 
   // Handle product added from quick add modal
   const handleProductAdded = (product: any) => {
-    // Convert to POS product and add to cart
+    // Seri numaralı ürün kontrolü
+    if (product.serial_number_tracking_enabled) {
+      const posProduct: Product = {
+        id: product.id,
+        barcode: product.barcode,
+        name: product.name,
+        unitPrice: getPriceByList(product),
+        qty: 1,
+        discount: 0,
+        currency: 'TRY',
+        vatRate: 18,
+        category: product.category || 'GENEL',
+        requiresSerialNumber: true,
+      };
+
+      // Modal aç - seri numarası seçimi için
+      setPendingSerialProduct({ product: posProduct, dbProduct: product });
+      setShowSerialNumberModal(true);
+      setSearchQuery('');
+      return;
+    }
+
+    // Normal ürün - direkt sepete ekle
     const posProduct: Product = {
       id: product.id,
       barcode: product.barcode,
@@ -565,11 +646,12 @@ const FastSalePage: React.FC = () => {
       const result = await ProductService.searchByBarcode(barcode.trim());
 
       if (result.success && result.data) {
+        const dbProduct = result.data as any;
         setPriceCheckProduct({
-          name: result.data.name,
-          sale_price_1: result.data.sale_price_1,
-          sale_price_2: result.data.sale_price_2,
-          barcode: result.data.barcode,
+          name: dbProduct.name,
+          sale_price_1: dbProduct.sale_price_1,
+          sale_price_2: dbProduct.sale_price_2,
+          barcode: dbProduct.barcode,
         });
       } else {
         showToast.error('Ürün bulunamadı');
@@ -920,10 +1002,11 @@ const FastSalePage: React.FC = () => {
 
     try {
       // Arka planda kaydet
-      await SaleService.createSale({
+      const saleResult = await SaleService.createSale({
         customerId: activeCustomer?.id || null,
         items: activeCart.lines.map(item => ({
           productId: item.isMiscellaneous ? null : item.id,
+          serialNumberId: item.serialNumberId || null,
           quantity: item.qty,
           unitPrice: item.unitPrice,
           discount: item.discount,
@@ -943,6 +1026,23 @@ const FastSalePage: React.FC = () => {
         dueDate: (useDueDate && dueDate && (paymentType === 'credit' || paymentType === 'partial')) ? dueDate : null,
       });
 
+      // Satış başarılıysa, seri numaralarını "sold" olarak işaretle
+      if (saleResult.success && saleResult.data) {
+        const saleId = saleResult.data.id;
+        
+        // Seri numaralı ürünleri işaretle
+        for (const item of activeCart.lines) {
+          if (item.serialNumberId) {
+            try {
+              await SerialNumberService.markSerialNumberAsSold(item.serialNumberId, saleId);
+            } catch (error) {
+              console.error('Error marking serial number as sold:', error);
+              // Hata olsa bile devam et
+            }
+          }
+        }
+      }
+
       showToast.success('Satış başarıyla kaydedildi!');
     } catch (error) {
       console.error('Sale error:', error);
@@ -954,7 +1054,24 @@ const FastSalePage: React.FC = () => {
     }
   };
 
-  const clearCart = () => {
+  const clearCart = async () => {
+    // Önce rezerve edilmiş seri numaralarını serbest bırak (eğer satış iptal edildiyse)
+    const activeCartData = state.carts.find((cart: Cart) => cart.tabId === state.activeCustomerTab);
+    if (activeCartData) {
+      for (const item of activeCartData.lines) {
+        if (item.serialNumberId) {
+          try {
+            // Not: Satış başarılıysa zaten "sold" olarak işaretlenmiş olacak
+            // Bu fonksiyon sadece iptal durumunda çalışır
+            await SerialNumberService.releaseSerialNumber(item.serialNumberId);
+          } catch (error) {
+            // Hata olsa bile devam et (muhtemelen zaten sold durumunda)
+            console.error('Error releasing serial number on clear:', error);
+          }
+        }
+      }
+    }
+
     setState((prev: POSState) => {
       const updatedCarts = prev.carts.map((cart) => {
         if (cart.tabId === prev.activeCustomerTab) {
@@ -980,6 +1097,15 @@ const FastSalePage: React.FC = () => {
 
   const updateQuantity = (itemId: string, newQty: number) => {
     if (newQty < 1) return;
+
+    // Seri numaralı ürünlerde miktar değiştirilemez
+    const activeCartData = state.carts.find((cart: Cart) => cart.tabId === state.activeCustomerTab);
+    const item = activeCartData?.lines.find((item: Product) => item.id === itemId);
+    
+    if (item?.serialNumberId) {
+      showToast.error('Seri numaralı ürünlerde miktar değiştirilemez!');
+      return;
+    }
 
     setState((prev: POSState) => {
       const updatedCarts = prev.carts.map((cart, index) => {
@@ -1013,7 +1139,21 @@ const FastSalePage: React.FC = () => {
     });
   };
 
-  const removeFromCart = (itemId: string) => {
+  const removeFromCart = async (itemId: string) => {
+    // Önce seri numaralı ürün mü kontrol et
+    const activeCart = state.carts.find((cart: Cart) => cart.tabId === state.activeCustomerTab);
+    const item = activeCart?.lines.find((item: Product) => item.id === itemId);
+    
+    // Eğer seri numaralı ürünse, seri numarasını serbest bırak
+    if (item?.serialNumberId) {
+      try {
+        await SerialNumberService.releaseSerialNumber(item.serialNumberId);
+      } catch (error) {
+        console.error('Error releasing serial number:', error);
+        // Hata olsa bile sepetten çıkar
+      }
+    }
+
     setState((prev: POSState) => {
       const activeCartIndex = prev.carts.findIndex((cart: Cart) => cart.tabId === prev.activeCustomerTab);
       if (activeCartIndex === -1) return prev;
@@ -1211,6 +1351,56 @@ const FastSalePage: React.FC = () => {
       setNoteForItem(itemId);
       setMiscItemNote(item.note || '');
       setShowNoteModal(true);
+    }
+  };
+
+  // Seri numarası seçildiğinde
+  const handleSerialNumberSelected = async (serialNumber: any) => {
+    if (!pendingSerialProduct) return;
+
+    try {
+      // Seri numarasını rezerve et
+      const reserveResult = await SerialNumberService.reserveSerialNumber(serialNumber.id);
+      if (!reserveResult.success) {
+        showToast.error(reserveResult.error || 'Seri numarası rezerve edilemedi');
+        return;
+      }
+
+      // Ürünü sepete ekle - seri numarası bilgisiyle
+      const productWithSerial: Product = {
+        ...pendingSerialProduct.product,
+        serialNumberId: serialNumber.id,
+        serialNumber: serialNumber.serial_number,
+      };
+
+      addToCart(productWithSerial);
+      showToast.success(`${pendingSerialProduct.product.name} sepete eklendi (SN: ${serialNumber.serial_number})`);
+
+      // Temizle
+      setPendingSerialProduct(null);
+      setShowSerialNumberModal(false);
+
+      // Focus back to barcode input
+      if (barcodeInputRef.current) {
+        barcodeInputRef.current.value = '';
+        barcodeInputRef.current.focus();
+      }
+      setSearchQuery('');
+    } catch (error) {
+      console.error('Error handling serial number selection:', error);
+      showToast.error('Seri numarası işlenirken hata oluştu');
+    }
+  };
+
+  // Seri numarası modalı kapatıldığında
+  const handleSerialNumberModalClose = () => {
+    setPendingSerialProduct(null);
+    setShowSerialNumberModal(false);
+    
+    // Focus back to barcode input
+    if (barcodeInputRef.current) {
+      barcodeInputRef.current.value = '';
+      barcodeInputRef.current.focus();
     }
   };
 
@@ -1433,18 +1623,25 @@ const FastSalePage: React.FC = () => {
                       </TableCell>
                       <TableCell className="hidden sm:table-cell text-center text-xs">{item.barcode}</TableCell>
                       <TableCell className="text-center text-xs sm:text-sm">
-                        <div className="flex items-center justify-center gap-1">
-                          {item.name}
-                          {item.isMiscellaneous && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openNoteModal(item.id)}
-                              className="h-6 w-6 p-0"
-                              title={item.note || 'Not ekle'}
-                            >
-                              <FileText className={`h-3 w-3 ${item.note ? 'text-blue-600' : 'text-gray-400'}`} />
-                            </Button>
+                        <div className="flex flex-col items-center justify-center gap-0.5">
+                          <div className="flex items-center gap-1">
+                            {item.name}
+                            {item.isMiscellaneous && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => openNoteModal(item.id)}
+                                className="h-6 w-6 p-0"
+                                title={item.note || 'Not ekle'}
+                              >
+                                <FileText className={`h-3 w-3 ${item.note ? 'text-blue-600' : 'text-gray-400'}`} />
+                              </Button>
+                            )}
+                          </div>
+                          {item.serialNumber && (
+                            <small className="text-[10px] text-gray-500">
+                              SN: {item.serialNumber}
+                            </small>
                           )}
                         </div>
                       </TableCell>
@@ -1457,7 +1654,9 @@ const FastSalePage: React.FC = () => {
                             const newQty = parseInt(e.target.value) || 1;
                             updateQuantity(item.id, newQty);
                           }}
-                          className="w-16 h-8 text-center text-sm p-1 mx-auto"
+                          disabled={!!item.serialNumberId}
+                          className="w-16 h-8 text-center text-sm p-1 mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                          title={item.serialNumberId ? 'Seri numaralı ürünlerde miktar değiştirilemez' : ''}
                         />
                       </TableCell>
                       <TableCell className="text-right hidden md:table-cell text-xs sm:text-sm">
@@ -1789,6 +1988,29 @@ const FastSalePage: React.FC = () => {
                       className="p-2 border-b hover:bg-gray-50 cursor-pointer flex justify-between items-center text-xs sm:text-sm"
                       onClick={() => {
                         const price = getPriceByList(product);
+                        
+                        // Seri numaralı ürün kontrolü
+                        if (product.serial_number_tracking_enabled) {
+                          const posProduct: Product = {
+                            id: product.id,
+                            barcode: product.barcode,
+                            name: product.name,
+                            unitPrice: price,
+                            qty: 1,
+                            discount: 0,
+                            currency: 'TRY',
+                            vatRate: 18,
+                            category: product.category_name,
+                            requiresSerialNumber: true,
+                          };
+                          
+                          // Modal aç - seri numarası seçimi için
+                          setPendingSerialProduct({ product: posProduct, dbProduct: product });
+                          setShowSerialNumberModal(true);
+                          return;
+                        }
+                        
+                        // Normal ürün - direkt sepete ekle
                         const posProduct: Product = {
                           id: product.id,
                           barcode: product.barcode,
@@ -2123,6 +2345,17 @@ const FastSalePage: React.FC = () => {
         onProductAdded={handleProductAdded}
         barcode={notFoundBarcode}
       />
+
+      {/* Seri Numarası Seçim Modal */}
+      {pendingSerialProduct && (
+        <SerialNumberSelectionModal
+          isOpen={showSerialNumberModal}
+          onClose={handleSerialNumberModalClose}
+          onSelect={handleSerialNumberSelected}
+          productId={pendingSerialProduct.dbProduct.id}
+          productName={pendingSerialProduct.product.name}
+        />
+      )}
     </Layout>
   );
 };

@@ -13,6 +13,10 @@ export interface Product {
   lineTotal?: number
   isMiscellaneous?: boolean
   note?: string
+  // Serial number tracking
+  serialNumberId?: string
+  serialNumber?: string
+  requiresSerialNumber?: boolean
 }
 
 export interface Cart {

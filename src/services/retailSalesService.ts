@@ -36,7 +36,8 @@ export async function getRetailSales(
                 user:users!sales_user_id_fkey(*),
                 sale_items(
                   *,
-                  product:products(*)
+                  product:products(*),
+                  serial_number:product_serial_numbers(*)
                 )
             `)
             .eq('branch_id', branchId)
@@ -74,7 +75,7 @@ export async function getRetailSales(
 
         let results = (data || []) as any as SaleWithDetails[]
 
-        // Arama filtresi (satış no, müşteri adı, ürün adı)
+        // Arama filtresi (satış no, müşteri adı, ürün adı, seri numarası)
         if (filter?.search && filter.search.trim()) {
             const searchTerm = filter.search.toLowerCase().trim()
             results = results.filter((sale: any) => {
@@ -88,9 +89,16 @@ export async function getRetailSales(
                     return productName.includes(searchTerm)
                 })
                 
+                // Seri numaralarında ara
+                const hasMatchingSerialNumber = (sale.sale_items || []).some((item: any) => {
+                    const serialNumber = (item.serial_number?.serial_number || '').toLowerCase()
+                    return serialNumber.includes(searchTerm)
+                })
+                
                 return saleNumber.includes(searchTerm) || 
                        customerName.includes(searchTerm) || 
-                       hasMatchingProduct
+                       hasMatchingProduct ||
+                       hasMatchingSerialNumber
             })
         }
 
@@ -171,7 +179,8 @@ export async function getRetailSaleById(saleId: string): Promise<SaleWithDetails
         user:users!sales_user_id_fkey(*),
         sale_items(
           *,
-          product:products(*)
+          product:products(*),
+          serial_number:product_serial_numbers(*)
         )
       `)
             .eq('id', saleId)
@@ -201,6 +210,20 @@ export async function deleteRetailSale(saleId: string): Promise<{ success: boole
 
         if (!sale) {
             throw new Error('Satış bulunamadı')
+        }
+
+        // Seri numaralarını temizle (sale_id referansını kaldır ve available yap)
+        const { error: serialError } = await supabase
+            .from('product_serial_numbers')
+            .update({
+                sale_id: null,
+                sold_date: null,
+                status: 'available'
+            })
+            .eq('sale_id', saleId)
+
+        if (serialError) {
+            console.error('Seri numaraları temizlenemedi:', serialError)
         }
 
         // Stokları geri yükle

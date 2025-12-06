@@ -5,6 +5,7 @@ export interface CreateSaleParams {
   customerId: string | null;
   items: Array<{
     productId: string | null;
+    serialNumberId?: string | null;
     quantity: number;
     unitPrice: number;
     discount: number;
@@ -75,6 +76,7 @@ export class SaleService {
       const saleItems: SaleItemInsert[] = params.items.map(item => ({
         sale_id: sale.id,
         product_id: item.productId,
+        serial_number_id: item.serialNumberId || null,
         quantity: item.quantity,
         unit_price: item.unitPrice,
         discount_amount: item.unitPrice * item.quantity * item.discount,
@@ -98,7 +100,7 @@ export class SaleService {
       // - Kasa hareketleri: trigger_create_sale_cash_movement (sales INSERT)
       // Bu yüzden manuel güncelleme yapmıyoruz
 
-      return { success: true, sale };
+      return { success: true, data: sale };
     } catch (error) {
       console.error('Error creating sale:', error);
       if (error && typeof error === 'object' && 'message' in error) {

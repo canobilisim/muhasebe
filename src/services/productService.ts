@@ -112,7 +112,19 @@ export class ProductService {
       }
 
       if (filter.isLowStock) {
-        query = query.lt('stock_quantity', supabase.raw('critical_stock_level'))
+        // Filter products where stock is less than critical level
+        // Note: This is done client-side since Supabase doesn't support column comparison in filters
+        const { data: allProducts } = await query
+        if (allProducts) {
+          const lowStockProducts = allProducts.filter(
+            (p) => p.critical_stock_level !== null && p.stock_quantity < p.critical_stock_level
+          )
+          return {
+            data: lowStockProducts,
+            error: null,
+            success: true,
+          }
+        }
       }
 
       if (filter.search) {
@@ -334,7 +346,7 @@ export class ProductService {
    * Check if product is low stock
    */
   static isLowStock(product: Product): boolean {
-    return product.stock_quantity <= product.critical_stock_level
+    return product.critical_stock_level !== null && product.stock_quantity <= product.critical_stock_level
   }
 
   /**
@@ -654,13 +666,18 @@ export class ProductService {
         .from('products')
         .select('*')
         .eq('is_active', true)
-        .lt('stock_quantity', supabase.raw('critical_stock_level'))
+        .not('critical_stock_level', 'is', null)
         .order('stock_quantity', { ascending: true })
 
       if (error) throw error
 
+      // Filter client-side to compare stock_quantity with critical_stock_level
+      const lowStockProducts = (data || []).filter(
+        (product) => product.critical_stock_level !== null && product.stock_quantity < product.critical_stock_level
+      )
+
       return {
-        data: data || [],
+        data: lowStockProducts,
         error: null,
         success: true
       }

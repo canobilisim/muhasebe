@@ -187,7 +187,7 @@ export const SerialNumberSelectionModal: React.FC<SerialNumberSelectionModalProp
                       </TableCell>
                       <TableCell className="font-medium">{sn.serial_number}</TableCell>
                       <TableCell className="text-sm text-gray-600">
-                        {new Date(sn.added_date).toLocaleDateString('tr-TR')}
+                        {sn.added_date ? new Date(sn.added_date).toLocaleDateString('tr-TR') : '-'}
                       </TableCell>
                     </TableRow>
                   ))}

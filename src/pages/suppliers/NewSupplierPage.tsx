@@ -146,7 +146,7 @@ const NewSupplierPage = () => {
                 <Label htmlFor="company_name">Firma Adı</Label>
                 <Input
                   id="company_name"
-                  value={formData.company_name}
+                  value={formData.company_name || ''}
                   onChange={(e) => handleInputChange('company_name', e.target.value)}
                   placeholder="Firma adı"
                 />
@@ -156,7 +156,7 @@ const NewSupplierPage = () => {
                 <Label htmlFor="contact_person">Yetkili Kişi</Label>
                 <Input
                   id="contact_person"
-                  value={formData.contact_person}
+                  value={formData.contact_person || ''}
                   onChange={(e) => handleInputChange('contact_person', e.target.value)}
                   placeholder="Yetkili kişi adı"
                 />
@@ -166,7 +166,7 @@ const NewSupplierPage = () => {
                 <Label htmlFor="phone">Telefon</Label>
                 <Input
                   id="phone"
-                  value={formData.phone}
+                  value={formData.phone || ''}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
                   placeholder="0555 123 45 67"
                 />
@@ -177,7 +177,7 @@ const NewSupplierPage = () => {
                 <Input
                   id="email"
                   type="email"
-                  value={formData.email}
+                  value={formData.email || ''}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   placeholder="ornek@firma.com"
                 />
@@ -189,7 +189,7 @@ const NewSupplierPage = () => {
                   id="credit_limit"
                   type="number"
                   step="0.01"
-                  value={formData.credit_limit}
+                  value={formData.credit_limit ?? 0}
                   onChange={(e) => handleInputChange('credit_limit', parseFloat(e.target.value) || 0)}
                   placeholder="0.00"
                 />
@@ -209,7 +209,7 @@ const NewSupplierPage = () => {
                 <Label htmlFor="city">İl</Label>
                 <Input
                   id="city"
-                  value={formData.city}
+                  value={formData.city || ''}
                   onChange={(e) => handleInputChange('city', e.target.value)}
                   placeholder="İl"
                 />
@@ -219,7 +219,7 @@ const NewSupplierPage = () => {
                 <Label htmlFor="district">İlçe</Label>
                 <Input
                   id="district"
-                  value={formData.district}
+                  value={formData.district || ''}
                   onChange={(e) => handleInputChange('district', e.target.value)}
                   placeholder="İlçe"
                 />
@@ -230,7 +230,7 @@ const NewSupplierPage = () => {
               <Label htmlFor="address">Adres</Label>
               <Textarea
                 id="address"
-                value={formData.address}
+                value={formData.address || ''}
                 onChange={(e) => handleInputChange('address', e.target.value)}
                 placeholder="Açık adres"
                 rows={3}
@@ -250,7 +250,7 @@ const NewSupplierPage = () => {
                 <Label htmlFor="tax_number">Vergi Numarası</Label>
                 <Input
                   id="tax_number"
-                  value={formData.tax_number}
+                  value={formData.tax_number || ''}
                   onChange={(e) => handleInputChange('tax_number', e.target.value)}
                   placeholder="1234567890"
                 />
@@ -260,7 +260,7 @@ const NewSupplierPage = () => {
                 <Label htmlFor="tax_office">Vergi Dairesi</Label>
                 <Input
                   id="tax_office"
-                  value={formData.tax_office}
+                  value={formData.tax_office || ''}
                   onChange={(e) => handleInputChange('tax_office', e.target.value)}
                   placeholder="Vergi dairesi"
                 />
@@ -270,7 +270,7 @@ const NewSupplierPage = () => {
                 <Label htmlFor="trade_registry_no">Ticaret Sicil No</Label>
                 <Input
                   id="trade_registry_no"
-                  value={formData.trade_registry_no}
+                  value={formData.trade_registry_no || ''}
                   onChange={(e) => handleInputChange('trade_registry_no', e.target.value)}
                   placeholder="Ticaret sicil numarası"
                 />
@@ -290,7 +290,7 @@ const NewSupplierPage = () => {
                 <Label htmlFor="bank_name">Banka Adı</Label>
                 <Input
                   id="bank_name"
-                  value={formData.bank_name}
+                  value={formData.bank_name || ''}
                   onChange={(e) => handleInputChange('bank_name', e.target.value)}
                   placeholder="Banka adı"
                 />
@@ -300,7 +300,7 @@ const NewSupplierPage = () => {
                 <Label htmlFor="iban">IBAN</Label>
                 <Input
                   id="iban"
-                  value={formData.iban}
+                  value={formData.iban || ''}
                   onChange={(e) => handleInputChange('iban', e.target.value)}
                   placeholder="TR00 0000 0000 0000 0000 0000 00"
                 />
@@ -310,7 +310,7 @@ const NewSupplierPage = () => {
                 <Label htmlFor="account_number">Hesap Numarası</Label>
                 <Input
                   id="account_number"
-                  value={formData.account_number}
+                  value={formData.account_number || ''}
                   onChange={(e) => handleInputChange('account_number', e.target.value)}
                   placeholder="Hesap numarası"
                 />
@@ -327,7 +327,7 @@ const NewSupplierPage = () => {
           <CardContent>
             <Textarea
               id="notes"
-              value={formData.notes}
+              value={formData.notes || ''}
               onChange={(e) => handleInputChange('notes', e.target.value)}
               placeholder="Tedarikçi hakkında notlar..."
               rows={4}
